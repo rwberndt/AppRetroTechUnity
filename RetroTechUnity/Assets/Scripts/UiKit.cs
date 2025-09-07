@@ -1,0 +1,75 @@
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+
+namespace RetroTech
+{
+    /// <summary>
+    /// Tiny kit to create rounded gradient surfaces, glass cards and TMP text.
+    /// Every method is safe if optional packages are missing.
+    /// </summary>
+    public static class UiKit
+    {
+        public static readonly Color32 TextMain = new(245, 245, 255, 255);
+        public static readonly Color32 TextMuted = new(210, 210, 235, 255);
+        public static readonly Color32 GlassBg = new(255, 255, 255, 30);
+        public static readonly Color32 GlassLine = new(255, 255, 255, 60);
+
+        // Create a rounded panel. When gradTop/bottom are provided, paints a vertical gradient
+        public static Image CreateCard(
+        Transform parent,
+        Vector2 size,              // use size.y as row height
+        Color32? fill,
+        float radius = 22f,
+        bool glass = false,
+        Color? gradTop = null,
+        Color? gradBottom = null)
+        {
+            var go = new GameObject("Card");
+            go.transform.SetParent(parent, false);
+
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+
+            var le = go.AddComponent<LayoutElement>();
+            le.preferredHeight = size.y > 0 ? size.y : 48f;
+            le.minHeight = le.preferredHeight;
+            le.flexibleHeight = 0f;
+
+            var img = go.AddComponent<Image>();
+            img.raycastTarget = true; // allow Button clicks on this card
+
+            if (glass && !fill.HasValue)
+                img.color = new Color(1f, 1f, 1f, 0.08f);   // subtle white on purple bg
+            else
+                img.color = fill.HasValue ? (Color)fill.Value : Color.white;
+
+            // (optional) if you have a 9-sliced rounded sprite, enable slicing:
+            // img.type = Image.Type.Sliced;
+            // img.sprite = YourRoundedSprite;
+
+            return img;
+        }
+
+        public static TMP_Text TMP(Transform parent, string text, int size, Color32 color,
+                                   TextAlignmentOptions align = TextAlignmentOptions.MidlineLeft,
+                                   bool bold = false)
+        {
+            var go = new GameObject("TMP");
+            go.transform.SetParent(parent, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(0, size + 18);
+            var t = go.AddComponent<TextMeshProUGUI>();
+            t.text = text;
+            t.fontSize = size;
+            t.color = color;
+            t.alignment = align;
+            t.enableWordWrapping = true;
+            return t;
+        }
+    }
+}
