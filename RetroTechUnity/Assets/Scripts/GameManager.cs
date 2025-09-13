@@ -156,103 +156,128 @@ namespace RetroTech
         }
 
         // ========= Navigation =========
+        private const float NavBarHeight = 76f;
 
         private void CreateNavigationBar()
         {
-            _navBar = new GameObject("NavigationBar");
+            if (_navBar != null) Destroy(_navBar);
+
+            _navBar = new GameObject("NavigationBar", typeof(RectTransform));
             _navBar.transform.SetParent(_canvas.transform, false);
-            var rt = _navBar.AddComponent<RectTransform>();
+            var rt = _navBar.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(0f, 0f);
             rt.anchorMax = new Vector2(1f, 0f);
             rt.pivot = new Vector2(0.5f, 0f);
-            rt.sizeDelta = new Vector2(0f, 76f);
+            rt.anchoredPosition = Vector2.zero;
 
-            var bgGO = new GameObject("Bg");
+            // apply safe area bottom ONLY (so it touches the page with no visual gap)
+            float bottomInset = Screen.safeArea.y; // pixels
+            rt.sizeDelta = new Vector2(0f, NavBarHeight + bottomInset);
+
+            // Background (fills full height; no vertical offset)
+            var bgGO = new GameObject("Bg", typeof(RectTransform), typeof(Image));
             bgGO.transform.SetParent(_navBar.transform, false);
-            var bgRT = bgGO.AddComponent<RectTransform>();
+            var bgRT = bgGO.GetComponent<RectTransform>();
             bgRT.anchorMin = Vector2.zero; bgRT.anchorMax = Vector2.one;
-            bgRT.offsetMin = new Vector2(10, 8); bgRT.offsetMax = new Vector2(-10, 8);
+            bgRT.offsetMin = new Vector2(10, 0);      // left pad only
+            bgRT.offsetMax = new Vector2(-10, 0);     // right pad only
 
-            var bgImg = bgGO.AddComponent<Image>();
+            var bgImg = bgGO.GetComponent<Image>();
             bgImg.type = Image.Type.Sliced;
-            bgImg.sprite = Resources.Load<Sprite>("Sprites/RoundedPanel"); // 9-slice rounded sprite (see note)
-            bgImg.color = new Color(1f, 1f, 1f, 0.12f); // glass look
-            var outline = bgGO.AddComponent<Outline>();
-            outline.effectColor = new Color(1f, 1f, 1f, 0.25f);
-            outline.effectDistance = new Vector2(1f, -1f);
+            // If you have a 9-sliced rounded panel Sprite in Assets/Resources/Sprites/RoundedPanel.png:
+            var rounded = Resources.Load<Sprite>("Sprites/RoundedPanel");
+            bgImg.sprite = rounded;
+            bgImg.color = new Color(1f, 1f, 1f, 0.12f);
 
-            // Row for tabs
-            var row = new GameObject("Row");
+            // Row
+            var row = new GameObject("Row", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             row.transform.SetParent(bgGO.transform, false);
-            var rowRT = row.AddComponent<RectTransform>();
+            var rowRT = row.GetComponent<RectTransform>();
             rowRT.anchorMin = Vector2.zero; rowRT.anchorMax = Vector2.one;
-            rowRT.offsetMin = Vector2.zero; rowRT.offsetMax = Vector2.zero;
+            rowRT.offsetMin = new Vector2(16, 8 + bottomInset);  // consume the inset INSIDE the bar
+            rowRT.offsetMax = new Vector2(-16, -8);
 
-            var h = row.AddComponent<HorizontalLayoutGroup>();
+            var h = row.GetComponent<HorizontalLayoutGroup>();
             h.childAlignment = TextAnchor.MiddleCenter;
             h.spacing = 8f;
             h.childControlWidth = true; h.childForceExpandWidth = true;
             h.childControlHeight = true; h.childForceExpandHeight = true;
-            h.padding = new RectOffset(16, 16, 8, 8);
 
-            // Create tabs
+            // Tabs
             CreateNavTab(row.transform, "Início", 0, _iconHome);
             CreateNavTab(row.transform, "Categorias", 1, _iconCategories);
             CreateNavTab(row.transform, "Timeline", 2, _iconTimeline);
             CreateNavTab(row.transform, "QR Code", 3, _iconScanner);
             CreateNavTab(row.transform, "Quiz", 4, _iconQuiz);
 
-            // Ensure on top
             _navBar.transform.SetAsLastSibling();
 
-            // Respect safe area
-            ApplySafeArea(rt);
+            // Make sure pages don't add extra bottom padding now; let the bar overlap them flush.
+            // If you previously padded pages by NavBarHeight, remove that padding.
 
+            Canvas.ForceUpdateCanvases();
             RefreshTabsVisual();
         }
 
-    private void CreateNavTab(Transform parent, string label, int pageIndex, Sprite icon)
-    {
-        // Cell
-        var cell = new GameObject("Tab_" + label);
-        cell.transform.SetParent(parent, false);
-        var le = cell.AddComponent<LayoutElement>();
-        le.flexibleWidth = 1; // even distribution
+        private void CreateNavTab(Transform parent, string label, int pageIndex, Sprite icon)
+        {
+            var cell = new GameObject("Tab_" + label,
+                typeof(RectTransform), typeof(LayoutElement), typeof(Image), typeof(Button), typeof(VerticalLayoutGroup));
+            cell.transform.SetParent(parent, false);
 
-        // Hit area + background (transparent)
-        var bg = cell.AddComponent<Image>();
-        bg.color = new Color(1, 1, 1, 0); // keep transparent; bg card is behind
-        var btn = cell.AddComponent<Button>();
-        btn.targetGraphic = bg; // important: Button needs a targetGraphic
-        btn.onClick.AddListener(() => { _activeTab = pageIndex; SwitchPage(pageIndex); RefreshTabsVisual(); });
+            var le = cell.GetComponent<LayoutElement>();
+            le.flexibleWidth = 1;
 
-        // Vertical content
-        var v = cell.AddComponent<VerticalLayoutGroup>();
-        v.childAlignment = TextAnchor.MiddleCenter;
-        v.spacing = 2f;
-        v.childControlHeight = true; v.childForceExpandHeight = false;
+            var bg = cell.GetComponent<Image>();
+            bg.color = new Color(1, 1, 1, 0); // transparent hit area
 
-        // Icon
-        var iconGO = new GameObject("Icon");
-        iconGO.transform.SetParent(cell.transform, false);
-        var iconImg = iconGO.AddComponent<Image>();
-        iconImg.sprite = icon;
-        iconImg.color = new Color32(245, 245, 255, 255);
-        var iRT = iconGO.GetComponent<RectTransform>();
-        iRT.sizeDelta = new Vector2(20, 20);
+            var btn = cell.GetComponent<Button>();
+            btn.targetGraphic = bg;
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(() => { _activeTab = pageIndex; SwitchPage(pageIndex); RefreshTabsVisual(); });
 
-        // Label
-        var labelGO = new GameObject("Label");
-        labelGO.transform.SetParent(cell.transform, false);
-        var t = labelGO.AddComponent<Text>();
-        t.text = label;
-        t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        t.fontSize = 12;
-        t.color = new Color32(210, 210, 235, 255);
-        t.alignment = TextAnchor.MiddleCenter;
-        var lrt = labelGO.GetComponent<RectTransform>();
-        lrt.sizeDelta = new Vector2(0, 16);
-    }
+            var v = cell.GetComponent<VerticalLayoutGroup>();
+            v.childAlignment = TextAnchor.MiddleCenter;
+            v.spacing = 2f;
+            v.childControlHeight = true; v.childForceExpandHeight = false;
+
+            // ICON
+            var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+            iconGO.transform.SetParent(cell.transform, false);
+            var iconImg = iconGO.GetComponent<Image>();
+            iconImg.raycastTarget = false;
+            iconImg.preserveAspect = true;
+            iconImg.color = Color.white; // full opacity so it's visible
+
+            // If sprite is missing, draw a simple visible placeholder
+            if (icon == null)
+            {
+                var tex = new Texture2D(2, 2);
+                tex.SetPixels(new[] { Color.white, Color.white, Color.white, Color.white });
+                tex.Apply();
+                iconImg.sprite = Sprite.Create(tex, new Rect(0, 0, 2, 2), new Vector2(0.5f, 0.5f), 100);
+                Debug.LogWarning($"[NavBar] Using placeholder for '{label}' icon.");
+            }
+            else
+            {
+                iconImg.sprite = icon;
+            }
+            var iRT = iconGO.GetComponent<RectTransform>();
+            iRT.sizeDelta = new Vector2(22, 22);
+
+            // LABEL (legacy Text to match your project)
+            var labelGO = new GameObject("Label", typeof(RectTransform), typeof(Text));
+            labelGO.transform.SetParent(cell.transform, false);
+            var t = labelGO.GetComponent<Text>();
+            t.text = label;
+            t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            t.fontSize = 12;
+            t.alignment = TextAnchor.MiddleCenter;
+            t.color = new Color32(210, 210, 235, 255);
+
+            var lrt = labelGO.GetComponent<RectTransform>();
+            lrt.sizeDelta = new Vector2(0, 16);
+        }
 
         private void RefreshTabsVisual()
         {
@@ -314,7 +339,7 @@ namespace RetroTech
 
             CreateCTAButton(content.transform, "Buscar Peças", () =>
             {
-                _activeTab = 1; 
+                _activeTab = 1;
                 SwitchPage(_activeTab);
                 RefreshTabsVisual();
             });
@@ -335,7 +360,7 @@ namespace RetroTech
             fillRT.anchorMin = new Vector2(0, 0); fillRT.anchorMax = new Vector2(1, 1);
             fillRT.offsetMin = Vector2.zero; fillRT.offsetMax = Vector2.zero;
             var le = fill.GetComponent<LayoutElement>();
-            le.flexibleHeight = 1; 
+            le.flexibleHeight = 1;
 
             var scrollGO = new GameObject("Scroll", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
             scrollGO.transform.SetParent(fill.transform, false);
@@ -455,8 +480,8 @@ namespace RetroTech
             scroll.content = crt;
 
             var v = contentGO.GetComponent<VerticalLayoutGroup>();
-            v.padding = new RectOffset(24, 24, 24, 32);   
-            v.spacing = 25;                               
+            v.padding = new RectOffset(24, 24, 24, 32);
+            v.spacing = 25;
             v.childForceExpandHeight = false;
             v.childControlHeight = true;
             v.childControlWidth = true;
@@ -471,8 +496,8 @@ namespace RetroTech
             var blrt = backLine.GetComponent<RectTransform>();
             blrt.anchorMin = new Vector2(0, 0); blrt.anchorMax = new Vector2(0, 1);
             blrt.pivot = new Vector2(0, 1);
-            blrt.anchoredPosition = new Vector2(60, 0);  
-            blrt.sizeDelta = new Vector2(5, 0);          
+            blrt.anchoredPosition = new Vector2(60, 0);
+            blrt.sizeDelta = new Vector2(5, 0);
             backLine.GetComponent<Image>().color = new Color32(255, 255, 255, 90);
 
             var pieces = new List<ComputerPiece>(SampleData.Pieces);
@@ -489,13 +514,13 @@ namespace RetroTech
                 rowHL.childControlWidth = true;
                 rowHL.childForceExpandHeight = false;
                 rowHL.childForceExpandWidth = false;
-                row.GetComponent<LayoutElement>().preferredHeight = 270; 
+                row.GetComponent<LayoutElement>().preferredHeight = 270;
 
                 // GUTTER (fixo)
                 var gutter = new GameObject("Gutter", typeof(RectTransform), typeof(LayoutElement));
                 gutter.transform.SetParent(row.transform, false);
                 var gutterLE = gutter.GetComponent<LayoutElement>();
-                gutterLE.minWidth = 112;                 
+                gutterLE.minWidth = 112;
                 gutterLE.preferredWidth = 112;
 
                 var seg = new GameObject("Segment", typeof(RectTransform), typeof(Image));
@@ -511,19 +536,19 @@ namespace RetroTech
                 var dotRT = dot.GetComponent<RectTransform>();
                 dotRT.anchorMin = new Vector2(0, 0.5f); dotRT.anchorMax = new Vector2(0, 0.5f);
                 dotRT.anchoredPosition = new Vector2(48, 0);
-                dotRT.sizeDelta = new Vector2(16, 16);  
+                dotRT.sizeDelta = new Vector2(16, 16);
                 var dotImg = dot.GetComponent<Image>();
                 dotImg.color = TextMain;
                 dotImg.raycastTarget = false;
 
-                var card = UiKit.CreateCard(row.transform, new Vector2(0, 250), default, 30f, glass: true); 
+                var card = UiKit.CreateCard(row.transform, new Vector2(0, 250), default, 30f, glass: true);
                 var cardLE = card.gameObject.AddComponent<LayoutElement>();
                 cardLE.flexibleWidth = 1;
                 cardLE.preferredHeight = 200;
 
                 var iv = card.gameObject.AddComponent<VerticalLayoutGroup>();
                 iv.padding = new RectOffset(16, 16, 16, 16);
-                iv.spacing = 15;                          
+                iv.spacing = 15;
                 iv.childAlignment = TextAnchor.UpperLeft;
                 iv.childControlHeight = true;
                 iv.childControlWidth = true;
@@ -535,8 +560,8 @@ namespace RetroTech
 
                 var btnCard = UiKit.CreateCard(card.transform, Vector2.zero, PrimaryColor, 22f);
                 var btnLE = btnCard.gameObject.AddComponent<LayoutElement>();
-                btnLE.minWidth = 250;     
-                btnLE.minHeight = 70;     
+                btnLE.minWidth = 250;
+                btnLE.minHeight = 70;
                 btnLE.flexibleWidth = 1;
 
                 var btn = btnCard.gameObject.AddComponent<Button>();
@@ -645,6 +670,7 @@ namespace RetroTech
         {
             var (surface, content) = BuildSurface("QuizPage");
 
+            // Header
             var header = UiKit.CreateCard(content, new Vector2(0, 48), new Color(1, 1, 1, 0.18f), 18f, glass: true);
             var h = header.gameObject.AddComponent<HorizontalLayoutGroup>();
             h.padding = new RectOffset(12, 12, 8, 8);
@@ -656,42 +682,68 @@ namespace RetroTech
 
             var scoreGO = new GameObject("Score", typeof(RectTransform));
             scoreGO.transform.SetParent(header.transform, false);
-            var scoreLE = scoreGO.AddComponent<LayoutElement>(); scoreLE.flexibleWidth = 1;
+            var scoreLE = scoreGO.AddComponent<LayoutElement>();
+            scoreLE.flexibleWidth = 1;
+
             _scoreLabel = (TextMeshProUGUI)UiKit.TMP(header.transform, "Pontuação: 0", 34, Color.white, TextAlignmentOptions.Right);
+
+            // Progress Bar
             var progress = UiKit.CreateCard(content, new Vector2(0, 6), new Color(1, 1, 1, 0.22f), 8f, glass: true);
             var barBG = progress;
             var fillGO = new GameObject("Fill", typeof(RectTransform), typeof(Image));
             fillGO.transform.SetParent(barBG.transform, false);
             var frt = fillGO.GetComponent<RectTransform>();
-            frt.anchorMin = new Vector2(0, 0); frt.anchorMax = new Vector2(0, 1);
-            frt.offsetMin = new Vector2(2, 2); frt.offsetMax = new Vector2(2, -2);
+            frt.anchorMin = new Vector2(0, 0);
+            frt.anchorMax = new Vector2(0, 1);
+            frt.offsetMin = new Vector2(2, 2);
+            frt.offsetMax = new Vector2(2, -2);
+
             _progressFill = fillGO.GetComponent<Image>();
             _progressFill.color = new Color32(255, 255, 255, 240);
             _progressFill.type = Image.Type.Filled;
             _progressFill.fillMethod = Image.FillMethod.Horizontal;
             _progressFill.fillAmount = 0f;
 
-            var qCard = UiKit.CreateCard(content, new Vector2(0, 84), new Color(1, 1, 1, 0.32f), 18f, glass: true);
-            var qText = (TextMeshProUGUI)UiKit.TMP(qCard.transform, "", 36, Color.white, TextAlignmentOptions.Midline, bold: false);
+            var qCard = UiKit.CreateCard(content, new Vector2(0, 100), new Color(1, 1, 1, 0.32f), 18f, glass: true);
+
+            var qCardSizeFitter = qCard.gameObject.AddComponent<ContentSizeFitter>();
+            qCardSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var qText = (TextMeshProUGUI)UiKit.TMP(qCard.transform, "", 32, Color.white, TextAlignmentOptions.TopLeft, bold: false);
+
             qText.enableWordWrapping = true;
-            qText.margin = new Vector4(12, 10, 12, 10);
-            qText.overflowMode = TMPro.TextOverflowModes.Overflow;
+            qText.overflowMode = TMPro.TextOverflowModes.Overflow; // Ou use TMPro.TextOverflowModes.Ellipsis
+            qText.margin = new Vector4(16, 12, 16, 12); // Margem maior para breathing room
+
+            var qTextRT = qText.GetComponent<RectTransform>();
+            qTextRT.anchorMin = new Vector2(0, 0);
+            qTextRT.anchorMax = new Vector2(1, 1);
+            qTextRT.offsetMin = Vector2.zero;
+            qTextRT.offsetMax = Vector2.zero;
+
+            qText.autoSizeTextContainer = false; 
 
             var opts = new GameObject("Options", typeof(RectTransform), typeof(VerticalLayoutGroup));
             opts.transform.SetParent(content, false);
             var ov = opts.GetComponent<VerticalLayoutGroup>();
-            ov.spacing = 10; ov.padding = new RectOffset(0, 0, 6, 6);
-            ov.childControlHeight = true; 
+            ov.spacing = 10;
+            ov.padding = new RectOffset(0, 0, 6, 6);
+            ov.childControlHeight = true;
             ov.childForceExpandHeight = false;
             ov.childControlWidth = true;
-            ov.childForceExpandWidth = true; 
+            ov.childForceExpandWidth = true;
 
             var expCard = UiKit.CreateCard(content, new Vector2(0, 120), new Color(1, 1, 1, 0.18f), 18f, glass: true);
             var expV = expCard.gameObject.AddComponent<VerticalLayoutGroup>();
-            expV.padding = new RectOffset(14, 14, 12, 12); expV.spacing = 6;
+            expV.padding = new RectOffset(14, 14, 12, 12);
+            expV.spacing = 6;
+
             UiKit.TMP(expCard.transform, "❌  Incorreto!", 15, Color.white, TextAlignmentOptions.Left, bold: true)
                 .name = "ExpTitle";
+
             _expTextTMP = (TextMeshProUGUI)UiKit.TMP(expCard.transform, "", 26, new Color32(255, 255, 255, 220), TextAlignmentOptions.Left);
+            _expTextTMP.enableWordWrapping = true; 
+
             expCard.gameObject.SetActive(false);
 
             var next = UiKit.CreateCard(content, new Vector2(0, 46), Color.white, 22f);
@@ -703,7 +755,6 @@ namespace RetroTech
 
             _currentQuizIndex = 0;
             _quizScore = 0;
-
             PopulateQuizQuestion(qText, opts, expCard.gameObject, _nextBtnGO);
 
             nextBtn.onClick.AddListener(() =>
@@ -764,8 +815,10 @@ namespace RetroTech
             var pV = panel.GetComponent<VerticalLayoutGroup>();
             pV.padding = new RectOffset(16, 16, 16, 16);
             pV.spacing = 12;
-            pV.childControlWidth = true; pV.childForceExpandWidth = true;
-            pV.childControlHeight = true; pV.childForceExpandHeight = false;
+            pV.childControlWidth = true;
+            pV.childForceExpandWidth = true;
+            pV.childControlHeight = false;
+            pV.childForceExpandHeight = false;
 
             // --- Header row ---------------------------------------------------------
             var header = new GameObject("Header", typeof(RectTransform), typeof(LayoutElement));
@@ -863,181 +916,180 @@ namespace RetroTech
 
         private void ShowPieceDetail(ComputerPiece piece)
         {
-            // Close any open modal
             if (_openModal != null) { Destroy(_openModal); _openModal = null; }
 
-            // Root on app canvas and ensure on top
-            var root = _canvas.transform;
             var overlay = new GameObject("PieceDetailOverlay",
                 typeof(RectTransform), typeof(Image), typeof(Button));
-            overlay.transform.SetParent(root, false);
+            overlay.transform.SetParent(_canvas.transform, false);
             overlay.transform.SetAsLastSibling();
             _openModal = overlay;
 
-            // Fullscreen translucent backdrop
-            var ovRt = overlay.GetComponent<RectTransform>();
-            ovRt.anchorMin = Vector2.zero; ovRt.anchorMax = Vector2.one;
-            ovRt.offsetMin = Vector2.zero; ovRt.offsetMax = Vector2.zero;
-            var ovImg = overlay.GetComponent<Image>(); ovImg.color = new Color(0, 0, 0, 0.55f);
-            overlay.GetComponent<Button>().onClick.AddListener(() => { if (_openModal) { Destroy(_openModal); _openModal = null; } });
+            var ovRT = overlay.GetComponent<RectTransform>();
+            ovRT.anchorMin = Vector2.zero; ovRT.anchorMax = Vector2.one;
+            ovRT.offsetMin = Vector2.zero; ovRT.offsetMax = Vector2.zero;
 
-            // Rounded panel
-            var panel = new GameObject("Panel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
-            panel.transform.SetParent(overlay.transform, false);
-            var prt = panel.GetComponent<RectTransform>();
-            prt.anchorMin = new Vector2(0.06f, 0.06f);
-            prt.anchorMax = new Vector2(0.94f, 0.94f);
-            prt.offsetMin = Vector2.zero; prt.offsetMax = Vector2.zero;
+            overlay.GetComponent<Image>().color = new Color(0, 0, 0, 0.55f);
+            var ovBtn = overlay.GetComponent<Button>();
+            ovBtn.transition = Selectable.Transition.None;
+            ovBtn.onClick.RemoveAllListeners();
+            ovBtn.onClick.AddListener(() => { if (_openModal != null) { Destroy(_openModal); _openModal = null; } });
 
-            var pImg = panel.GetComponent<Image>();
-            var rounded = Resources.Load<Sprite>("Sprites/RoundedPanel");  // 9-slice
-            if (rounded) { pImg.sprite = rounded; pImg.type = Image.Type.Sliced; }
-            pImg.color = Color.white;
+            var (surface, content) = BuildSurface("PieceDetail");
+            surface.transform.SetParent(overlay.transform, false);
+            surface.transform.SetAsLastSibling();
 
-            var vlg = panel.GetComponent<VerticalLayoutGroup>();
-            vlg.padding = new RectOffset(14, 14, 14, 14);
-            vlg.spacing = 10;
-            vlg.childControlWidth = true; vlg.childForceExpandWidth = true;
-            vlg.childControlHeight = true; vlg.childForceExpandHeight = false;
+            var sRT = surface.GetComponent<RectTransform>();
+            sRT.anchorMin = new Vector2(0, 0);
+            sRT.anchorMax = new Vector2(1, 1);
+            sRT.offsetMin = new Vector2(2, 2);
+            sRT.offsetMax = new Vector2(-12, -12);
 
-            // ---------- APP BAR ----------
-            var appbar = new GameObject("AppBar", typeof(RectTransform), typeof(LayoutElement));
-            appbar.transform.SetParent(panel.transform, false);
-            appbar.GetComponent<LayoutElement>().preferredHeight = 40;
-            var titleRow = UiKit.TMP(appbar.transform, "RetroTech", 18, Color.white, TMPro.TextAlignmentOptions.Left, bold: true);
-            titleRow.enableWordWrapping = false;
+            var existingVLG = content.GetComponent<VerticalLayoutGroup>();
+            if (existingVLG != null) DestroyImmediate(existingVLG);
 
-            // back chevron + “Voltar”
-            var back = new GameObject("Back", typeof(RectTransform), typeof(Button));
-            back.transform.SetParent(appbar.transform, false);
-            var brt = back.GetComponent<RectTransform>();
-            brt.anchorMin = new Vector2(0, 0.5f); brt.anchorMax = new Vector2(0, 0.5f); brt.pivot = new Vector2(0, 0.5f);
-            brt.sizeDelta = new Vector2(120, 36); brt.anchoredPosition = new Vector2(0, 0);
-            var backBtn = back.GetComponent<Button>();
-            var backTxt = UiKit.TMP(back.transform, "◀  Voltar", 14, new Color(1, 1, 1, 0.85f),
-                                    TMPro.TextAlignmentOptions.MidlineLeft, bold: false);
-            backBtn.onClick.AddListener(() => { if (_openModal) { Destroy(_openModal); _openModal = null; } });
+            var safe = Screen.safeArea;
+            var topInset = Mathf.Max(0, (int)safe.y);
+            var bottomInset = Mathf.Max(0, (int)(Screen.height - (safe.y + safe.height)));
 
-            // ---------- SCROLL AREA (fills remaining space) ----------
-            var scrollGO = new GameObject("Scroll", typeof(RectTransform), typeof(ScrollRect), typeof(LayoutElement));
-            scrollGO.transform.SetParent(panel.transform, false);
-            var sLE = scrollGO.GetComponent<LayoutElement>(); sLE.flexibleHeight = 1; sLE.minHeight = 100;
+            var appbar = new GameObject("AppBar", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            appbar.transform.SetParent(content, false);
 
-            var srt = scrollGO.GetComponent<RectTransform>();
-            srt.anchorMin = new Vector2(0, 0); srt.anchorMax = new Vector2(1, 1);
-            srt.offsetMin = Vector2.zero; srt.offsetMax = Vector2.zero;
-            var scroll = scrollGO.GetComponent<ScrollRect>(); scroll.vertical = true; scroll.horizontal = false;
+            var appbarRT = appbar.GetComponent<RectTransform>();
+            appbarRT.anchorMin = new Vector2(0, 1);
+            appbarRT.anchorMax = new Vector2(1, 1);
+            appbarRT.pivot = new Vector2(0.5f, 1);
+            appbarRT.offsetMin = new Vector2(12, -60);
+            appbarRT.offsetMax = new Vector2(-12, -8 - (topInset > 0 ? 12 : 0));
+
+            var backBtnGO = new GameObject("BackBtn", typeof(RectTransform), typeof(Image), typeof(Button));
+            backBtnGO.transform.SetParent(appbar.transform, false);
+            var bRT = backBtnGO.GetComponent<RectTransform>();
+            bRT.sizeDelta = new Vector2(50, 56);
+            backBtnGO.GetComponent<Image>().color = new Color(1, 1, 1, 0);
+            var backTMP = UiKit.TMP(backBtnGO.transform, "◀", 36, Color.white, TMPro.TextAlignmentOptions.Left, bold: true);
+            backTMP.enableWordWrapping = false;
+            backBtnGO.GetComponent<Button>().onClick.AddListener(() => { if (_openModal != null) { Destroy(_openModal); _openModal = null; } });
+
+            var titleApp = UiKit.TMP(appbar.transform, "RetroTech", 55, Color.white, TMPro.TextAlignmentOptions.Left, bold: true);
+            titleApp.margin = new Vector4(4, 0, 0, 0);
+            titleApp.enableWordWrapping = false;
+
+            var scrollGO = new GameObject("Scroll", typeof(RectTransform), typeof(ScrollRect));
+            scrollGO.transform.SetParent(content, false);
+
+            var scrollRT = scrollGO.GetComponent<RectTransform>();
+            scrollRT.anchorMin = new Vector2(0, 0);
+            scrollRT.anchorMax = new Vector2(1, 1);
+            scrollRT.offsetMin = new Vector2(12, 12 + (bottomInset > 0 ? 12 : 0));
+            scrollRT.offsetMax = new Vector2(-12, -72 - (topInset > 0 ? 12 : 0));
+
+            var scroll = scrollGO.GetComponent<ScrollRect>();
+            scroll.vertical = true; scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
 
             var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(RectMask2D));
             viewport.transform.SetParent(scrollGO.transform, false);
-            var vpRt = viewport.GetComponent<RectTransform>();
-            vpRt.anchorMin = Vector2.zero; vpRt.anchorMax = Vector2.one;
-            vpRt.offsetMin = Vector2.zero; vpRt.offsetMax = Vector2.zero;
-            viewport.GetComponent<Image>().color = new Color(1, 1, 1, 0);  // transparent
-            scroll.viewport = vpRt;
+            var vpRT = viewport.GetComponent<RectTransform>();
+            vpRT.anchorMin = Vector2.zero; vpRT.anchorMax = Vector2.one;
+            vpRT.offsetMin = Vector2.zero; vpRT.offsetMax = Vector2.zero;
+            viewport.GetComponent<Image>().color = new Color(1, 1, 1, 0);
+            scroll.viewport = vpRT;
 
-            var content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-            content.transform.SetParent(viewport.transform, false);
-            var contRt = content.GetComponent<RectTransform>();
-            contRt.anchorMin = new Vector2(0, 1); contRt.anchorMax = new Vector2(1, 1);
-            contRt.pivot = new Vector2(0.5f, 1); contRt.offsetMin = Vector2.zero; contRt.offsetMax = Vector2.zero;
-            scroll.content = contRt;
+            var inner = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+            inner.transform.SetParent(viewport.transform, false);
+            var inRT = inner.GetComponent<RectTransform>();
+            inRT.anchorMin = new Vector2(0, 1); inRT.anchorMax = new Vector2(1, 1);
+            inRT.pivot = new Vector2(0.5f, 1);
+            inRT.offsetMin = Vector2.zero; inRT.offsetMax = Vector2.zero;
+            scroll.content = inRT;
 
-            var cv = content.GetComponent<VerticalLayoutGroup>();
-            cv.padding = new RectOffset(8, 8, 8, 8);
-            cv.spacing = 10;
-            cv.childControlWidth = true; cv.childForceExpandWidth = true;
-            cv.childControlHeight = true; cv.childForceExpandHeight = false;
-            var fit = content.GetComponent<ContentSizeFitter>();
-            fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            fit.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            var vInner = inner.GetComponent<VerticalLayoutGroup>();
+            vInner.padding = new RectOffset(8, 8, 12, 20);
+            vInner.spacing = 8;
+            vInner.childControlWidth = true; vInner.childForceExpandWidth = true;
+            vInner.childControlHeight = true; vInner.childForceExpandHeight = false;
 
-            // ---------- HERO IMAGE CARD ----------
-            var heroCard = UiKit.CreateCard(content.transform, new Vector2(0, 180), Color.white, 16f, glass: true);
-            var hero = heroCard.gameObject.GetComponent<Image>();
-            hero.color = new Color(1, 1, 1, 0.9f);
+            inner.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var heroCard = UiKit.CreateCard(inner.transform, new Vector2(0, 200), Color.white, 18f, glass: true);
+            heroCard.color = new Color(1, 1, 1, 0.92f);
             var heroLE = heroCard.gameObject.GetComponent<LayoutElement>() ?? heroCard.gameObject.AddComponent<LayoutElement>();
-            heroLE.minHeight = 160; heroLE.preferredHeight = 200;
+            heroLE.minHeight = 180; heroLE.preferredHeight = 200;
 
-            // optional sprite
             if (!string.IsNullOrEmpty(piece.ImageUrl))
             {
                 var sp = Resources.Load<Sprite>(piece.ImageUrl);
-                if (sp) heroCard.sprite = sp;
+                if (sp != null)
+                {
+                    heroCard.sprite = sp;
+                    heroCard.type = Image.Type.Simple;
+                    heroCard.preserveAspect = true;
+                }
             }
+            else heroCard.type = Image.Type.Sliced;
 
-            // ---------- METADATA ----------
-            AddMutedLabel("Ano de fabricação");
+            var pieceTitle = UiKit.TMP(inner.transform, string.IsNullOrWhiteSpace(piece.Name) ? "Peça sem nome" : piece.Name,
+                40, Color.white, TMPro.TextAlignmentOptions.Left, bold: true);
+            pieceTitle.margin = new Vector4(0, 6, 0, 6);
+
+            AddMuted("Ano de fabricação");
             AddValue(piece.YearManufactured > 0 ? piece.YearManufactured.ToString() : "-");
 
-            AddMutedLabel("Fabricante");
+            AddMuted("Fabricante");
             AddValue(string.IsNullOrEmpty(piece.Manufacturer) ? (piece.Category ?? "-") : piece.Manufacturer);
 
-            // ---------- DESCRIPTION ----------
-            AddSectionTitle("A primeira calculadora científica portátil do mundo, revolucionando os cálculos de engenharia.");
-            if (!string.IsNullOrEmpty(piece.Description))
-            {
-                AddParagraph(piece.Description);
-            }
+            AddHeader("Descrição");
+            AddParagraph(string.IsNullOrEmpty(piece.Description) ? "Sem descrição." : piece.Description);
 
-            // ---------- CURIOSIDADES ----------
-            AddSectionHeader("Curiosidades");
-            AddParagraph(piece.Curiosities ??
-                "A HP-35 foi chamada de “slide rule killer” porque substituiu as réguas de cálculo usadas por engenheiros.");
+            AddHeader("Curiosidades");
+            AddParagraph(string.IsNullOrEmpty(piece.Curiosities) ? "—" : piece.Curiosities);
 
-            // ---------- ESPECIFICAÇÕES (bulleted) ----------
-            AddSectionHeader("Especificações");
-            foreach (var item in piece.Specifications)
-            {
-                AddBullet(item);
-            }
+            AddHeader("Especificações");
+            if (piece.Specifications != null)
+                foreach (var item in piece.Specifications) AddBullet(item);
 
-            // bottom spacer so the CTA doesn’t cover text
             var spacer = new GameObject("Spacer", typeof(LayoutElement));
-            spacer.transform.SetParent(content.transform, false);
-            spacer.GetComponent<LayoutElement>().preferredHeight = 70;
+            spacer.transform.SetParent(inner.transform, false);
+            spacer.GetComponent<LayoutElement>().preferredHeight = 40;
 
-            // ---------- BOTTOM CTA (fixed) ----------
-            var cta = UiKit.CreateCard(panel.transform, new Vector2(0, 46), Color.white, 22f);
-            var ctaLE = cta.gameObject.AddComponent<LayoutElement>(); ctaLE.preferredHeight = 50;
-            var ctaBtn = cta.gameObject.AddComponent<Button>();
-            UiKit.TMP(cta.transform, "◧  Gerar QR Code desta peça", 14, new Color(0.38f, 0.31f, 0.64f, 1),
-                      TMPro.TextAlignmentOptions.Center, bold: true).enableWordWrapping = false;
-            // TODO: hook your generator here
-            ctaBtn.onClick.AddListener(() => Debug.Log("Gerar QR para: " + piece.Name));
-
-            // final layout pass
-            Canvas.ForceUpdateCanvases();
-            LayoutRebuilder.ForceRebuildLayoutImmediate(contRt);
-            LayoutRebuilder.ForceRebuildLayoutImmediate(prt);
-
-            // ---------- local UI builders ----------
-            void AddMutedLabel(string text)
-                => UiKit.TMP(content.transform, text, 12, new Color(1, 1, 1, 0.75f),
-                             TMPro.TextAlignmentOptions.Left, bold: true);
+            void AddMuted(string text)
+            {
+                var t = UiKit.TMP(inner.transform, text, 26, new Color(1, 1, 1, 0.65f), TMPro.TextAlignmentOptions.Left);
+                t.margin = new Vector4(0, 4, 0, 0);
+                t.raycastTarget = false;
+            }
 
             void AddValue(string text)
-                => UiKit.TMP(content.transform, text, 14, Color.white,
-                             TMPro.TextAlignmentOptions.Left);
+            {
+                var t = UiKit.TMP(inner.transform, text, 30, Color.white, TMPro.TextAlignmentOptions.Left);
+                t.margin = new Vector4(0, 0, 0, 2);
+                t.raycastTarget = false;
+            }
 
-            void AddSectionHeader(string text)
-                => UiKit.TMP(content.transform, text, 14, Color.white,
-                             TMPro.TextAlignmentOptions.Left, bold: true);
-
-            void AddSectionTitle(string text)
-                => UiKit.TMP(content.transform, text, 14, Color.white,
-                             TMPro.TextAlignmentOptions.Left);
+            void AddHeader(string text)
+            {
+                var t = UiKit.TMP(inner.transform, text, 32, Color.white, TMPro.TextAlignmentOptions.Left, bold: true);
+                t.margin = new Vector4(0, 8, 0, 3);
+                t.raycastTarget = false;
+            }
 
             void AddParagraph(string text)
             {
-                var p = UiKit.TMP(content.transform, text, 13, new Color(1, 1, 1, 0.92f),
-                                  TMPro.TextAlignmentOptions.Left);
+                var p = UiKit.TMP(inner.transform, text, 26, new Color(1, 1, 1, 0.95f), TMPro.TextAlignmentOptions.Left);
                 p.enableWordWrapping = true;
+                p.lineSpacing = 1.6f;
+                p.margin = new Vector4(0, 0, 0, 3);
+                p.raycastTarget = false;
             }
 
             void AddBullet(string text)
-                => UiKit.TMP(content.transform, "• " + text, 13, new Color(1, 1, 1, 0.92f),
-                             TMPro.TextAlignmentOptions.Left);
+            {
+                var b = UiKit.TMP(inner.transform, "• " + text, 26, new Color(1, 1, 1, 0.95f), TMPro.TextAlignmentOptions.Left);
+                b.enableWordWrapping = true;
+                b.lineSpacing = 1.3f;
+                b.margin = new Vector4(0, 0, 0, 1);
+                b.raycastTarget = false;
+            }
         }
 
         private void ShowQRModal(ComputerPiece piece)
@@ -1054,7 +1106,7 @@ namespace RetroTech
 
             var close = UiKit.CreateCard(card.transform, new Vector2(0, 40), PrimaryColor, 18f);
             var btn = close.gameObject.AddComponent<Button>();
-            UiKit.TMP(close.transform, "Fechar", 16, Color.white, TextAlignmentOptions.Center, bold:true);
+            UiKit.TMP(close.transform, "Fechar", 16, Color.white, TextAlignmentOptions.Center, bold: true);
             btn.onClick.AddListener(() => Destroy(modal));
         }
 
@@ -1108,9 +1160,7 @@ namespace RetroTech
             // button
             var searchBtnCard = UiKit.CreateCard(content, new Vector2(0, 44), PrimaryColor, 18f);
             var searchBtn = searchBtnCard.gameObject.AddComponent<Button>();
-#if TMP_PRESENT
-            UiKit.TMP(searchBtnCard.transform, "Buscar", 16, Color.white, TextAlignmentOptions.Center, bold:true);
-#endif
+            UiKit.TMP(searchBtnCard.transform, "Buscar", 16, Color.white, TextAlignmentOptions.Center, bold: true);
 
             // results
             var resultsGO = new GameObject("Results"); resultsGO.transform.SetParent(content, false);
@@ -1142,9 +1192,7 @@ namespace RetroTech
                 {
                     var row = UiKit.CreateCard(resContent.transform, new Vector2(0, 48), default, 14f, glass: true);
                     var btn = row.gameObject.AddComponent<Button>();
-#if TMP_PRESENT
                     UiKit.TMP(row.transform, $"{p.Name} - {p.Description}", 14, TextMain);
-#endif
                     var captured = p;
                     btn.onClick.AddListener(() => ShowPieceDetail(captured));
                 }
@@ -1318,14 +1366,14 @@ namespace RetroTech
             var hlg = rt.GetComponentInChildren<HorizontalLayoutGroup>(true);
             if (hlg != null)
             {
-                int bottomPad = Mathf.RoundToInt((1f - anchorMin.y) * 0f); 
+                int bottomPad = Mathf.RoundToInt((1f - anchorMin.y) * 0f);
                 hlg.padding = new RectOffset(side, side, 8, extraBottom);
             }
         }
 
         private void CreateCTAButton(Transform parent, string text, UnityEngine.Events.UnityAction onClick)
         {
-            var go = new GameObject("CTA_BuscarPecas");
+            var go = new GameObject("CTA_Button");
             go.transform.SetParent(parent, false);
 
             var img = go.AddComponent<Image>();
@@ -1364,7 +1412,7 @@ namespace RetroTech
             ttl.rectTransform.anchorMin = new Vector2(0, 0);
             ttl.rectTransform.anchorMax = new Vector2(1, 1);
             ttl.rectTransform.offsetMin = new Vector2(16, 8);
-            ttl.rectTransform.offsetMax = new Vector2(-44, -8); 
+            ttl.rectTransform.offsetMax = new Vector2(-44, -8);
 
             var chev = CreateDisclosureIcon(header.transform);
             return (header, chev);
@@ -1385,7 +1433,7 @@ namespace RetroTech
             var sp = Resources.Load<Sprite>("Sprites/Chevron");
             if (sp == null) Debug.LogWarning("Sprite 'Sprites/Chevron' não encontrado (Resources).");
             img.sprite = sp;
-            img.color = new Color32(120, 100, 170, 255); 
+            img.color = new Color32(120, 100, 170, 255);
 
             return rt;
         }
@@ -1393,51 +1441,51 @@ namespace RetroTech
 
 
         #region HELPERS
-            private void AddSpacer(Transform parent, float height)
-            {
-                var go = new GameObject("Spacer", typeof(RectTransform), typeof(LayoutElement));
-                go.transform.SetParent(parent, false);
-                var le = go.GetComponent<LayoutElement>();
-                le.minHeight = height; le.preferredHeight = height;
-            }
-            
-            private RectTransform CreateFramedSquare(Transform parent, float size, float borderAlpha = 1f)
-            {
-                var holder = new GameObject("PreviewHolder", typeof(RectTransform));
-                holder.transform.SetParent(parent, false);
-                var hrt = holder.GetComponent<RectTransform>();
-                hrt.sizeDelta = new Vector2(size, size);
-            
-                var frame = new GameObject("Frame", typeof(RectTransform), typeof(Image));
-                frame.transform.SetParent(holder.transform, false);
-                var frt = frame.GetComponent<RectTransform>();
-                frt.anchorMin = Vector2.zero; frt.anchorMax = Vector2.one;
-                frt.offsetMin = Vector2.zero; frt.offsetMax = Vector2.zero;
-            
-                var img = frame.GetComponent<Image>();
-                img.sprite = Resources.Load<Sprite>("Sprites/RoundedPanel"); 
-                img.type = Image.Type.Sliced;
-                img.color = new Color(1,1,1,borderAlpha);
-                img.fillCenter = false; 
-            
-                var inner = new GameObject("Inner", typeof(RectTransform), typeof(Image));
-                inner.transform.SetParent(holder.transform, false);
-                var irt = inner.GetComponent<RectTransform>();
-                irt.anchorMin = Vector2.zero; irt.anchorMax = Vector2.one;
-                irt.offsetMin = new Vector2(8,8); irt.offsetMax = new Vector2(-8,-8);
-                var bg = inner.GetComponent<Image>(); bg.color = new Color(1,1,1, 0.06f);
-            
-                return irt;
-            }
-            
-            private void CreateCenteredIcon(RectTransform parent, string spritePath, float size)
-            {
-                var go = new GameObject("CenterIcon", typeof(RectTransform), typeof(Image));
-                go.transform.SetParent(parent, false);
-                var rt = go.GetComponent<RectTransform>(); rt.sizeDelta = new Vector2(size, size);
-                var img = go.GetComponent<Image>(); img.sprite = Resources.Load<Sprite>(spritePath); img.color = Color.white;
-            }
-            
+        private void AddSpacer(Transform parent, float height)
+        {
+            var go = new GameObject("Spacer", typeof(RectTransform), typeof(LayoutElement));
+            go.transform.SetParent(parent, false);
+            var le = go.GetComponent<LayoutElement>();
+            le.minHeight = height; le.preferredHeight = height;
+        }
+
+        private RectTransform CreateFramedSquare(Transform parent, float size, float borderAlpha = 1f)
+        {
+            var holder = new GameObject("PreviewHolder", typeof(RectTransform));
+            holder.transform.SetParent(parent, false);
+            var hrt = holder.GetComponent<RectTransform>();
+            hrt.sizeDelta = new Vector2(size, size);
+
+            var frame = new GameObject("Frame", typeof(RectTransform), typeof(Image));
+            frame.transform.SetParent(holder.transform, false);
+            var frt = frame.GetComponent<RectTransform>();
+            frt.anchorMin = Vector2.zero; frt.anchorMax = Vector2.one;
+            frt.offsetMin = Vector2.zero; frt.offsetMax = Vector2.zero;
+
+            var img = frame.GetComponent<Image>();
+            img.sprite = Resources.Load<Sprite>("Sprites/RoundedPanel");
+            img.type = Image.Type.Sliced;
+            img.color = new Color(1, 1, 1, borderAlpha);
+            img.fillCenter = false;
+
+            var inner = new GameObject("Inner", typeof(RectTransform), typeof(Image));
+            inner.transform.SetParent(holder.transform, false);
+            var irt = inner.GetComponent<RectTransform>();
+            irt.anchorMin = Vector2.zero; irt.anchorMax = Vector2.one;
+            irt.offsetMin = new Vector2(8, 8); irt.offsetMax = new Vector2(-8, -8);
+            var bg = inner.GetComponent<Image>(); bg.color = new Color(1, 1, 1, 0.06f);
+
+            return irt;
+        }
+
+        private void CreateCenteredIcon(RectTransform parent, string spritePath, float size)
+        {
+            var go = new GameObject("CenterIcon", typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(parent, false);
+            var rt = go.GetComponent<RectTransform>(); rt.sizeDelta = new Vector2(size, size);
+            var img = go.GetComponent<Image>(); img.sprite = Resources.Load<Sprite>(spritePath); img.color = Color.white;
+        }
+
         #endregion
 
     }
