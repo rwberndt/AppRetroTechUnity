@@ -45,6 +45,8 @@ namespace RetroTech
         private int _activeTab = 0;
         private GameObject _openModal;
 
+        private HomePage _homePage;
+
         [RuntimeInitializeOnLoadMethod]
         private static void InitializeOnLoad()
         {
@@ -383,62 +385,46 @@ namespace RetroTech
 
         private GameObject CreateHomePage()
         {
-            var (surface, content) = BuildPrototypeSurface("HomePage");
+            // Criar o GameObject que irá conter a HomePage
+            var homePageContainer = new GameObject("HomePageContainer");
 
-            // App title - much larger
-            var titleTMP = UiKit.TMP(content, "RetroTech", 72, Color.white, TextAlignmentOptions.Left, bold: true);
-            titleTMP.margin = new Vector4(0, 0, 0, 30);
+            // Adicionar o componente HomePage
+            _homePage = homePageContainer.AddComponent<HomePage>();
 
-            // Welcome message - larger
-            var welcomeTMP = UiKit.TMP(content, "Bem-vindo ao RetroTech", 48, Color.white, TextAlignmentOptions.Left, bold: true);
-            welcomeTMP.margin = new Vector4(0, 0, 0, 24);
-
-            // Description - larger with better spacing
-            var descTMP = UiKit.TMP(content,
-                "Explore e aprenda sobre o acervo de peças de computação do Departamento de Sistemas e Computação (DSC) da FURB de forma interativa.",
-                32, new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
-            descTMP.margin = new Vector4(0, 0, 0, 40);
-
-            // Objective section - larger
-            var objTitleTMP = UiKit.TMP(content, "Objetivo do aplicativo", 42, Color.white, TextAlignmentOptions.Left, bold: true);
-            objTitleTMP.margin = new Vector4(0, 0, 0, 18);
-
-            var objDescTMP = UiKit.TMP(content,
-                "Facilitar o acesso e a compreensão do acervo histórico de peças de computação do DSC, proporcionando uma experiência educativa e imersiva.",
-                28, new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
-            objDescTMP.margin = new Vector4(0, 0, 0, 40);
-
-            // Features section - larger
-            var featTitleTMP = UiKit.TMP(content, "Principais funcionalidades", 42, Color.white, TextAlignmentOptions.Left, bold: true);
-            featTitleTMP.margin = new Vector4(0, 0, 0, 18);
-
-            var featDescTMP = UiKit.TMP(content,
-                "• Navegação por categorias\n• Linha do tempo interativa\n• Leitura de QR Codes\n• Detalhes e curiosidades\n• Quiz educativo",
-                28, new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
-            featDescTMP.margin = new Vector4(0, 0, 0, 40);
-            featDescTMP.lineSpacing = 1.4f; // Better line spacing
-
-            // Team section - larger
-            var teamTitleTMP = UiKit.TMP(content, "Equipe de desenvolvimento", 42, Color.white, TextAlignmentOptions.Left, bold: true);
-            teamTitleTMP.margin = new Vector4(0, 0, 0, 18);
-
-            var teamDescTMP = UiKit.TMP(content,
-                "Ricardo Berndt - Ciência da Computação\n\n" +
-                "Orientador: Dalton Solano dos Reis\nSupervisor: Miguel A. Wistainater",
-                28, new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
-            teamDescTMP.margin = new Vector4(0, 0, 0, 50);
-            teamDescTMP.lineSpacing = 1.3f;
-
-            // CTA Button - larger and more prominent
-            var ctaButton = CreateLargerCTAButton(content.transform, "Buscar Peças", () =>
+            // Configurar o evento de clique do botão "Buscar Peças"
+            _homePage.OnSearchPiecesClicked += () =>
             {
+                // Navegar para a página de categorias
                 _activeTab = 1;
                 SwitchPage(_activeTab);
                 RefreshTabsVisual();
-            });
+            };
 
-            return surface;
+            // Criar a página usando a nova classe
+            var pageObject = _homePage.CreatePage(_canvas.transform, BuildPrototypeSurface);
+
+            return pageObject;
         }
+
+        /// <summary>
+        /// Método auxiliar para acessar a página inicial
+        /// </summary>
+        public HomePage GetHomePage()
+        {
+            return _homePage;
+        }
+
+        /// <summary>
+        /// Atualiza configurações da página inicial (exemplo de uso)
+        /// </summary>
+        public void UpdateHomePageSettings(float titleSize, float welcomeSize, float descSize)
+        {
+            if (_homePage != null)
+            {
+                _homePage.UpdateFontSizes(titleSize, welcomeSize, descSize);
+            }
+        }
+
 
         private GameObject CreateCategoriesPage()
         {
