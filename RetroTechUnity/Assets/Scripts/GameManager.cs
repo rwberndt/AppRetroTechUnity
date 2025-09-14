@@ -426,78 +426,80 @@ namespace RetroTech
         }
 
 
+        private CategoriesPage _categoriesPage;
+
+        // ... outros métodos existentes ...
+
+        /// <summary>
+        /// Cria a página de categorias usando a classe CategoriesPage separada
+        /// </summary>
         private GameObject CreateCategoriesPage()
         {
-            var (surface, content) = BuildPrototypeSurface("CategoriesPage");
+            // Criar o GameObject que irá conter a CategoriesPage
+            var categoriesPageContainer = new GameObject("CategoriesPageContainer");
 
-            // Categories list
-            foreach (Category cat in SampleData.Categories)
+            // Adicionar o componente CategoriesPage
+            _categoriesPage = categoriesPageContainer.AddComponent<CategoriesPage>();
+
+            // Configurar o evento de seleção de peça
+            _categoriesPage.OnPieceSelected += (piece) =>
             {
-                var (header, chevron) = CreatePrototypeCategoryHeader(content, cat.Name);
+                // Mostrar detalhes da peça selecionada
+                ShowPieceDetail(piece);
+            };
 
-                var subList = new GameObject($"SubList_{cat.Id}", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-                subList.transform.SetParent(content, false);
-                var subRT = subList.GetComponent<RectTransform>();
-                subRT.anchorMin = new Vector2(0, 1);
-                subRT.anchorMax = new Vector2(1, 1);
-                subRT.pivot = new Vector2(0.5f, 1);
+            // Criar a página usando a nova classe
+            var pageObject = _categoriesPage.CreatePage(_canvas.transform, _canvas, BuildPrototypeSurface);
 
-                var sv = subList.GetComponent<VerticalLayoutGroup>();
-                sv.padding = new RectOffset(0, 0, 8, 8);
-                sv.spacing = 8;
-                sv.childControlWidth = true;
-                sv.childForceExpandWidth = true;
-                sv.childControlHeight = true;
-                sv.childForceExpandHeight = false;
-                subList.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-                foreach (string sub in cat.Subcategories)
-                {
-                    var subCard = CreateGlassCard(subList.transform, 48f);
-
-                    var btn = subCard.gameObject.GetComponent<Button>() ?? subCard.gameObject.AddComponent<Button>();
-                    btn.targetGraphic = subCard;
-
-                    var colors = btn.colors;
-                    colors.highlightedColor = new Color(1, 1, 1, 0.2f);
-                    colors.pressedColor = new Color(1, 1, 1, 0.3f);
-                    btn.colors = colors;
-
-                    var txt = UiKit.TMP(subCard.transform, sub, 18, Color.white, TextAlignmentOptions.MidlineLeft);
-                    txt.enableWordWrapping = false;
-                    txt.overflowMode = TMPro.TextOverflowModes.Ellipsis;
-                    txt.rectTransform.anchorMin = Vector2.zero;
-                    txt.rectTransform.anchorMax = Vector2.one;
-                    txt.rectTransform.offsetMin = new Vector2(20, 8);
-                    txt.rectTransform.offsetMax = new Vector2(-20, -8);
-                    txt.raycastTarget = false;
-
-                    string captured = sub;
-                    btn.onClick.AddListener(() => ShowPiecesModal(cat.Id, captured));
-                }
-
-                if (!_categoryExpanded.ContainsKey(cat.Id))
-                    _categoryExpanded[cat.Id] = false;
-
-                subList.SetActive(_categoryExpanded[cat.Id]);
-                if (chevron != null)
-                    chevron.localEulerAngles = _categoryExpanded[cat.Id] ? new Vector3(0, 0, 180) : Vector3.zero;
-
-                string cid = cat.Id;
-                var hBtn = header.GetComponent<Button>();
-                hBtn.onClick.AddListener(() =>
-                {
-                    bool expanded = !_categoryExpanded[cid];
-                    _categoryExpanded[cid] = expanded;
-                    subList.SetActive(expanded);
-                    if (chevron != null)
-                        chevron.localEulerAngles = expanded ? new Vector3(0, 0, 180) : Vector3.zero;
-                    Canvas.ForceUpdateCanvases();
-                });
-            }
-
-            return surface;
+            return pageObject;
         }
+
+        /// <summary>
+        /// Método auxiliar para acessar a página de categorias
+        /// </summary>
+        public CategoriesPage GetCategoriesPage()
+        {
+            return _categoriesPage;
+        }
+
+        /// <summary>
+        /// Atualiza configurações da página de categorias (exemplo de uso)
+        /// </summary>
+        public void UpdateCategoriesPageSettings(float headerHeight, float itemHeight, int titleSize, int itemSize)
+        {
+            if (_categoriesPage != null)
+            {
+                _categoriesPage.UpdateVisualSettings(headerHeight, itemHeight, titleSize, itemSize);
+            }
+        }
+
+        /// <summary>
+        /// Expande ou recolhe uma categoria específica programaticamente
+        /// </summary>
+        /// <param name="categoryId">ID da categoria</param>
+        /// <param name="expand">True para expandir, false para recolher</param>
+        public void SetCategoryExpanded(string categoryId, bool expand)
+        {
+            if (_categoriesPage != null)
+            {
+                _categoriesPage.SetCategoryExpanded(categoryId, expand);
+            }
+        }
+
+        /// <summary>
+        /// Fecha qualquer modal aberto na página de categorias
+        /// </summary>
+        public void CloseCategoriesModal()
+        {
+            if (_categoriesPage != null)
+            {
+                _categoriesPage.CloseModal();
+            }
+        }
+
+        // IMPORTANTE: Remover ou comentar os métodos antigos relacionados a modal
+        // pois agora eles estão na CategoriesPage:
+
 
         private GameObject CreateTimelinePage()
         {
@@ -1048,100 +1050,22 @@ namespace RetroTech
             });
         }
 
-        // ========= Modal & Detail Views (keeping your original logic but with prototype styling) =========
-
-        private void ShowPiecesModal(string categoryId, string subcategoryName)
+        /// <summary>
+        /// Versão atualizada do CloseModal que fecha modais de todas as páginas
+        /// </summary>
+        private void CloseModal()
         {
-            CloseModal();
+            // Fechar modal da página de categorias
+            if (_categoriesPage != null)
+                _categoriesPage.CloseModal();
 
-            var overlay = new GameObject("ModalOverlay", typeof(RectTransform), typeof(Image), typeof(Button));
-            overlay.transform.SetParent(_canvas.transform, false);
-            _openModal = overlay;
-
-            var ovRT = overlay.GetComponent<RectTransform>();
-            ovRT.anchorMin = Vector2.zero;
-            ovRT.anchorMax = Vector2.one;
-            ovRT.offsetMin = Vector2.zero;
-            ovRT.offsetMax = Vector2.zero;
-
-            overlay.GetComponent<Image>().color = new Color(0, 0, 0, 0.7f);
-            overlay.GetComponent<Button>().onClick.AddListener(CloseModal);
-
-            // Modal panel with glass effect
-            var panel = new GameObject("ModalPanel", typeof(RectTransform), typeof(Image));
-            panel.transform.SetParent(overlay.transform, false);
-
-            var pRT = panel.GetComponent<RectTransform>();
-            pRT.anchorMin = new Vector2(0.05f, 0.1f);
-            pRT.anchorMax = new Vector2(0.95f, 0.9f);
-            pRT.offsetMin = Vector2.zero;
-            pRT.offsetMax = Vector2.zero;
-
-            var pImg = panel.GetComponent<Image>();
-            pImg.color = new Color(1f, 1f, 1f, 0.95f); // Semi-transparent white
-
-            var roundedSprite = Resources.Load<Sprite>("Sprites/RoundedPanel");
-            if (roundedSprite != null)
+            // Fechar outros modais se houver
+            if (_openModal != null)
             {
-                pImg.sprite = roundedSprite;
-                pImg.type = Image.Type.Sliced;
-            }
-
-            // Header
-            var header = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-            header.transform.SetParent(panel.transform, false);
-            var hRT = header.GetComponent<RectTransform>();
-            hRT.anchorMin = new Vector2(0, 1);
-            hRT.anchorMax = new Vector2(1, 1);
-            hRT.pivot = new Vector2(0.5f, 1);
-            hRT.offsetMin = new Vector2(16, -60);
-            hRT.offsetMax = new Vector2(-16, -16);
-
-            var hHLG = header.GetComponent<HorizontalLayoutGroup>();
-            hHLG.childAlignment = TextAnchor.MiddleLeft;
-            hHLG.spacing = 16;
-
-            var titleTMP = UiKit.TMP(header.transform, subcategoryName, 24, new Color32(50, 50, 70, 255), TextAlignmentOptions.MidlineLeft, bold: true);
-
-            var spacer = new GameObject("Spacer", typeof(RectTransform), typeof(LayoutElement));
-            spacer.transform.SetParent(header.transform, false);
-            spacer.GetComponent<LayoutElement>().flexibleWidth = 1;
-
-            var closeBtn = new GameObject("CloseBtn", typeof(RectTransform), typeof(Image), typeof(Button));
-            closeBtn.transform.SetParent(header.transform, false);
-            var cRT = closeBtn.GetComponent<RectTransform>();
-            cRT.sizeDelta = new Vector2(32, 32);
-            closeBtn.GetComponent<Image>().color = new Color(0.9f, 0.9f, 0.9f, 1f);
-            closeBtn.GetComponent<Button>().onClick.AddListener(CloseModal);
-
-            UiKit.TMP(closeBtn.transform, "✕", 18, new Color32(50, 50, 70, 255), TextAlignmentOptions.Center, bold: true);
-
-            // Scrollable content
-            var scrollView = CreateModalScrollView(panel.transform, new Vector2(16, 16), new Vector2(-16, -76));
-
-            // Add pieces
-            foreach (var piece in SampleData.Pieces)
-            {
-                var pieceCard = CreateGlassCard(scrollView.transform, 56f);
-                pieceCard.color = new Color(1f, 1f, 1f, 0.3f);
-
-                var btn = pieceCard.gameObject.AddComponent<Button>();
-                btn.onClick.AddListener(() =>
-                {
-                    CloseModal();
-                    ShowPieceDetail(piece);
-                });
-
-                var pieceTMP = UiKit.TMP(pieceCard.transform, piece.Name, 18, new Color32(50, 50, 70, 255), TextAlignmentOptions.MidlineLeft);
-                pieceTMP.raycastTarget = false;
-                var pieceRT = pieceTMP.rectTransform;
-                pieceRT.anchorMin = Vector2.zero;
-                pieceRT.anchorMax = Vector2.one;
-                pieceRT.offsetMin = new Vector2(16, 8);
-                pieceRT.offsetMax = new Vector2(-16, -8);
+                Destroy(_openModal);
+                _openModal = null;
             }
         }
-
         private Transform CreateModalScrollView(Transform parent, Vector2 offsetMin, Vector2 offsetMax)
         {
             var scrollGO = new GameObject("ScrollView", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
@@ -1191,14 +1115,6 @@ namespace RetroTech
             return content.transform;
         }
 
-        private void CloseModal()
-        {
-            if (_openModal != null)
-            {
-                Destroy(_openModal);
-                _openModal = null;
-            }
-        }
 
         private void ShowPieceDetail(ComputerPiece piece)
         {
