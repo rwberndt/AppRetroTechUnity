@@ -46,6 +46,7 @@ namespace RetroTech
         private GameObject _openModal;
 
         private HomePage _homePage;
+        private ScannerPage _scannerPage;
 
         [RuntimeInitializeOnLoadMethod]
         private static void InitializeOnLoad()
@@ -371,16 +372,7 @@ namespace RetroTech
                     label.color = active ? Color.white : new Color32(180, 180, 200, 200);
             }
         }
-
-        public void SwitchPage(int index)
-        {
-            for (int i = 0; i < _pages.Length; i++)
-                if (_pages[i] != null) _pages[i].SetActive(i == index);
-
-            _activeTab = index;
-            RefreshTabsVisual();
-        }
-
+        
         // ========= Pages =========
 
         private GameObject CreateHomePage()
@@ -522,57 +514,92 @@ namespace RetroTech
 
         private GameObject CreateScannerPage()
         {
-            var (surface, content) = BuildPrototypeSurface("ScannerPage");
+            // Criar o GameObject que irá conter a ScannerPage
+            var scannerPageContainer = new GameObject("ScannerPageContainer");
 
-            // Title
-            var titleTMP = UiKit.TMP(content, "Scanner QR", 36, Color.white, TextAlignmentOptions.Left, bold: true);
-            titleTMP.margin = new Vector4(0, 0, 0, 32);
+            // Adicionar o componente ScannerPage
+            _scannerPage = scannerPageContainer.AddComponent<ScannerPage>();
 
-            // QR Code preview area
-            var previewCard = CreateGlassCard(content, 280f);
-            var previewVLG = previewCard.gameObject.AddComponent<VerticalLayoutGroup>();
-            previewVLG.childAlignment = TextAnchor.MiddleCenter;
-            previewVLG.spacing = 16;
-            previewVLG.padding = new RectOffset(24, 24, 24, 24);
-
-            // QR Code icon placeholder
-            var qrFrame = CreateQRFrame(previewCard.transform, 180f);
-
-            var scanTitleTMP = UiKit.TMP(previewCard.transform, "Scanner QR Code", 24, Color.white, TextAlignmentOptions.Center, bold: true);
-            scanTitleTMP.enableWordWrapping = false;
-
-            var scanDescTMP = UiKit.TMP(previewCard.transform,
-                "Aponte a câmera para o QR code de uma peça para ver seus detalhes.",
-                18, new Color32(255, 255, 255, 180), TextAlignmentOptions.Center);
-            scanDescTMP.margin = new Vector4(8, 0, 8, 0);
-
-            AddSpacer(content, 24);
-
-            // Start scanner button
-            var scanButton = CreatePrototypeCTAButton(content.transform, "⚡ Iniciar Scanner", () =>
+            // Configurar o evento de peça escaneada
+            _scannerPage.OnPieceScanned += (piece) =>
             {
-                SimulateScan();
-            });
+                // Mostrar detalhes da peça escaneada
+                ShowPieceDetail(piece);
+            };
 
-            AddSpacer(content, 24);
+            // Criar a página usando a nova classe
+            var pageObject = _scannerPage.CreatePage(_canvas.transform, _canvas, BuildPrototypeSurface);
 
-            // Tips card
-            var tipsCard = CreateGlassCard(content, 140f);
-            var tipsVLG = tipsCard.gameObject.AddComponent<VerticalLayoutGroup>();
-            tipsVLG.childAlignment = TextAnchor.UpperLeft;
-            tipsVLG.spacing = 8;
-            tipsVLG.padding = new RectOffset(20, 20, 16, 16);
+            return pageObject;
+        }
 
-            var tipsTitleTMP = UiKit.TMP(tipsCard.transform, "Dicas para escanear:", 20, Color.white, bold: true);
-            tipsTitleTMP.enableWordWrapping = false;
+        /// <summary>
+        /// Método auxiliar para acessar a página do scanner
+        /// </summary>
+        public ScannerPage GetScannerPage()
+        {
+            return _scannerPage;
+        }
 
-            var tipsTMP = UiKit.TMP(tipsCard.transform,
-                "• Mantenha o QR code bem iluminado\n" +
-                "• Mantenha a câmera estável\n" +
-                "• Certifique-se que o código esteja completo na tela",
-                16, new Color32(255, 255, 255, 180), TextAlignmentOptions.Left);
+        /// <summary>
+        /// Para o escaneamento se estiver ativo
+        /// </summary>
+        public void StopScanning()
+        {
+            if (_scannerPage != null)
+            {
+                _scannerPage.StopScan();
+            }
+        }
 
-            return surface;
+        /// <summary>
+        /// Verifica se está escaneando atualmente
+        /// </summary>
+        /// <returns>True se estiver escaneando, false caso contrário</returns>
+        public bool IsScanning()
+        {
+            if (_scannerPage != null)
+            {
+                return _scannerPage.IsScanning();
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Atualiza configurações da página do scanner (exemplo de uso)
+        /// </summary>
+        public void UpdateScannerPageSettings(float previewHeight, float tipsHeight, float frameSize)
+        {
+            if (_scannerPage != null)
+            {
+                _scannerPage.UpdateVisualSettings(previewHeight, tipsHeight, frameSize);
+            }
+        }
+
+        /// <summary>
+        /// Atualiza tamanhos das fontes da página do scanner
+        /// </summary>
+        public void UpdateScannerFontSizes(int titleSize, int scanTitleSize, int descSize, int tipsSize)
+        {
+            if (_scannerPage != null)
+            {
+                _scannerPage.UpdateFontSizes(titleSize, scanTitleSize, descSize, tipsSize);
+            }
+        }
+
+       
+        public void SwitchPage(int index)
+        {
+            if (_activeTab == 3 && index != 3) 
+            {
+                StopScanning();
+            }
+
+            for (int i = 0; i < _pages.Length; i++)
+                if (_pages[i] != null) _pages[i].SetActive(i == index);
+
+            _activeTab = index;
+            RefreshTabsVisual();
         }
 
         private GameObject CreateQuizPage()
@@ -847,65 +874,7 @@ namespace RetroTech
             return timelineCard.gameObject;
         }
 
-        private GameObject CreateQRFrame(Transform parent, float size)
-        {
-            var frameGO = new GameObject("QRFrame", typeof(RectTransform), typeof(Image));
-            frameGO.transform.SetParent(parent, false);
-
-            var frameRT = frameGO.GetComponent<RectTransform>();
-            frameRT.sizeDelta = new Vector2(size, size);
-
-            var frameImg = frameGO.GetComponent<Image>();
-            frameImg.color = new Color(1f, 1f, 1f, 0.2f);
-            frameImg.raycastTarget = false;
-
-            // Try to load rounded frame sprite
-            var frameSprite = Resources.Load<Sprite>("Sprites/RoundedPanel");
-            if (frameSprite != null)
-            {
-                frameImg.sprite = frameSprite;
-                frameImg.type = Image.Type.Sliced;
-                frameImg.fillCenter = false; // Only border
-            }
-
-            var frameLE = frameGO.AddComponent<LayoutElement>();
-            frameLE.preferredWidth = size;
-            frameLE.preferredHeight = size;
-
-            // QR Code icon inside
-            var qrIconGO = new GameObject("QRIcon", typeof(RectTransform), typeof(Image));
-            qrIconGO.transform.SetParent(frameGO.transform, false);
-
-            var qrIconRT = qrIconGO.GetComponent<RectTransform>();
-            qrIconRT.anchorMin = new Vector2(0.5f, 0.5f);
-            qrIconRT.anchorMax = new Vector2(0.5f, 0.5f);
-            qrIconRT.pivot = new Vector2(0.5f, 0.5f);
-            qrIconRT.sizeDelta = new Vector2(80, 80);
-
-            var qrIconImg = qrIconGO.GetComponent<Image>();
-            qrIconImg.raycastTarget = false;
-
-            // Try to load QR icon sprite, fallback to text
-            var qrSprite = Resources.Load<Sprite>("Sprites/qr_glyph");
-            if (qrSprite != null)
-            {
-                qrIconImg.sprite = qrSprite;
-                qrIconImg.color = Color.white;
-            }
-            else
-            {
-                // Text fallback
-                qrIconImg.color = new Color(0, 0, 0, 0);
-                var qrTextTMP = UiKit.TMP(qrIconGO.transform, "⊞", 48, Color.white, TextAlignmentOptions.Center);
-                var qrTextRT = qrTextTMP.rectTransform;
-                qrTextRT.anchorMin = Vector2.zero;
-                qrTextRT.anchorMax = Vector2.one;
-                qrTextRT.offsetMin = Vector2.zero;
-                qrTextRT.offsetMax = Vector2.zero;
-            }
-
-            return frameGO;
-        }
+      
 
         private GameObject CreateProgressBar(Transform parent)
         {
@@ -1225,67 +1194,7 @@ namespace RetroTech
 
         // ========= Scanner =========
 
-        private void SimulateScan()
-        {
-#if UNITY_ANDROID
-            try
-            {
-                if (!UnityEngine.Android.Permission.HasUserAuthorizedPermission(UnityEngine.Android.Permission.Camera))
-                    UnityEngine.Android.Permission.RequestUserPermission(UnityEngine.Android.Permission.Camera);
-            }
-            catch { }
-#endif
-
-#if ZXING_PRESENT
-            StartCoroutine(ScanQRCode());
-#else
-            if (SampleData.Pieces.Count == 0) return;
-            int index = Random.Range(0, SampleData.Pieces.Count);
-            ShowPieceDetail(SampleData.Pieces[index]);
-#endif
-        }
-
-#if ZXING_PRESENT
-        private System.Collections.IEnumerator ScanQRCode()
-        {
-            if (WebCamTexture.devices.Length == 0)
-            {
-                if (SampleData.Pieces.Count > 0)
-                    ShowPieceDetail(SampleData.Pieces[Random.Range(0, SampleData.Pieces.Count)]);
-                yield break;
-            }
-
-            var device = WebCamTexture.devices[0];
-            var webcam = new WebCamTexture(device.name);
-            webcam.Play();
-            yield return new WaitForSeconds(0.5f);
-
-            var reader = new BarcodeReader { AutoRotate = true, Options = new DecodingOptions { TryHarder = true } };
-            ComputerPiece found = null;
-
-            for (int attempt = 0; attempt < 30 && found == null; attempt++)
-            {
-                try
-                {
-                    var result = reader.Decode(webcam.GetPixels32(), webcam.width, webcam.height);
-                    if (result != null)
-                    {
-                        string payload = result.Text;
-                        const string prefix = "https://retro.tech/piece/";
-                        if (payload.StartsWith(prefix)) payload = payload.Substring(prefix.Length);
-                        foreach (var piece in SampleData.Pieces)
-                            if (piece.Id == payload) { found = piece; break; }
-                    }
-                }
-                catch { }
-                yield return null;
-            }
-            webcam.Stop();
-
-            if (found != null) ShowPieceDetail(found);
-            else if (SampleData.Pieces.Count > 0) ShowPieceDetail(SampleData.Pieces[Random.Range(0, SampleData.Pieces.Count)]);
-        }
-#endif
+       
 
         // ========= Search Feature =========
 
