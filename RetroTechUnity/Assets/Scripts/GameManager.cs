@@ -40,8 +40,6 @@ namespace RetroTech
         private Sprite _iconHome, _iconCategories, _iconTimeline, _iconScanner, _iconQuiz;
 
         private Dictionary<string, bool> _categoryExpanded = new();
-        private int _currentQuizIndex;
-        private int _quizScore;
         private int _activeTab = 0;
         private GameObject _openModal;
 
@@ -602,87 +600,7 @@ namespace RetroTech
             RefreshTabsVisual();
         }
 
-        private GameObject CreateQuizPage()
-        {
-            var (surface, content) = BuildPrototypeSurface("QuizPage");
-
-            // Quiz header with progress
-            var headerCard = CreateGlassCard(content, 60f);
-            var headerHLG = headerCard.gameObject.AddComponent<HorizontalLayoutGroup>();
-            headerHLG.padding = new RectOffset(20, 20, 12, 12);
-            headerHLG.spacing = 16;
-            headerHLG.childAlignment = TextAnchor.MiddleCenter;
-            headerHLG.childForceExpandWidth = false;
-
-            var quizTitleTMP = UiKit.TMP(headerCard.transform, "Quiz RetroTech", 28, Color.white, TextAlignmentOptions.Left, bold: true);
-            quizTitleTMP.enableWordWrapping = false;
-
-            var spacerGO = new GameObject("Spacer", typeof(RectTransform), typeof(LayoutElement));
-            spacerGO.transform.SetParent(headerCard.transform, false);
-            spacerGO.GetComponent<LayoutElement>().flexibleWidth = 1;
-
-            _scoreLabel = (TextMeshProUGUI)UiKit.TMP(headerCard.transform, "Pontuação: 0", 20, Color.white, TextAlignmentOptions.Right);
-            _scoreLabel.enableWordWrapping = false;
-
-            // Progress bar
-            var progressCard = CreateProgressBar(content);
-
-            // Question card
-            var questionCard = CreateGlassCard(content, 120f);
-            var questionVLG = questionCard.gameObject.AddComponent<VerticalLayoutGroup>();
-            questionVLG.padding = new RectOffset(20, 20, 16, 16);
-            questionVLG.spacing = 0;
-
-            var qText = UiKit.TMP(questionCard.transform, "", 20, Color.white, TextAlignmentOptions.TopLeft);
-            qText.enableWordWrapping = true;
-
-            // Options container
-            var optionsContainer = new GameObject("Options", typeof(RectTransform), typeof(VerticalLayoutGroup));
-            optionsContainer.transform.SetParent(content, false);
-            var optionsVLG = optionsContainer.GetComponent<VerticalLayoutGroup>();
-            optionsVLG.spacing = 12;
-            optionsVLG.padding = new RectOffset(0, 0, 8, 8);
-            optionsVLG.childControlHeight = true;
-            optionsVLG.childForceExpandHeight = false;
-            optionsVLG.childControlWidth = true;
-            optionsVLG.childForceExpandWidth = true;
-
-            // Explanation card
-            var expCard = CreateGlassCard(content, 100f);
-            var expVLG = expCard.gameObject.AddComponent<VerticalLayoutGroup>();
-            expVLG.padding = new RectOffset(16, 16, 12, 12);
-            expVLG.spacing = 8;
-
-            UiKit.TMP(expCard.transform, "❌ Incorreto!", 16, Color.white, TextAlignmentOptions.Left, bold: true)
-                .name = "ExpTitle";
-
-            _expTextTMP = (TextMeshProUGUI)UiKit.TMP(expCard.transform, "", 16, new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
-            _expTextTMP.enableWordWrapping = true;
-
-            expCard.gameObject.SetActive(false);
-
-            // Next button
-            _nextBtnGO = CreatePrototypeCTAButton(content.transform, "Próxima Pergunta", null);
-            _nextBtnGO.SetActive(false);
-
-            // Set up the next button click after it's created
-            var nextButton = _nextBtnGO.GetComponent<Button>();
-            nextButton.onClick.AddListener(() =>
-            {
-                _currentQuizIndex++;
-                if (_currentQuizIndex >= SampleData.QuizQuestions.Count)
-                    ShowQuizResult(content.gameObject);
-                else
-                    PopulateQuizQuestion((TextMeshProUGUI)qText, optionsContainer, expCard.gameObject, _nextBtnGO);
-            });
-
-            // Initialize quiz
-            _currentQuizIndex = 0;
-            _quizScore = 0;
-            PopulateQuizQuestion((TextMeshProUGUI)qText, optionsContainer, expCard.gameObject, _nextBtnGO);
-
-            return surface;
-        }
+       
 
         // ========= Helper Methods for Prototype UI =========
 
@@ -874,149 +792,97 @@ namespace RetroTech
             return timelineCard.gameObject;
         }
 
-      
 
-        private GameObject CreateProgressBar(Transform parent)
+
+        private QuizPage _quizPage;
+
+        // Substituir o método CreateQuizPage() existente por este:
+        private GameObject CreateQuizPage()
         {
-            var progressCard = CreateGlassCard(parent, 12f);
-            progressCard.color = new Color(1f, 1f, 1f, 0.2f);
+            // Criar o GameObject que irá conter a QuizPage
+            var quizPageContainer = new GameObject("QuizPageContainer");
 
-            var fillGO = new GameObject("ProgressFill", typeof(RectTransform), typeof(Image));
-            fillGO.transform.SetParent(progressCard.transform, false);
+            // Adicionar o componente QuizPage
+            _quizPage = quizPageContainer.AddComponent<QuizPage>();
 
-            var fillRT = fillGO.GetComponent<RectTransform>();
-            fillRT.anchorMin = Vector2.zero;
-            fillRT.anchorMax = new Vector2(0, 1);
-            fillRT.offsetMin = new Vector2(2, 2);
-            fillRT.offsetMax = new Vector2(2, -2);
+            // Configurar os eventos da quiz page
+            _quizPage.OnScoreUpdated += (currentScore, totalQuestions) =>
+            {
+                // Opcional: log ou outras ações quando a pontuação é atualizada
+                Debug.Log($"Quiz Score Updated: {currentScore}/{totalQuestions}");
+            };
 
-            _progressFill = fillGO.GetComponent<Image>();
-            _progressFill.color = Color.white;
-            _progressFill.type = Image.Type.Filled;
-            _progressFill.fillMethod = Image.FillMethod.Horizontal;
-            _progressFill.fillAmount = 0f;
+            _quizPage.OnQuizCompleted += (finalScore) =>
+            {
+                // Opcional: ações quando o quiz é completado
+                Debug.Log($"Quiz Completed! Final Score: {finalScore}");
+            };
 
-            return progressCard.gameObject;
+            _quizPage.OnQuestionAnswered += (question, wasCorrect) =>
+            {
+                // Opcional: ações quando uma pergunta é respondida
+                Debug.Log($"Question answered: {question.Question} - {(wasCorrect ? "Correct" : "Incorrect")}");
+            };
+
+            // Criar a página usando a nova classe
+            var pageObject = _quizPage.CreatePage(
+                _canvas.transform,
+                BuildPrototypeSurface,
+                CreateGlassCard,
+                CreatePrototypeCTAButton
+            );
+
+            return pageObject;
         }
 
-        // ========= Quiz Logic =========
+        // Métodos auxiliares para acessar a quiz page:
 
-        private void PopulateQuizQuestion(TextMeshProUGUI questionTMP, GameObject optionsContainer, GameObject explanationGO, GameObject nextGO)
+        /// <summary>
+        /// Método auxiliar para acessar a página de quiz
+        /// </summary>
+        public QuizPage GetQuizPage()
         {
-            foreach (Transform child in optionsContainer.transform)
-                Destroy(child.gameObject);
+            return _quizPage;
+        }
 
-            explanationGO.SetActive(false);
-            nextGO.SetActive(false);
-
-            var q = SampleData.QuizQuestions[_currentQuizIndex];
-
-            _scoreLabel.text = $"Pontuação: {_quizScore}";
-            _progressFill.fillAmount = (_currentQuizIndex) / Mathf.Max(1f, (float)(SampleData.QuizQuestions.Count - 1));
-
-            questionTMP.text = q.Question;
-
-            for (int i = 0; i < q.Options.Count; i++)
+        /// <summary>
+        /// Atualiza configurações da página de quiz
+        /// </summary>
+        public void UpdateQuizPageSettings(float headerH, float questionH, float optionH, float explanationH,
+                                         int titleSize, int scoreSize, int questionSize, int optionSize)
+        {
+            if (_quizPage != null)
             {
-                int idx = i;
-
-                var optionCard = CreateGlassCard(optionsContainer.transform, 48f);
-                optionCard.color = Color.white; // White options like prototype
-
-                var btn = optionCard.gameObject.AddComponent<Button>();
-                btn.targetGraphic = optionCard;
-
-                var optionTMP = UiKit.TMP(optionCard.transform, q.Options[i], 16, new Color32(103, 80, 164, 255), TextAlignmentOptions.Center, bold: true);
-                optionTMP.enableWordWrapping = false;
-                optionTMP.raycastTarget = false;
-
-                var optionRT = optionTMP.rectTransform;
-                optionRT.anchorMin = Vector2.zero;
-                optionRT.anchorMax = Vector2.one;
-                optionRT.offsetMin = new Vector2(16, 8);
-                optionRT.offsetMax = new Vector2(-16, -8);
-
-                btn.onClick.AddListener(() =>
-                {
-                    bool correct = idx == q.CorrectAnswerIndex;
-                    if (correct) _quizScore++;
-
-                    var expTitle = explanationGO.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
-                    expTitle.text = correct ? "✅ Correto!" : "❌ Incorreto!";
-
-                    _expTextTMP.text = q.Explanation;
-                    explanationGO.SetActive(true);
-
-                    // Update option colors
-                    for (int c = 0; c < optionsContainer.transform.childCount; c++)
-                    {
-                        var opt = optionsContainer.transform.GetChild(c);
-                        var img = opt.GetComponent<Image>();
-                        var txt = opt.GetComponentInChildren<TextMeshProUGUI>();
-                        var button = opt.GetComponent<Button>();
-                        if (button) button.interactable = false;
-
-                        if (c == q.CorrectAnswerIndex)
-                        {
-                            img.color = new Color32(76, 175, 80, 255); // Green for correct
-                            txt.color = Color.white;
-                        }
-                        else if (c == idx && !correct)
-                        {
-                            img.color = new Color32(244, 67, 54, 255); // Red for wrong choice
-                            txt.color = Color.white;
-                        }
-                        else
-                        {
-                            img.color = new Color32(200, 200, 200, 255); // Gray for others
-                            txt.color = new Color32(100, 100, 100, 255);
-                        }
-                    }
-
-                    _scoreLabel.text = $"Pontuação: {_quizScore}";
-                    nextGO.SetActive(true);
-                });
+                _quizPage.UpdateVisualSettings(headerH, questionH, optionH, explanationH,
+                                             titleSize, scoreSize, questionSize, optionSize);
             }
         }
 
-        private void ShowQuizResult(GameObject quizPageContent)
+        /// <summary>
+        /// Reinicia o quiz programaticamente
+        /// </summary>
+        public void RestartQuiz()
         {
-            foreach (Transform c in quizPageContent.transform)
-                Destroy(c.gameObject);
-
-            var resultCard = CreateGlassCard(quizPageContent.transform, 200f);
-            var resultVLG = resultCard.gameObject.AddComponent<VerticalLayoutGroup>();
-            resultVLG.padding = new RectOffset(24, 24, 24, 24);
-            resultVLG.spacing = 16;
-            resultVLG.childAlignment = TextAnchor.MiddleCenter;
-
-            var scoreTMP = UiKit.TMP(resultCard.transform,
-                $"Você acertou {_quizScore} de {SampleData.QuizQuestions.Count} perguntas!",
-                24, Color.white, TextAlignmentOptions.Center, bold: true);
-
-            var msg = (_quizScore == SampleData.QuizQuestions.Count)
-                ? "Excelente! Você é um expert em tecnologia retrô."
-                : (_quizScore >= SampleData.QuizQuestions.Count / 2)
-                    ? "Muito bom! Continue explorando para aprender mais."
-                    : "Você pode melhorar! Que tal estudar mais sobre as peças?";
-
-            var msgTMP = UiKit.TMP(resultCard.transform, msg, 18, new Color32(255, 255, 255, 200), TextAlignmentOptions.Center);
-
-            // Save high score
-            int previousHigh = PlayerPrefs.GetInt("RetroTech_HighScore", 0);
-            if (_quizScore > previousHigh)
+            if (_quizPage != null)
             {
-                PlayerPrefs.SetInt("RetroTech_HighScore", _quizScore);
-                PlayerPrefs.Save();
+                _quizPage.RestartQuiz();
             }
+        }
 
-            // Restart button
-            CreatePrototypeCTAButton(resultCard.transform, "Reiniciar Quiz", () =>
-            {
-                _currentQuizIndex = 0;
-                _quizScore = 0;
-                SwitchPage(4); // Reload quiz page
-            });
+        /// <summary>
+        /// Obtém a pontuação atual do quiz
+        /// </summary>
+        public int GetCurrentQuizScore()
+        {
+            return _quizPage != null ? _quizPage.GetCurrentScore() : 0;
+        }
+
+        /// <summary>
+        /// Obtém a pontuação máxima do quiz
+        /// </summary>
+        public int GetQuizHighScore()
+        {
+            return _quizPage != null ? _quizPage.GetHighScore() : 0;
         }
 
         /// <summary>
@@ -1191,10 +1057,6 @@ namespace RetroTech
             contentTMP.enableWordWrapping = true;
             contentTMP.margin = new Vector4(0, 0, 0, 20);
         }
-
-        // ========= Scanner =========
-
-       
 
         // ========= Search Feature =========
 
