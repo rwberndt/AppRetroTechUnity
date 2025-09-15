@@ -45,6 +45,8 @@ namespace RetroTech
 
         private HomePage _homePage;
         private ScannerPage _scannerPage;
+        private CategoriesPage _categoriesPage;
+        private QuizPage _quizPage;
 
         [RuntimeInitializeOnLoadMethod]
         private static void InitializeOnLoad()
@@ -416,16 +418,13 @@ namespace RetroTech
         }
 
 
-        private CategoriesPage _categoriesPage;
-
-        // ... outros métodos existentes ...
+        
 
         /// <summary>
         /// Cria a página de categorias usando a classe CategoriesPage separada
         /// </summary>
         private GameObject CreateCategoriesPage()
         {
-            // Criar o GameObject que irá conter a CategoriesPage
             var categoriesPageContainer = new GameObject("CategoriesPageContainer");
 
             // Adicionar o componente CategoriesPage
@@ -487,28 +486,7 @@ namespace RetroTech
             }
         }
 
-        // IMPORTANTE: Remover ou comentar os métodos antigos relacionados a modal
-        // pois agora eles estão na CategoriesPage:
 
-
-        private GameObject CreateTimelinePage()
-        {
-            var (surface, content) = BuildPrototypeSurface("TimelinePage");
-
-            // Timeline title
-            var titleTMP = UiKit.TMP(content, "Linha do Tempo", 36, Color.white, TextAlignmentOptions.Left, bold: true);
-            titleTMP.margin = new Vector4(0, 0, 0, 24);
-
-            var pieces = new List<ComputerPiece>(SampleData.Pieces);
-            pieces.Sort((a, b) => a.YearManufactured.CompareTo(b.YearManufactured));
-
-            foreach (var piece in pieces)
-            {
-                var timelineCard = CreateTimelineCard(content, piece);
-            }
-
-            return surface;
-        }
 
         private GameObject CreateScannerPage()
         {
@@ -755,46 +733,160 @@ namespace RetroTech
             return chevronRT;
         }
 
-        private GameObject CreateTimelineCard(Transform parent, ComputerPiece piece)
+        private TimelinePage _timelinePage;
+
+        // Substituir o método CreateTimelinePage() existente por este:
+        private GameObject CreateTimelinePage()
         {
-            var timelineCard = CreateGlassCard(parent, 200f);
-            timelineCard.color = new Color(0f, 0f, 0f, 0.3f); // Dark card like prototype
+            // Criar o GameObject que irá conter a TimelinePage
+            var timelinePageContainer = new GameObject("TimelinePageContainer");
 
-            var cardVLG = timelineCard.gameObject.AddComponent<VerticalLayoutGroup>();
-            cardVLG.padding = new RectOffset(20, 20, 16, 16);
-            cardVLG.spacing = 12;
-            cardVLG.childAlignment = TextAnchor.UpperLeft;
-            cardVLG.childControlWidth = true;
-            cardVLG.childForceExpandWidth = true;
-            cardVLG.childControlHeight = false;
-            cardVLG.childForceExpandHeight = false;
+            // Adicionar o componente TimelinePage
+            _timelinePage = timelinePageContainer.AddComponent<TimelinePage>();
 
-            // Year badge
-            var yearTMP = UiKit.TMP(timelineCard.transform, piece.YearManufactured.ToString(), 16, new Color32(147, 112, 219, 255), TextAlignmentOptions.Left, bold: true);
-            yearTMP.margin = new Vector4(0, 0, 0, 4);
+            // Configurar os eventos da timeline page
+            _timelinePage.OnPieceSelected += (piece) =>
+            {
+                // Mostrar detalhes da peça selecionada
+                ShowPieceDetail(piece);
+            };
 
-            // Piece name
-            var nameTMP = UiKit.TMP(timelineCard.transform, piece.Name, 22, Color.white, TextAlignmentOptions.Left, bold: true);
-            nameTMP.enableWordWrapping = true;
-            nameTMP.margin = new Vector4(0, 0, 0, 8);
+            _timelinePage.OnTimelineGenerated += (pieces) =>
+            {
+                // Opcional: log quando a timeline é gerada
+                Debug.Log($"Timeline generated with {pieces.Count} pieces");
+            };
 
-            // Description
-            var descTMP = UiKit.TMP(timelineCard.transform, $"{piece.Manufacturer} — {piece.Description}", 16, new Color32(255, 255, 255, 180), TextAlignmentOptions.Left);
-            descTMP.enableWordWrapping = true;
-            descTMP.margin = new Vector4(0, 0, 0, 16);
+            _timelinePage.OnSortOrderChanged += (sortOrder) =>
+            {
+                // Opcional: log quando a ordem é alterada
+                Debug.Log($"Timeline sort order changed to: {sortOrder}");
+            };
 
-            // Details button
-            var detailsBtn = CreatePrototypeCTAButton(timelineCard.transform, "Ver detalhes →", () => ShowPieceDetail(piece));
-            var detailsBtnLE = detailsBtn.GetComponent<LayoutElement>();
-            detailsBtnLE.preferredHeight = 40;
-            detailsBtnLE.minHeight = 40;
+            // Criar a página usando a nova classe
+            var pageObject = _timelinePage.CreatePage(
+                _canvas.transform,
+                BuildPrototypeSurface,
+                CreateGlassCard,
+                CreatePrototypeCTAButton
+            );
 
-            return timelineCard.gameObject;
+            return pageObject;
         }
 
+        // Métodos auxiliares para acessar a timeline page:
 
+        /// <summary>
+        /// Método auxiliar para acessar a página de timeline
+        /// </summary>
+        public TimelinePage GetTimelinePage()
+        {
+            return _timelinePage;
+        }
 
-        private QuizPage _quizPage;
+        /// <summary>
+        /// Atualiza configurações da página de timeline
+        /// </summary>
+        public void UpdateTimelinePageSettings(float cardHeight, float titleMargin, int titleSize, int yearSize,
+                                              int nameSize, int descSize, int btnSize, float btnHeight)
+        {
+            if (_timelinePage != null)
+            {
+                _timelinePage.UpdateVisualSettings(cardHeight, titleMargin, titleSize, yearSize,
+                                                 nameSize, descSize, btnSize, btnHeight);
+            }
+        }
+
+        /// <summary>
+        /// Muda a ordem de classificação da timeline
+        /// </summary>
+        public void ChangeTimelineSortOrder(TimelinePage.SortOrder sortOrder)
+        {
+            if (_timelinePage != null)
+            {
+                _timelinePage.ChangeSortOrder(sortOrder);
+            }
+        }
+
+        /// <summary>
+        /// Filtra a timeline por período
+        /// </summary>
+        public void FilterTimelineByYear(int startYear, int endYear)
+        {
+            if (_timelinePage != null)
+            {
+                _timelinePage.FilterByYearRange(startYear, endYear);
+            }
+        }
+
+        /// <summary>
+        /// Remove filtros da timeline
+        /// </summary>
+        public void ClearTimelineFilters()
+        {
+            if (_timelinePage != null)
+            {
+                _timelinePage.ClearFilters();
+            }
+        }
+
+        /// <summary>
+        /// Busca por peças na timeline
+        /// </summary>
+        public void SearchTimelinePieces(string searchTerm)
+        {
+            if (_timelinePage != null)
+            {
+                _timelinePage.SearchPieces(searchTerm);
+            }
+        }
+
+        /// <summary>
+        /// Obtém estatísticas da timeline
+        /// </summary>
+        public (int totalPieces, int earliestYear, int latestYear) GetTimelineStats()
+        {
+            if (_timelinePage != null)
+            {
+                return _timelinePage.GetTimelineStats();
+            }
+            return (0, 0, 0);
+        }
+
+        /// <summary>
+        /// Obtém as peças atualmente exibidas na timeline
+        /// </summary>
+        public List<ComputerPiece> GetDisplayedTimelinePieces()
+        {
+            if (_timelinePage != null)
+            {
+                return _timelinePage.GetDisplayedPieces();
+            }
+            return new List<ComputerPiece>();
+        }
+
+        /// <summary>
+        /// Exemplo de como usar os novos recursos da TimelinePage
+        /// </summary>
+        public void ExampleTimelineUsage()
+        {
+            // Mudar para ordem decrescente (mais recentes primeiro)
+            ChangeTimelineSortOrder(TimelinePage.SortOrder.Descending);
+
+            // Filtrar por década de 1970
+            FilterTimelineByYear(1970, 1979);
+
+            // Buscar por "Intel"
+            SearchTimelinePieces("Intel");
+
+            // Obter estatísticas
+            var (total, earliest, latest) = GetTimelineStats();
+            Debug.Log($"Timeline: {total} pieces from {earliest} to {latest}");
+
+            // Limpar filtros
+            ClearTimelineFilters();
+        }
+
 
         // Substituir o método CreateQuizPage() existente por este:
         private GameObject CreateQuizPage()
