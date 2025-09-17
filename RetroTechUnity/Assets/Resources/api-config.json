@@ -1,0 +1,10 @@
+{
+  "baseUrl": "https://localhost:5001/api",
+  "timeoutSeconds": 30,
+  "ignoreCertificateErrors": true,
+  "endpoints": {
+    "categories": "categorias",
+    "pieces": "pecas",
+    "quiz": "quiz"
+  }
+}

@@ -5,12 +5,14 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using TMPro;
 using System.Linq;
+using System.Threading.Tasks;
 #if ZXING_PRESENT
 using ZXing;
 using ZXing.Common;
 #endif
 
 using static RetroTech.UiKit;
+using RetroTech.Services;
 
 namespace RetroTech
 {
@@ -39,6 +41,9 @@ namespace RetroTech
         // Icons (Resources/Icons/*.png)
         private Sprite _iconHome, _iconCategories, _iconTimeline, _iconScanner, _iconQuiz;
 
+        private ApiClient _apiClient;
+        private IContentService _contentService;
+
         private Dictionary<string, bool> _categoryExpanded = new();
         private int _activeTab = 0;
         private GameObject _openModal;
@@ -62,10 +67,43 @@ namespace RetroTech
             LoadIcons();
             CreateCanvas();
             SetupBackground();
+            InitializeServices();
+        }
 
-            CreatePages();
-            CreateNavigationBar();
-            SwitchPage(0);
+        private async void Start()
+        {
+            try
+            {
+                await InitializeContentAsync();
+                CreatePages();
+                CreateNavigationBar();
+                SwitchPage(0);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Failed to initialize RetroTech content. {ex}");
+            }
+        }
+
+        private void InitializeServices()
+        {
+            try
+            {
+                var configuration = ApiConfiguration.Load();
+                _apiClient = new ApiClient(configuration);
+                _contentService = new ContentService(_apiClient, configuration);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Failed to configure API services. {ex}");
+                _apiClient = null;
+                _contentService = null;
+            }
+        }
+
+        private async Task InitializeContentAsync()
+        {
+            await SampleData.InitializeAsync(_contentService);
         }
 
         // ========= Canvas & Input =========
@@ -1318,6 +1356,11 @@ namespace RetroTech
             {
                 var noResultsTMP = UiKit.TMP(resultsGO, "Nenhuma peça encontrada.", 18, new Color32(255, 255, 255, 150), TextAlignmentOptions.Center);
             }
+        }
+
+        private void OnDestroy()
+        {
+            _apiClient?.Dispose();
         }
 
         // ========= Utility Methods =========
