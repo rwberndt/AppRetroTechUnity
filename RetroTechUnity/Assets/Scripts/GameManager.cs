@@ -200,10 +200,14 @@ namespace RetroTech
             surface.transform.SetParent(_canvas.transform, false);
 
             var srt = surface.AddComponent<RectTransform>();
-            srt.anchorMin = new Vector2(0f, 0.08f); // Leave space for nav bar
-            srt.anchorMax = new Vector2(1f, 1f);
-            srt.offsetMin = new Vector2(16, 16); // Small margin
-            srt.offsetMax = new Vector2(-16, -16);
+            srt.pivot = new Vector2(0.5f, 1f);
+            TryAttachSafeAreaComponent(surface);
+            FitToSafeArea(srt, 24f, 48f, NavBarHeight + 44f);
+
+            var surfaceImage = surface.AddComponent<Image>();
+            surfaceImage.color = new Color(1f, 1f, 1f, 0.04f);
+            surfaceImage.raycastTarget = false;
+            TryApplyRoundedCorners(surface, 48f);
 
             // Scrollable content container
             var scrollGO = new GameObject("ScrollView", typeof(RectTransform), typeof(ScrollRect));
@@ -243,15 +247,17 @@ namespace RetroTech
             scroll.content = crt;
 
             var vlg = content.GetComponent<VerticalLayoutGroup>();
-            vlg.padding = new RectOffset(40, 40, 60, 60); // Much more padding
-            vlg.spacing = 30; // More spacing between elements
-            vlg.childAlignment = TextAnchor.UpperLeft;
+            vlg.padding = new RectOffset(0, 0, 0, 32);
+            vlg.spacing = 32f;
+            vlg.childAlignment = TextAnchor.UpperCenter;
             vlg.childControlWidth = true;
-            vlg.childForceExpandWidth = true;
+            vlg.childForceExpandWidth = false;
             vlg.childControlHeight = true;
             vlg.childForceExpandHeight = false;
 
-            content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var fitter = content.GetComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
             return (surface, crt);
         }

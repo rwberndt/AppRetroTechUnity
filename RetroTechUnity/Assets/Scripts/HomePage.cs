@@ -6,7 +6,7 @@ using static RetroTech.UiKit;
 namespace RetroTech
 {
     /// <summary>
-    /// P·gina inicial do RetroTech que apresenta informaÁıes sobre o aplicativo,
+    /// P√°gina inicial do RetroTech que apresenta informa√ß√µes sobre o aplicativo,
     /// seus objetivos, funcionalidades principais e equipe de desenvolvimento.
     /// </summary>
     public class HomePage : MonoBehaviour
@@ -17,13 +17,19 @@ namespace RetroTech
         [Header("Content Configuration")]
         [SerializeField] private float titleFontSize = 60f;
         [SerializeField] private float welcomeFontSize = 40f;
-        [SerializeField] private float descriptionFontSize = 35f;
-        [SerializeField] private float sectionTitleFontSize = 40f;
-        [SerializeField] private float sectionTextFontSize = 35f;
+        [SerializeField] private float descriptionFontSize = 34f;
+        [SerializeField] private float sectionTitleFontSize = 38f;
+        [SerializeField] private float sectionTextFontSize = 32f;
 
-        // Colors
+        [Header("Palette")]
+        [SerializeField] private Color gradientTop = new Color32(138, 98, 221, 255);
+        [SerializeField] private Color gradientBottom = new Color32(255, 146, 196, 255);
+        [SerializeField] private Color buttonFill = new Color32(245, 245, 255, 255);
+        [SerializeField] private float heroCornerRadius = 44f;
+        [SerializeField] private float buttonCornerRadius = 28f;
+
         private readonly Color TextMain = new Color32(245, 245, 255, 255);
-        private readonly Color TextMuted = new Color32(210, 210, 235, 255);
+        private readonly Color TextMuted = new Color32(215, 214, 238, 255);
         private readonly Color PrimaryColor = new Color32(114, 74, 160, 255);
 
         // Events
@@ -31,13 +37,14 @@ namespace RetroTech
 
         private GameObject _pageObject;
         private RectTransform _contentContainer;
+        private RectTransform _heroCard;
 
         /// <summary>
-        /// Cria e configura a p·gina inicial
+        /// Cria e configura a p√°gina inicial
         /// </summary>
-        /// <param name="parent">Transform pai onde a p·gina ser· criada</param>
-        /// <param name="buildSurfaceFunc">FunÁ„o para criar a superfÌcie base da p·gina</param>
-        /// <returns>GameObject da p·gina criada</returns>
+        /// <param name="parent">Transform pai onde a p√°gina ser√° criada</param>
+        /// <param name="buildSurfaceFunc">Fun√ß√£o para criar a superf√≠cie base da p√°gina</param>
+        /// <returns>GameObject da p√°gina criada</returns>
         public GameObject CreatePage(Transform parent, System.Func<string, (GameObject surface, RectTransform content)> buildSurfaceFunc)
         {
             var (surface, content) = buildSurfaceFunc(pageTitle);
@@ -50,191 +57,248 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// Cria todo o conte˙do da p·gina inicial
+        /// Cria todo o conte√∫do da p√°gina inicial
         /// </summary>
         private void CreateContent()
         {
+            _heroCard = CreateHeroCard();
+
             CreateTitle();
             CreateWelcomeSection();
             CreateDescriptionSection();
             CreateObjectiveSection();
             CreateFeaturesSection();
             CreateTeamSection();
+            CreateSpacer(32f, "SpacerBeforeCTA");
             CreateCTAButton();
         }
 
+        private RectTransform CreateHeroCard()
+        {
+            var cardGO = new GameObject("HeroCard", typeof(RectTransform));
+            cardGO.transform.SetParent(_contentContainer, false);
+
+            var rt = cardGO.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 1f);
+            rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = Vector2.zero;
+
+            var layoutElement = cardGO.AddComponent<LayoutElement>();
+            layoutElement.minHeight = 0f;
+            layoutElement.flexibleWidth = 1f;
+            layoutElement.preferredWidth = 760f;
+
+            var background = cardGO.AddComponent<Image>();
+            background.raycastTarget = false;
+            ApplyVerticalGradient(background, gradientTop, gradientBottom);
+            TryApplyRoundedCorners(cardGO, heroCornerRadius);
+
+            var layoutGroup = cardGO.AddComponent<VerticalLayoutGroup>();
+            layoutGroup.padding = new RectOffset(56, 56, 72, 72);
+            layoutGroup.spacing = 32f;
+            layoutGroup.childAlignment = TextAnchor.UpperLeft;
+            layoutGroup.childControlWidth = true;
+            layoutGroup.childForceExpandWidth = true;
+            layoutGroup.childControlHeight = true;
+            layoutGroup.childForceExpandHeight = false;
+
+            cardGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            return rt;
+        }
+
         /// <summary>
-        /// Cria o tÌtulo principal do aplicativo
+        /// Cria o t√≠tulo principal do aplicativo
         /// </summary>
         private void CreateTitle()
         {
-            var titleTMP = UiKit.TMP(_contentContainer, "RetroTech", (int)titleFontSize, TextMain,
+            var titleTMP = UiKit.TMP(_heroCard, "RetroTech", (int)titleFontSize, (Color32)TextMain,
                 TextAlignmentOptions.Left, bold: true);
             titleTMP.name = "Title";
+            titleTMP.enableWordWrapping = false;
         }
 
         /// <summary>
-        /// Cria a seÁ„o de boas-vindas
+        /// Cria a se√ß√£o de boas-vindas
         /// </summary>
         private void CreateWelcomeSection()
         {
-            var welcomeTMP = UiKit.TMP(_contentContainer, "Bem-vindo ao RetroTech", (int)welcomeFontSize,
-                TextMain, TextAlignmentOptions.Left, bold: true);
+            var welcomeTMP = UiKit.TMP(_heroCard, "Bem-vindo ao RetroTech", (int)welcomeFontSize,
+                (Color32)TextMain, TextAlignmentOptions.Left, bold: true);
             welcomeTMP.name = "WelcomeTitle";
+            welcomeTMP.enableWordWrapping = false;
         }
 
         /// <summary>
-        /// Cria a descriÁ„o principal do aplicativo
+        /// Cria a descri√ß√£o principal do aplicativo
         /// </summary>
         private void CreateDescriptionSection()
         {
-            var descriptionText = "Explore e aprenda sobre o acervo de peÁas de computaÁ„o do " +
-                                "Departamento de Sistemas e ComputaÁ„o (DSC) da FURB de forma interativa.";
+            var descriptionText = "Explore e aprenda sobre o acervo de pe√ßas de computa√ß√£o do " +
+                                "Departamento de Sistemas e Computa√ß√£o (DSC) da FURB com uma experi√™ncia interativa e envolvente.";
 
-            var descTMP = UiKit.TMP(_contentContainer, descriptionText, (int)descriptionFontSize,
-                TextMuted, TextAlignmentOptions.Left);
+            var descTMP = UiKit.TMP(_heroCard, descriptionText, (int)descriptionFontSize,
+                (Color32)TextMuted, TextAlignmentOptions.Left);
             descTMP.name = "MainDescription";
         }
 
         /// <summary>
-        /// Cria a seÁ„o sobre o objetivo do aplicativo
+        /// Cria a se√ß√£o sobre o objetivo do aplicativo
         /// </summary>
         private void CreateObjectiveSection()
         {
-            // TÌtulo da seÁ„o
-            var objTitleTMP = UiKit.TMP(_contentContainer, "Objetivo do aplicativo", (int)sectionTitleFontSize,
-                TextMain, TextAlignmentOptions.Left, bold: true);
-            objTitleTMP.name = "ObjectiveTitle";
+            var objectiveText = "Facilitar o acesso e a compreens√£o do acervo hist√≥rico de pe√ßas de " +
+                              "computa√ß√£o do DSC, proporcionando uma experi√™ncia educativa e imersiva.";
 
-            // DescriÁ„o do objetivo
-            var objectiveText = "Facilitar o acesso e a compreens„o do acervo histÛrico de peÁas de " +
-                              "computaÁ„o do DSC, proporcionando uma experiÍncia educativa e imersiva.";
-
-            var objDescTMP = UiKit.TMP(_contentContainer, objectiveText, (int)sectionTextFontSize,
-                TextMuted, TextAlignmentOptions.Left);
-            objDescTMP.name = "ObjectiveDescription";
+            CreateInfoSection("Objective", "Objetivo do aplicativo", objectiveText);
         }
 
         /// <summary>
-        /// Cria a seÁ„o das principais funcionalidades
+        /// Cria a se√ß√£o das principais funcionalidades
         /// </summary>
         private void CreateFeaturesSection()
         {
-            // TÌtulo da seÁ„o
-            var featTitleTMP = UiKit.TMP(_contentContainer, "Principais funcionalidades", (int)sectionTitleFontSize,
-                TextMain, TextAlignmentOptions.Left, bold: true);
-            featTitleTMP.name = "FeaturesTitle";
+            var featuresText = "‚Ä¢ Navega√ß√£o por categorias de pe√ßas\n" +
+                             "‚Ä¢ Linha do tempo interativa\n" +
+                             "‚Ä¢ Leitor de QR Codes\n" +
+                             "‚Ä¢ Quiz educativo";
 
-            // Lista de funcionalidades
-            var featuresText = "ï NavegaÁ„o por categorias\n" +
-                             "ï Linha do tempo interativa\n" +
-                             "ï Leitura de QR Codes\n" +
-                             "ï Detalhes e curiosidades\n" +
-                             "ï Quiz educativo";
-
-            var featDescTMP = UiKit.TMP(_contentContainer, featuresText, (int)sectionTextFontSize,
-                TextMuted, TextAlignmentOptions.Left);
-            featDescTMP.name = "FeaturesDescription";
+            CreateInfoSection("Features", "Principais funcionalidades", featuresText);
         }
 
         /// <summary>
-        /// Cria a seÁ„o da equipe de desenvolvimento
+        /// Cria a se√ß√£o da equipe de desenvolvimento
         /// </summary>
         private void CreateTeamSection()
         {
-            // TÌtulo da seÁ„o
-            var teamTitleTMP = UiKit.TMP(_contentContainer, "Equipe de desenvolvimento", (int)sectionTitleFontSize,
-                TextMain, TextAlignmentOptions.Left, bold: true);
-            teamTitleTMP.name = "TeamTitle";
-
-            // InformaÁıes da equipe
-            var teamText = "Ricardo Berndt - CiÍncia da ComputaÁ„o\n\n" +
+            var teamText = "Integrante: Darlon Solano dos Reis - Sistemas de Informa√ß√£o\n" +
                           "Orientador: Dalton Solano dos Reis\n" +
                           "Supervisor: Miguel A. Wistainater";
 
-            var teamDescTMP = UiKit.TMP(_contentContainer, teamText, (int)sectionTextFontSize,
-                TextMuted, TextAlignmentOptions.Left);
-            teamDescTMP.name = "TeamDescription";
+            CreateInfoSection("Team", "Equipe de desenvolvimento", teamText);
+        }
+
+        private void CreateInfoSection(string sectionKey, string title, string body)
+        {
+            var section = new GameObject($"{sectionKey}Section", typeof(RectTransform));
+            section.transform.SetParent(_heroCard, false);
+
+            var layout = section.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = 12f;
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.childControlWidth = true;
+            layout.childForceExpandWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandHeight = false;
+
+            var titleTMP = UiKit.TMP(section.transform, title, (int)sectionTitleFontSize,
+                (Color32)TextMain, TextAlignmentOptions.Left, bold: true);
+            titleTMP.name = $"{sectionKey}Title";
+
+            var bodyTMP = UiKit.TMP(section.transform, body, (int)sectionTextFontSize,
+                (Color32)TextMuted, TextAlignmentOptions.Left);
+            bodyTMP.name = $"{sectionKey}Description";
+        }
+
+        private void CreateSpacer(float height, string name)
+        {
+            var spacer = new GameObject(name, typeof(RectTransform));
+            spacer.transform.SetParent(_heroCard, false);
+            var layout = spacer.AddComponent<LayoutElement>();
+            layout.minHeight = height;
+            layout.preferredHeight = height;
+            layout.flexibleHeight = 0f;
         }
 
         /// <summary>
-        /// Cria o bot„o de call-to-action para buscar peÁas
+        /// Cria o bot√£o de call-to-action para buscar pe√ßas
         /// </summary>
         private void CreateCTAButton()
         {
-            var buttonCard = UiKit.CreateCard(_contentContainer.transform, new Vector2(0, 60),
-                Color.white, 22f);
+            var buttonCard = UiKit.CreateCard(_heroCard.transform, new Vector2(0, 96),
+                (Color32)buttonFill, buttonCornerRadius);
 
-            var buttonLE = buttonCard.gameObject.AddComponent<LayoutElement>();
-            buttonLE.minHeight = 60;
-            buttonLE.preferredHeight = 60;
+            var buttonLE = buttonCard.gameObject.GetComponent<LayoutElement>();
+            buttonLE.minHeight = 96f;
+            buttonLE.preferredHeight = 96f;
+            buttonLE.flexibleHeight = 0f;
 
             var button = buttonCard.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.ColorTint;
+            var colors = button.colors;
+            colors.highlightedColor = new Color(1f, 1f, 1f, 0.92f);
+            colors.pressedColor = new Color(0.92f, 0.92f, 0.98f, 1f);
+            colors.selectedColor = new Color(1f, 1f, 1f, 0.95f);
+            colors.colorMultiplier = 1f;
+            button.colors = colors;
+
+            button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() => OnSearchPiecesClicked?.Invoke());
 
-            var buttonText = UiKit.TMP(buttonCard.transform, "Buscar PeÁas", 30,
-                PrimaryColor, TextAlignmentOptions.Center, bold: true);
+            var buttonText = UiKit.TMP(buttonCard.transform, "Buscar Pe√ßas", 32,
+                (Color32)PrimaryColor, TextAlignmentOptions.Center, bold: true);
             buttonText.name = "CTAButtonText";
             buttonText.enableWordWrapping = false;
 
-            // Posicionar o texto no centro do bot„o
             var textRT = buttonText.rectTransform;
             textRT.anchorMin = Vector2.zero;
             textRT.anchorMax = Vector2.one;
-            textRT.offsetMin = new Vector2(16, 8);
-            textRT.offsetMax = new Vector2(-16, -8);
+            textRT.offsetMin = new Vector2(28f, 18f);
+            textRT.offsetMax = new Vector2(-28f, -18f);
 
-            buttonCard.name = "CTAButton";
+            buttonCard.gameObject.name = "CTAButton";
         }
 
         /// <summary>
-        /// Atualiza as configuraÁıes visuais da p·gina
+        /// Atualiza as configura√ß√µes visuais da p√°gina
         /// </summary>
-        /// <param name="newTitleSize">Novo tamanho da fonte do tÌtulo</param>
+        /// <param name="newTitleSize">Novo tamanho da fonte do t√≠tulo</param>
         /// <param name="newWelcomeSize">Novo tamanho da fonte de boas-vindas</param>
-        /// <param name="newDescSize">Novo tamanho da fonte de descriÁ„o</param>
+        /// <param name="newDescSize">Novo tamanho da fonte de descri√ß√£o</param>
         public void UpdateFontSizes(float newTitleSize, float newWelcomeSize, float newDescSize)
         {
             titleFontSize = newTitleSize;
             welcomeFontSize = newWelcomeSize;
             descriptionFontSize = newDescSize;
 
-            // Atualizar elementos existentes se a p·gina j· foi criada
+            // Atualizar elementos existentes se a p√°gina j√° foi criada
             if (_contentContainer != null)
             {
-                var title = _contentContainer.Find("Title")?.GetComponent<TextMeshProUGUI>();
+                var title = _contentContainer.Find("HeroCard/Title")?.GetComponent<TextMeshProUGUI>();
                 if (title != null) title.fontSize = titleFontSize;
 
-                var welcome = _contentContainer.Find("WelcomeTitle")?.GetComponent<TextMeshProUGUI>();
+                var welcome = _contentContainer.Find("HeroCard/WelcomeTitle")?.GetComponent<TextMeshProUGUI>();
                 if (welcome != null) welcome.fontSize = welcomeFontSize;
 
-                var desc = _contentContainer.Find("MainDescription")?.GetComponent<TextMeshProUGUI>();
+                var desc = _contentContainer.Find("HeroCard/MainDescription")?.GetComponent<TextMeshProUGUI>();
                 if (desc != null) desc.fontSize = descriptionFontSize;
             }
         }
 
         /// <summary>
-        /// ObtÈm referÍncia ao GameObject da p·gina
+        /// Obt√©m refer√™ncia ao GameObject da p√°gina
         /// </summary>
-        /// <returns>GameObject da p·gina ou null se n„o foi criada</returns>
+        /// <returns>GameObject da p√°gina ou null se n√£o foi criada</returns>
         public GameObject GetPageObject()
         {
             return _pageObject;
         }
 
         /// <summary>
-        /// ObtÈm referÍncia ao container de conte˙do
+        /// Obt√©m refer√™ncia ao container de conte√∫do
         /// </summary>
-        /// <returns>RectTransform do container de conte˙do ou null se n„o foi criado</returns>
+        /// <returns>RectTransform do container de conte√∫do ou null se n√£o foi criado</returns>
         public RectTransform GetContentContainer()
         {
             return _contentContainer;
         }
 
         /// <summary>
-        /// Define se a p·gina est· ativa ou n„o
+        /// Define se a p√°gina est√° ativa ou n√£o
         /// </summary>
-        /// <param name="active">Estado de ativaÁ„o</param>
+        /// <param name="active">Estado de ativa√ß√£o</param>
         public void SetActive(bool active)
         {
             if (_pageObject != null)
@@ -244,7 +308,7 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// Limpa recursos da p·gina
+        /// Limpa recursos da p√°gina
         /// </summary>
         private void OnDestroy()
         {
@@ -254,16 +318,18 @@ namespace RetroTech
         #region Editor Methods
 #if UNITY_EDITOR
         /// <summary>
-        /// Valida as configuraÁıes no editor
+        /// Valida as configura√ß√µes no editor
         /// </summary>
         private void OnValidate()
         {
-            // Garantir que os tamanhos de fonte sejam v·lidos
+            // Garantir que os tamanhos de fonte sejam v√°lidos
             titleFontSize = Mathf.Max(10f, titleFontSize);
             welcomeFontSize = Mathf.Max(10f, welcomeFontSize);
             descriptionFontSize = Mathf.Max(10f, descriptionFontSize);
             sectionTitleFontSize = Mathf.Max(10f, sectionTitleFontSize);
             sectionTextFontSize = Mathf.Max(10f, sectionTextFontSize);
+            heroCornerRadius = Mathf.Max(0f, heroCornerRadius);
+            buttonCornerRadius = Mathf.Max(0f, buttonCornerRadius);
         }
 #endif
         #endregion
