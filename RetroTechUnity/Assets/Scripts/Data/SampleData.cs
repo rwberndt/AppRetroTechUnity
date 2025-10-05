@@ -83,14 +83,30 @@ namespace RetroTech
         {
             lock (SyncRoot)
             {
+                const long CalculatorsCategoryId = 1L;
+                const long StorageCategoryId = 2L;
+                const long ProcessorsCategoryId = 3L;
+                const long ComputersCategoryId = 4L;
+                const long NetworkCategoryId = 5L;
+
+                const long TapeReelId = 1L;
+                const long Floppy525Id = 2L;
+                const long Intel8080Id = 3L;
+                const long Hp35Id = 4L;
+                const long AppleIiId = 5L;
+                const long HardDrive5MbId = 6L;
+                const long TapeReelDuplicateOneId = 7L;
+                const long TapeReelDuplicateTwoId = 8L;
+                const long TapeReelDuplicateThreeId = 9L;
+
                 Categories = new List<Category>
                 {
                     new Category(
-                        id: "calc",
+                        id: CalculatorsCategoryId,
                         name: "Calculadoras",
                         subcategories: new List<string> { "Calculadoras mecânicas", "Calculadoras eletrônicas" }),
                     new Category(
-                        id: "storage",
+                        id: StorageCategoryId,
                         name: "Dispositivos de armazenamento",
                         subcategories: new List<string>
                         {
@@ -101,15 +117,15 @@ namespace RetroTech
                             "Bobina de fita magnética"
                         }),
                     new Category(
-                        id: "processors",
+                        id: ProcessorsCategoryId,
                         name: "Microcontroladores e Processadores",
                         subcategories: new List<string> { "Intel 8080", "Motorola 6800", "Zilog Z80" }),
                     new Category(
-                        id: "computers",
+                        id: ComputersCategoryId,
                         name: "Computadores pessoais e monitores",
                         subcategories: new List<string> { "Apple II", "Commodore 64", "TRS-80" }),
                     new Category(
-                        id: "network",
+                        id: NetworkCategoryId,
                         name: "Placas controladoras e Relês",
                         subcategories: new List<string> { "Placas de rede", "Controladores", "Relês" })
                 };
@@ -117,9 +133,9 @@ namespace RetroTech
                 Pieces = new List<ComputerPiece>
                 {
                     new ComputerPiece(
-                        id: "bobina_magnetica",
+                        id: TapeReelId,
                         name: "Bobina de fita magnética",
-                        category: "storage",
+                        categoryId: StorageCategoryId,
                         yearManufactured: 1960,
                         manufacturer: "Verbatim",
                         description: "É um meio de armazenamento usado para arquivar grandes volumes de dados em sistemas antigos e corporativos.",
@@ -128,9 +144,9 @@ namespace RetroTech
                         specifications: new List<string> { "Capacidade: 6250 BPI", "Velocidade: 75 IPS", "Comprimento: 2400 pés" }
                     ),
                     new ComputerPiece(
-                        id: "disquete_525",
+                        id: Floppy525Id,
                         name: "Disquete de 5.25 polegadas",
-                        category: "storage",
+                        categoryId: StorageCategoryId,
                         yearManufactured: 1976,
                         manufacturer: "Shugart Associates",
                         description: "Disco flexível usado como meio de armazenamento removível em computadores pessoais dos anos 70 e 80.",
@@ -139,9 +155,9 @@ namespace RetroTech
                         specifications: new List<string> { "Capacidade: 160KB-1.2MB", "Rotação: 300 RPM", "Trilhas: 40-80" }
                     ),
                     new ComputerPiece(
-                        id: "intel_8080",
+                        id: Intel8080Id,
                         name: "Processador Intel 8080",
-                        category: "processors",
+                        categoryId: ProcessorsCategoryId,
                         yearManufactured: 1974,
                         manufacturer: "Intel",
                         description: "Microprocessador de 8 bits que foi fundamental para o desenvolvimento dos primeiros computadores pessoais.",
@@ -150,9 +166,9 @@ namespace RetroTech
                         specifications: new List<string> { "Clock: 2 MHz", "Arquitetura: 8 bits", "Transistores: 6000" }
                     ),
                     new ComputerPiece(
-                        id: "calculadora_hp35",
+                        id: Hp35Id,
                         name: "Calculadora HP-35",
-                        category: "calc",
+                        categoryId: CalculatorsCategoryId,
                         yearManufactured: 1972,
                         manufacturer: "Hewlett-Packard",
                         description: "A primeira calculadora científica portátil do mundo, revolucionando os cálculos de engenharia.",
@@ -161,9 +177,9 @@ namespace RetroTech
                         specifications: new List<string> { "Funções: 35", "Display: LED vermelho", "Bateria: NiCad recarregável" }
                     ),
                     new ComputerPiece(
-                        id: "apple_ii",
+                        id: AppleIiId,
                         name: "Apple II",
-                        category: "computers",
+                        categoryId: ComputersCategoryId,
                         yearManufactured: 1977,
                         manufacturer: "Apple Computer",
                         description: "Um dos primeiros computadores pessoais altamente bem-sucedidos, conhecido por sua facilidade de uso.",
@@ -172,9 +188,9 @@ namespace RetroTech
                         specifications: new List<string> { "CPU: MOS 6502 1MHz", "RAM: 4KB-48KB", "Cores: 6 cores" }
                     ),
                     new ComputerPiece(
-                        id: "disco_rigido_5mb",
+                        id: HardDrive5MbId,
                         name: "Disco Rígido 5MB",
-                        category: "storage",
+                        categoryId: StorageCategoryId,
                         yearManufactured: 1980,
                         manufacturer: "Seagate",
                         description: "Um dos primeiros discos rígidos para computadores pessoais, com impressionantes 5MB de capacidade.",
@@ -183,9 +199,9 @@ namespace RetroTech
                         specifications: new List<string> { "Capacidade: 5MB", "Interface: ST-506", "Rotação: 3600 RPM" }
                     ),
                     new ComputerPiece(
-                        id: "bobina_magnetica",
+                        id: TapeReelDuplicateOneId,
                         name: "Bobina de fita magnética",
-                        category: "storage",
+                        categoryId: StorageCategoryId,
                         yearManufactured: 1960,
                         manufacturer: "Verbatim",
                         description: "É um meio de armazenamento usado para arquivar grandes volumes de dados em sistemas antigos e corporativos.",
@@ -194,9 +210,9 @@ namespace RetroTech
                         specifications: new List<string> { "Capacidade: 6250 BPI", "Velocidade: 75 IPS", "Comprimento: 2400 pés" }
                     ),
                     new ComputerPiece(
-                        id: "bobina_magnetica",
+                        id: TapeReelDuplicateTwoId,
                         name: "Bobina de fita magnética",
-                        category: "storage",
+                        categoryId: StorageCategoryId,
                         yearManufactured: 1960,
                         manufacturer: "Verbatim",
                         description: "É um meio de armazenamento usado para arquivar grandes volumes de dados em sistemas antigos e corporativos.",
@@ -205,9 +221,9 @@ namespace RetroTech
                         specifications: new List<string> { "Capacidade: 6250 BPI", "Velocidade: 75 IPS", "Comprimento: 2400 pés" }
                     ),
                     new ComputerPiece(
-                        id: "bobina_magnetica",
+                        id: TapeReelDuplicateThreeId,
                         name: "Bobina de fita magnética",
-                        category: "storage",
+                        categoryId: StorageCategoryId,
                         yearManufactured: 1960,
                         manufacturer: "Verbatim",
                         description: "É um meio de armazenamento usado para arquivar grandes volumes de dados em sistemas antigos e corporativos.",
@@ -220,44 +236,44 @@ namespace RetroTech
                 QuizQuestions = new List<QuizQuestion>
                 {
                     new QuizQuestion(
-                        id: "q1",
+                        id: 1L,
                         question: "Qual foi o primeiro processador de 8 bits da Intel?",
                         options: new List<string> { "Intel 8008", "Intel 8080", "Intel 8086", "Intel 4004" },
                         correctAnswerIndex: 1,
                         explanation: "O Intel 8080, lançado em 1974, foi o sucessor do 8008 e se tornou extremamente popular nos primeiros computadores pessoais.",
-                        relatedPieceId: "intel_8080"
+                        relatedPieceId: Intel8080Id
                     ),
                     new QuizQuestion(
-                        id: "q2",
+                        id: 2L,
                         question: "Qual a capacidade de um disquete de 5.25 polegadas de alta densidade?",
                         options: new List<string> { "360KB", "720KB", "1.2MB", "1.44MB" },
                         correctAnswerIndex: 2,
                         explanation: "Os disquetes de 5.25\" de alta densidade podiam armazenar 1.2MB, enquanto os de baixa densidade armazenavam 360KB.",
-                        relatedPieceId: "disquete_525"
+                        relatedPieceId: Floppy525Id
                     ),
                     new QuizQuestion(
-                        id: "q3",
+                        id: 3L,
                         question: "Em que ano foi lançado o Apple II?",
                         options: new List<string> { "1975", "1976", "1977", "1978" },
                         correctAnswerIndex: 2,
                         explanation: "O Apple II foi lançado em 1977 e se tornou um dos computadores pessoais mais bem-sucedidos da história.",
-                        relatedPieceId: "apple_ii"
+                        relatedPieceId: AppleIiId
                     ),
                     new QuizQuestion(
-                        id: "q4",
+                        id: 4L,
                         question: "Quanto custava a calculadora HP-35 quando foi lançada em 1972?",
                         options: new List<string> { "US$ 195", "US$ 295", "US$ 395", "US$ 495" },
                         correctAnswerIndex: 2,
                         explanation: "A HP-35 custava US$ 395 em 1972, o que equivale a mais de US$ 2.000 em valores atuais.",
-                        relatedPieceId: "calculadora_hp35"
+                        relatedPieceId: Hp35Id
                     ),
                     new QuizQuestion(
-                        id: "q5",
+                        id: 5L,
                         question: "Qual era a capacidade dos primeiros discos rígidos para PCs?",
                         options: new List<string> { "1MB", "5MB", "10MB", "20MB" },
                         correctAnswerIndex: 1,
                         explanation: "O Seagate ST-506, um dos primeiros HDs para PCs, tinha 5MB de capacidade e custava cerca de US$ 1.500.",
-                        relatedPieceId: "disco_rigido_5mb"
+                        relatedPieceId: HardDrive5MbId
                     )
                 };
 

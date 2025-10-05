@@ -505,7 +505,7 @@ namespace RetroTech
         /// </summary>
         /// <param name="categoryId">ID da categoria</param>
         /// <param name="expand">True para expandir, false para recolher</param>
-        public void SetCategoryExpanded(string categoryId, bool expand)
+        public void SetCategoryExpanded(long categoryId, bool expand)
         {
             if (_categoriesPage != null)
             {

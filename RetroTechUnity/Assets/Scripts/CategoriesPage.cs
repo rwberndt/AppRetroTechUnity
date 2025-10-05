@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -35,7 +36,7 @@ namespace RetroTech
         public System.Action<ComputerPiece> OnPieceSelected;
 
         // State
-        private Dictionary<string, bool> _categoryExpanded = new Dictionary<string, bool>();
+        private readonly Dictionary<long, bool> _categoryExpanded = new Dictionary<long, bool>();
         private GameObject _pageObject;
         private RectTransform _contentContainer;
         private Canvas _parentCanvas;
@@ -179,7 +180,7 @@ namespace RetroTech
         /// <returns>GameObject da lista de subcategorias</returns>
         private GameObject CreateSubcategoryList(Category category)
         {
-            var subList = new GameObject($"SubList_{category.Id}", typeof(RectTransform),
+            var subList = new GameObject($"SubList_{category.Id.ToString(CultureInfo.InvariantCulture)}", typeof(RectTransform),
                 typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             subList.transform.SetParent(_contentContainer, false);
 
@@ -213,7 +214,7 @@ namespace RetroTech
         /// <param name="parent">Transform pai</param>
         /// <param name="categoryId">ID da categoria pai</param>
         /// <param name="subcategoryName">Nome da subcategoria</param>
-        private void CreateSubcategoryItem(Transform parent, string categoryId, string subcategoryName)
+        private void CreateSubcategoryItem(Transform parent, long categoryId, string subcategoryName)
         {
             var subCard = UiKit.CreateCard(parent, new Vector2(0, subcategoryItemHeight),
                 SubcategoryColor, 14f, glass: true);
@@ -253,7 +254,7 @@ namespace RetroTech
         /// <param name="categoryId">ID da categoria</param>
         /// <param name="subList">GameObject da lista de subcategorias</param>
         /// <param name="chevron">RectTransform do chevron</param>
-        private void SetupCategoryHeaderInteraction(GameObject header, string categoryId, GameObject subList, RectTransform chevron)
+        private void SetupCategoryHeaderInteraction(GameObject header, long categoryId, GameObject subList, RectTransform chevron)
         {
             var btn = header.GetComponent<Button>();
             btn.onClick.AddListener(() =>
@@ -277,7 +278,7 @@ namespace RetroTech
         /// </summary>
         /// <param name="categoryId">ID da categoria</param>
         /// <param name="subcategoryName">Nome da subcategoria</param>
-        private void ShowPiecesModal(string categoryId, string subcategoryName)
+        private void ShowPiecesModal(long categoryId, string subcategoryName)
         {
             CloseModal();
 
@@ -291,7 +292,7 @@ namespace RetroTech
             var modalPanel = CreateModalPanel();
             CreateModalHeader(modalPanel.transform, subcategoryName);
             var scrollContent = CreateModalScrollView(modalPanel.transform);
-            PopulateModalWithPieces(scrollContent);
+            PopulateModalWithPieces(scrollContent, categoryId);
         }
 
         /// <summary>
@@ -442,10 +443,16 @@ namespace RetroTech
         /// Popula o modal com as peças
         /// </summary>
         /// <param name="parent">Transform pai</param>
-        private void PopulateModalWithPieces(Transform parent)
+        /// <param name="categoryId">Categoria utilizada para filtrar as peças</param>
+        private void PopulateModalWithPieces(Transform parent, long categoryId)
         {
             foreach (var piece in SampleData.Pieces)
             {
+                if (piece.CategoryId != categoryId)
+                {
+                    continue;
+                }
+
                 var pieceCard = UiKit.CreateCard(parent, new Vector2(0, 56),
                     new Color(1f, 1f, 1f, 0.3f), 8f, glass: true);
 
@@ -522,14 +529,14 @@ namespace RetroTech
         /// </summary>
         /// <param name="categoryId">ID da categoria</param>
         /// <param name="expand">True para expandir, false para recolher</param>
-        public void SetCategoryExpanded(string categoryId, bool expand)
+        public void SetCategoryExpanded(long categoryId, bool expand)
         {
             if (_categoryExpanded.ContainsKey(categoryId))
             {
                 _categoryExpanded[categoryId] = expand;
 
                 // Encontrar e atualizar a UI se necessário
-                var subListGO = _contentContainer?.Find($"SubList_{categoryId}")?.gameObject;
+                var subListGO = _contentContainer?.Find($"SubList_{categoryId.ToString(CultureInfo.InvariantCulture)}")?.gameObject;
                 if (subListGO != null)
                 {
                     subListGO.SetActive(expand);
