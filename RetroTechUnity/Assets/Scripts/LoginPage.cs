@@ -24,7 +24,7 @@ namespace RetroTech
         [SerializeField] private Color32 successColor = new Color32(144, 238, 144, 255);
 
         public event Action<string, string> OnLoginRequested;
-        public event Action<string, string, string> OnRegisterRequested;
+        public event Action<string, string> OnRegisterRequested;
 
         private GameObject _pageObject;
         private RectTransform _contentContainer;
@@ -35,10 +35,9 @@ namespace RetroTech
         private Button _loginSubmitButton;
         private Button _registerSubmitButton;
 
-        private TMP_InputField _loginEmailInput;
+        private TMP_InputField _loginUsernameInput;
         private TMP_InputField _loginPasswordInput;
-        private TMP_InputField _registerNameInput;
-        private TMP_InputField _registerEmailInput;
+        private TMP_InputField _registerUsernameInput;
         private TMP_InputField _registerPasswordInput;
 
         private Button _loginTabButton;
@@ -267,8 +266,8 @@ namespace RetroTech
 
         private void BuildLoginForm()
         {
-            UiKit.TMP(_loginForm.transform, "E-mail", 28, UiKit.TextMain, TextAlignmentOptions.Left, bold: true);
-            _loginEmailInput = CreateInputField(_loginForm.transform, "Digite seu e-mail", TMP_InputField.ContentType.EmailAddress, false);
+            UiKit.TMP(_loginForm.transform, "Usuário", 28, UiKit.TextMain, TextAlignmentOptions.Left, bold: true);
+            _loginUsernameInput = CreateInputField(_loginForm.transform, "Digite seu nome de usuário", TMP_InputField.ContentType.Standard, false);
 
             UiKit.TMP(_loginForm.transform, "Senha", 28, UiKit.TextMain, TextAlignmentOptions.Left, bold: true);
             _loginPasswordInput = CreateInputField(_loginForm.transform, "Digite sua senha", TMP_InputField.ContentType.Password, true);
@@ -279,11 +278,8 @@ namespace RetroTech
 
         private void BuildRegisterForm()
         {
-            UiKit.TMP(_registerForm.transform, "Nome completo", 28, UiKit.TextMain, TextAlignmentOptions.Left, bold: true);
-            _registerNameInput = CreateInputField(_registerForm.transform, "Como devemos chamar você?", TMP_InputField.ContentType.Standard, false);
-
-            UiKit.TMP(_registerForm.transform, "E-mail", 28, UiKit.TextMain, TextAlignmentOptions.Left, bold: true);
-            _registerEmailInput = CreateInputField(_registerForm.transform, "Informe um e-mail válido", TMP_InputField.ContentType.EmailAddress, false);
+            UiKit.TMP(_registerForm.transform, "Usuário", 28, UiKit.TextMain, TextAlignmentOptions.Left, bold: true);
+            _registerUsernameInput = CreateInputField(_registerForm.transform, "Escolha um nome de usuário", TMP_InputField.ContentType.Standard, false);
 
             UiKit.TMP(_registerForm.transform, "Senha", 28, UiKit.TextMain, TextAlignmentOptions.Left, bold: true);
             _registerPasswordInput = CreateInputField(_registerForm.transform, "Crie uma senha", TMP_InputField.ContentType.Password, true);
@@ -441,14 +437,13 @@ namespace RetroTech
 
         private void HandleLoginClicked()
         {
-            OnLoginRequested?.Invoke(_loginEmailInput?.text ?? string.Empty, _loginPasswordInput?.text ?? string.Empty);
+            OnLoginRequested?.Invoke(_loginUsernameInput?.text ?? string.Empty, _loginPasswordInput?.text ?? string.Empty);
         }
 
         private void HandleRegisterClicked()
         {
             OnRegisterRequested?.Invoke(
-                _registerNameInput?.text ?? string.Empty,
-                _registerEmailInput?.text ?? string.Empty,
+                _registerUsernameInput?.text ?? string.Empty,
                 _registerPasswordInput?.text ?? string.Empty);
         }
     }

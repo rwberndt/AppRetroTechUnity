@@ -27,9 +27,8 @@ namespace RetroTech.Services
         [Serializable]
         private class UserRecord
         {
-            public string DisplayName;
-            public string Email;
-            public string NormalizedEmail;
+            public string Username;
+            public string NormalizedUsername;
             public string Salt;
             public string PasswordHash;
         }
@@ -41,24 +40,23 @@ namespace RetroTech.Services
             _database = LoadDatabase();
         }
 
-        public bool TryRegister(string displayName, string email, string password, out string errorMessage)
+        public bool TryRegister(string username, string password, out string errorMessage)
         {
             errorMessage = string.Empty;
 
-            displayName = (displayName ?? string.Empty).Trim();
-            var originalEmail = (email ?? string.Empty).Trim();
-            email = NormalizeEmail(email);
+            username = (username ?? string.Empty).Trim();
+            var normalizedUsername = NormalizeUsername(username);
             password = password ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(displayName))
+            if (string.IsNullOrWhiteSpace(username))
             {
-                errorMessage = "Informe seu nome completo.";
+                errorMessage = "Informe um nome de usuário.";
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(email) || !email.Contains("@"))
+            if (username.Length < 3)
             {
-                errorMessage = "Informe um e-mail válido.";
+                errorMessage = "O nome de usuário deve ter pelo menos 3 caracteres.";
                 return false;
             }
 
@@ -68,9 +66,9 @@ namespace RetroTech.Services
                 return false;
             }
 
-            if (_database.Users.Any(u => string.Equals(u.NormalizedEmail, email, StringComparison.Ordinal)))
+            if (_database.Users.Any(u => string.Equals(u.NormalizedUsername, normalizedUsername, StringComparison.Ordinal)))
             {
-                errorMessage = "Já existe uma conta com este e-mail.";
+                errorMessage = "Já existe uma conta com este nome de usuário.";
                 return false;
             }
 
@@ -79,9 +77,8 @@ namespace RetroTech.Services
 
             _database.Users.Add(new UserRecord
             {
-                DisplayName = displayName,
-                Email = originalEmail,
-                NormalizedEmail = email,
+                Username = username,
+                NormalizedUsername = normalizedUsername,
                 Salt = salt,
                 PasswordHash = hash
             });
@@ -90,17 +87,17 @@ namespace RetroTech.Services
             return true;
         }
 
-        public bool TrySignIn(string email, string password, out UserProfile profile, out string errorMessage)
+        public bool TrySignIn(string username, string password, out UserProfile profile, out string errorMessage)
         {
             profile = null;
             errorMessage = string.Empty;
 
-            email = NormalizeEmail(email);
+            username = NormalizeUsername(username);
             password = password ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(email) || !email.Contains("@"))
+            if (string.IsNullOrWhiteSpace(username))
             {
-                errorMessage = "Informe um e-mail válido.";
+                errorMessage = "Informe seu nome de usuário.";
                 return false;
             }
 
@@ -110,10 +107,10 @@ namespace RetroTech.Services
                 return false;
             }
 
-            var record = _database.Users.FirstOrDefault(u => string.Equals(u.NormalizedEmail, email, StringComparison.Ordinal));
+            var record = _database.Users.FirstOrDefault(u => string.Equals(u.NormalizedUsername, username, StringComparison.Ordinal));
             if (record == null)
             {
-                errorMessage = "Nenhuma conta foi encontrada para o e-mail informado.";
+                errorMessage = "Nenhuma conta foi encontrada para o nome de usuário informado.";
                 return false;
             }
 
@@ -124,8 +121,8 @@ namespace RetroTech.Services
                 return false;
             }
 
-            profile = new UserProfile(record.DisplayName, record.Email);
-            PlayerPrefs.SetString(LastUserKey, record.NormalizedEmail);
+            profile = new UserProfile(record.Username);
+            PlayerPrefs.SetString(LastUserKey, record.NormalizedUsername);
             PlayerPrefs.Save();
             return true;
         }
@@ -133,13 +130,13 @@ namespace RetroTech.Services
         public bool TryAutoSignIn(out UserProfile profile)
         {
             profile = null;
-            var lastEmail = PlayerPrefs.GetString(LastUserKey, string.Empty);
-            if (string.IsNullOrWhiteSpace(lastEmail))
+            var lastUsername = PlayerPrefs.GetString(LastUserKey, string.Empty);
+            if (string.IsNullOrWhiteSpace(lastUsername))
             {
                 return false;
             }
 
-            var record = _database.Users.FirstOrDefault(u => string.Equals(u.NormalizedEmail, lastEmail, StringComparison.Ordinal));
+            var record = _database.Users.FirstOrDefault(u => string.Equals(u.NormalizedUsername, lastUsername, StringComparison.Ordinal));
             if (record == null)
             {
                 PlayerPrefs.DeleteKey(LastUserKey);
@@ -147,7 +144,7 @@ namespace RetroTech.Services
                 return false;
             }
 
-            profile = new UserProfile(record.DisplayName, record.Email);
+            profile = new UserProfile(record.Username);
             return true;
         }
 
@@ -157,11 +154,11 @@ namespace RetroTech.Services
             PlayerPrefs.Save();
         }
 
-        private static string NormalizeEmail(string email)
+        private static string NormalizeUsername(string username)
         {
-            return string.IsNullOrWhiteSpace(email)
+            return string.IsNullOrWhiteSpace(username)
                 ? string.Empty
-                : email.Trim().ToLowerInvariant();
+                : username.Trim().ToLowerInvariant();
         }
 
         private static UserDatabase LoadDatabase()

@@ -146,7 +146,7 @@ namespace RetroTech
             _loginPage.ResetState();
         }
 
-        private async void HandleLoginRequested(string email, string password)
+        private async void HandleLoginRequested(string username, string password)
         {
             if (_authenticationService == null)
             {
@@ -156,7 +156,7 @@ namespace RetroTech
             _loginPage?.SetBusy(true);
             _loginPage?.ShowMessage(string.Empty, false);
 
-            if (_authenticationService.TrySignIn(email, password, out var profile, out var error))
+            if (_authenticationService.TrySignIn(username, password, out var profile, out var error))
             {
                 await HandleAuthenticatedAsync(profile);
             }
@@ -168,7 +168,7 @@ namespace RetroTech
             }
         }
 
-        private async void HandleRegisterRequested(string displayName, string email, string password)
+        private async void HandleRegisterRequested(string username, string password)
         {
             if (_authenticationService == null)
             {
@@ -178,9 +178,9 @@ namespace RetroTech
             _loginPage?.SetBusy(true);
             _loginPage?.ShowMessage(string.Empty, false);
 
-            if (_authenticationService.TryRegister(displayName, email, password, out var error))
+            if (_authenticationService.TryRegister(username, password, out var error))
             {
-                if (_authenticationService.TrySignIn(email, password, out var profile, out var signInError))
+                if (_authenticationService.TrySignIn(username, password, out var profile, out var signInError))
                 {
                     await HandleAuthenticatedAsync(profile);
                 }

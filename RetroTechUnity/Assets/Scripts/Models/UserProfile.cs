@@ -7,18 +7,16 @@ namespace RetroTech
     [System.Serializable]
     public class UserProfile
     {
-        public string DisplayName { get; }
-        public string Email { get; }
+        public string Username { get; }
 
-        public UserProfile(string displayName, string email)
+        public UserProfile(string username)
         {
-            DisplayName = displayName;
-            Email = email;
+            Username = username;
         }
 
         public override string ToString()
         {
-            return string.IsNullOrEmpty(DisplayName) ? Email : $"{DisplayName} ({Email})";
+            return Username ?? string.Empty;
         }
     }
 }

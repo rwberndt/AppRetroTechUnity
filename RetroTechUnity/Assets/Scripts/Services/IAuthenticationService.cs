@@ -9,8 +9,8 @@ namespace RetroTech.Services
     /// </summary>
     public interface IAuthenticationService
     {
-        bool TryRegister(string displayName, string email, string password, out string errorMessage);
-        bool TrySignIn(string email, string password, out UserProfile profile, out string errorMessage);
+        bool TryRegister(string username, string password, out string errorMessage);
+        bool TrySignIn(string username, string password, out UserProfile profile, out string errorMessage);
         bool TryAutoSignIn(out UserProfile profile);
         void SignOut();
     }
