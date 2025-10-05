@@ -1,207 +1,347 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using RetroTech;
 using UnityEngine;
 
 namespace RetroTech.Services
 {
     /// <summary>
-    /// Simple local authentication provider backed by Unity's <see cref="PlayerPrefs"/>.
-    /// Passwords are salted and hashed with SHA-256 so that even the local cache does not store
-    /// plain text secrets.
+    /// Authentication service that communicates with the RetroTech API to register users and
+    /// exchange credentials for JWT tokens. Successful authentications are cached locally so
+    /// the app can attempt an automatic sign-in on startup.
     /// </summary>
-    public class AuthenticationService : IAuthenticationService
+    public class AuthenticationService : IAuthenticationService, IDisposable
     {
-        private const string UsersKey = "RetroTech.Auth.Users";
-        private const string LastUserKey = "RetroTech.Auth.LastUser";
+        private const string TokenKey = "RetroTech.Auth.Token";
+        private const string UsernameKey = "RetroTech.Auth.Username";
 
         [Serializable]
-        private class UserDatabase
+        private class AuthRequest
         {
-            public List<UserRecord> Users = new();
+            public string username;
+            public string password;
         }
 
         [Serializable]
-        private class UserRecord
+        private class AuthResponse
         {
-            public string Username;
-            public string NormalizedUsername;
-            public string Salt;
-            public string PasswordHash;
+            public string token;
+            public string accessToken;
+            public string jwt;
+            public string bearerToken;
+            public string username;
+            public string userName;
         }
 
-        private readonly UserDatabase _database;
-
-        public AuthenticationService()
+        [Serializable]
+        private class ErrorResponse
         {
-            _database = LoadDatabase();
+            public string message;
+            public string error;
+            public string detail;
+            public string title;
         }
 
-        public bool TryRegister(string username, string password, out string errorMessage)
+        private readonly HttpClient _httpClient;
+        private readonly string _loginEndpoint;
+        private readonly string _registerEndpoint;
+        private bool _disposed;
+
+        public AuthenticationService(ApiConfiguration configuration)
         {
-            errorMessage = string.Empty;
+            if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 
-            username = (username ?? string.Empty).Trim();
-            var normalizedUsername = NormalizeUsername(username);
-            password = password ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(username))
-            {
-                errorMessage = "Informe um nome de usuário.";
-                return false;
-            }
-
-            if (username.Length < 3)
-            {
-                errorMessage = "O nome de usuário deve ter pelo menos 3 caracteres.";
-                return false;
-            }
-
-            if (password.Length < 6)
-            {
-                errorMessage = "A senha deve ter pelo menos 6 caracteres.";
-                return false;
-            }
-
-            if (_database.Users.Any(u => string.Equals(u.NormalizedUsername, normalizedUsername, StringComparison.Ordinal)))
-            {
-                errorMessage = "Já existe uma conta com este nome de usuário.";
-                return false;
-            }
-
-            var salt = GenerateSalt();
-            var hash = HashPassword(password, salt);
-
-            _database.Users.Add(new UserRecord
-            {
-                Username = username,
-                NormalizedUsername = normalizedUsername,
-                Salt = salt,
-                PasswordHash = hash
-            });
-
-            SaveDatabase();
-            return true;
+            _httpClient = CreateHttpClient(configuration);
+            _loginEndpoint = NormalizeEndpoint(configuration.AuthLoginEndpoint);
+            _registerEndpoint = NormalizeEndpoint(configuration.AuthRegisterEndpoint);
         }
 
-        public bool TrySignIn(string username, string password, out UserProfile profile, out string errorMessage)
+        public async Task<AuthenticationResult> RegisterAsync(string username, string password, CancellationToken cancellationToken = default)
         {
-            profile = null;
-            errorMessage = string.Empty;
-
-            username = NormalizeUsername(username);
-            password = password ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(username))
+            string validationError = ValidateCredentials(username, password);
+            if (!string.IsNullOrEmpty(validationError))
             {
-                errorMessage = "Informe seu nome de usuário.";
-                return false;
+                return AuthenticationResult.Failure(validationError);
             }
 
-            if (string.IsNullOrEmpty(password))
+            return await SendAuthRequestAsync(_registerEndpoint, NormalizeUsername(username), password, cancellationToken).ConfigureAwait(false);
+        }
+
+        public async Task<AuthenticationResult> SignInAsync(string username, string password, CancellationToken cancellationToken = default)
+        {
+            string validationError = ValidateCredentials(username, password, allowShortPassword: true);
+            if (!string.IsNullOrEmpty(validationError))
             {
-                errorMessage = "Informe sua senha.";
-                return false;
+                return AuthenticationResult.Failure(validationError);
             }
 
-            var record = _database.Users.FirstOrDefault(u => string.Equals(u.NormalizedUsername, username, StringComparison.Ordinal));
-            if (record == null)
-            {
-                errorMessage = "Nenhuma conta foi encontrada para o nome de usuário informado.";
-                return false;
-            }
-
-            var hash = HashPassword(password, record.Salt);
-            if (!string.Equals(hash, record.PasswordHash, StringComparison.Ordinal))
-            {
-                errorMessage = "Senha incorreta. Tente novamente.";
-                return false;
-            }
-
-            profile = new UserProfile(record.Username);
-            PlayerPrefs.SetString(LastUserKey, record.NormalizedUsername);
-            PlayerPrefs.Save();
-            return true;
+            return await SendAuthRequestAsync(_loginEndpoint, NormalizeUsername(username), password, cancellationToken).ConfigureAwait(false);
         }
 
         public bool TryAutoSignIn(out UserProfile profile)
         {
-            profile = null;
-            var lastUsername = PlayerPrefs.GetString(LastUserKey, string.Empty);
-            if (string.IsNullOrWhiteSpace(lastUsername))
+            string cachedUsername = PlayerPrefs.GetString(UsernameKey, string.Empty);
+            string cachedToken = PlayerPrefs.GetString(TokenKey, string.Empty);
+
+            if (string.IsNullOrWhiteSpace(cachedUsername) || string.IsNullOrWhiteSpace(cachedToken))
             {
+                profile = null;
                 return false;
             }
 
-            var record = _database.Users.FirstOrDefault(u => string.Equals(u.NormalizedUsername, lastUsername, StringComparison.Ordinal));
-            if (record == null)
-            {
-                PlayerPrefs.DeleteKey(LastUserKey);
-                PlayerPrefs.Save();
-                return false;
-            }
-
-            profile = new UserProfile(record.Username);
+            profile = new UserProfile(cachedUsername, cachedToken);
             return true;
         }
 
         public void SignOut()
         {
-            PlayerPrefs.DeleteKey(LastUserKey);
-            PlayerPrefs.Save();
+            ClearSession();
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _httpClient.Dispose();
+            _disposed = true;
+        }
+
+        private async Task<AuthenticationResult> SendAuthRequestAsync(string endpoint, string username, string password, CancellationToken cancellationToken)
+        {
+            EnsureNotDisposed();
+
+            if (string.IsNullOrEmpty(endpoint))
+            {
+                return AuthenticationResult.Failure("Endpoint de autenticação não configurado.");
+            }
+
+            var requestPayload = new AuthRequest
+            {
+                username = username,
+                password = password
+            };
+
+            string json = JsonUtility.ToJson(requestPayload);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            try
+            {
+                using HttpResponseMessage response = await _httpClient
+                    .PostAsync(endpoint, content, cancellationToken)
+                    .ConfigureAwait(false);
+
+                string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var profile = ParseProfile(responseContent, username);
+                    if (profile == null || string.IsNullOrWhiteSpace(profile.AccessToken))
+                    {
+                        return AuthenticationResult.Failure("Resposta inválida do servidor de autenticação.");
+                    }
+
+                    CacheSession(profile);
+                    return AuthenticationResult.Success(profile);
+                }
+
+                string errorMessage = ExtractErrorMessage(responseContent, response.ReasonPhrase);
+                return AuthenticationResult.Failure(errorMessage);
+            }
+            catch (OperationCanceledException)
+            {
+                return AuthenticationResult.Failure("A solicitação foi cancelada. Tente novamente.");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Authentication request failed: {ex}");
+                return AuthenticationResult.Failure("Não foi possível se conectar ao servidor. Verifique sua conexão e tente novamente.");
+            }
+        }
+
+        private static UserProfile ParseProfile(string responseContent, string fallbackUsername)
+        {
+            string username = fallbackUsername;
+            string token = string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(responseContent))
+            {
+                try
+                {
+                    var parsed = JsonUtility.FromJson<AuthResponse>(responseContent);
+                    if (parsed != null)
+                    {
+                        username = !string.IsNullOrWhiteSpace(parsed.username)
+                            ? parsed.username.Trim()
+                            : !string.IsNullOrWhiteSpace(parsed.userName)
+                                ? parsed.userName.Trim()
+                                : fallbackUsername;
+
+                        token = CoalesceToken(parsed.token, parsed.accessToken, parsed.jwt, parsed.bearerToken);
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    // If the payload is not a JSON object we fall back to additional heuristics below.
+                }
+
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    string trimmed = responseContent.Trim().Trim('\"');
+                    if (!trimmed.StartsWith("{") && !trimmed.StartsWith("["))
+                    {
+                        token = trimmed;
+                    }
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return null;
+            }
+
+            return new UserProfile(username, token);
+        }
+
+        private static string CoalesceToken(params string[] candidates)
+        {
+            if (candidates == null)
+            {
+                return string.Empty;
+            }
+
+            foreach (var candidate in candidates)
+            {
+                if (!string.IsNullOrWhiteSpace(candidate))
+                {
+                    return candidate.Trim();
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static string ExtractErrorMessage(string responseContent, string fallback)
+        {
+            if (!string.IsNullOrWhiteSpace(responseContent))
+            {
+                try
+                {
+                    var error = JsonUtility.FromJson<ErrorResponse>(responseContent);
+                    if (error != null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(error.message))
+                            return error.message.Trim();
+                        if (!string.IsNullOrWhiteSpace(error.error))
+                            return error.error.Trim();
+                        if (!string.IsNullOrWhiteSpace(error.detail))
+                            return error.detail.Trim();
+                        if (!string.IsNullOrWhiteSpace(error.title))
+                            return error.title.Trim();
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    // ignored - we'll fall back to the raw string.
+                }
+
+                string plain = responseContent.Trim().Trim('\"');
+                if (!string.IsNullOrWhiteSpace(plain))
+                {
+                    return plain;
+                }
+            }
+
+            return string.IsNullOrWhiteSpace(fallback)
+                ? "Falha ao processar a solicitação de autenticação."
+                : fallback;
+        }
+
+        private static string ValidateCredentials(string username, string password, bool allowShortPassword = false)
+        {
+            string normalizedUsername = NormalizeUsername(username);
+            string safePassword = password ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(normalizedUsername))
+            {
+                return "Informe um nome de usuário.";
+            }
+
+            if (normalizedUsername.Length < 3)
+            {
+                return "O nome de usuário deve ter pelo menos 3 caracteres.";
+            }
+
+            if (string.IsNullOrEmpty(safePassword))
+            {
+                return "Informe sua senha.";
+            }
+
+            if (!allowShortPassword && safePassword.Length < 6)
+            {
+                return "A senha deve ter pelo menos 6 caracteres.";
+            }
+
+            return string.Empty;
         }
 
         private static string NormalizeUsername(string username)
         {
-            return string.IsNullOrWhiteSpace(username)
-                ? string.Empty
-                : username.Trim().ToLowerInvariant();
+            return string.IsNullOrWhiteSpace(username) ? string.Empty : username.Trim();
         }
 
-        private static UserDatabase LoadDatabase()
+        private static string NormalizeEndpoint(string endpoint)
         {
-            var json = PlayerPrefs.GetString(UsersKey, string.Empty);
-            if (string.IsNullOrEmpty(json))
-            {
-                return new UserDatabase();
-            }
-
-            try
-            {
-                var database = JsonUtility.FromJson<UserDatabase>(json);
-                return database ?? new UserDatabase();
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"Falha ao carregar usuários salvos: {ex.Message}. Reiniciando base local.");
-                return new UserDatabase();
-            }
+            return string.IsNullOrWhiteSpace(endpoint) ? string.Empty : endpoint.Trim().Trim('/');
         }
 
-        private void SaveDatabase()
+        private static HttpClient CreateHttpClient(ApiConfiguration configuration)
         {
-            var json = JsonUtility.ToJson(_database);
-            PlayerPrefs.SetString(UsersKey, json);
+            HttpMessageHandler handler = configuration.IgnoreCertificateErrors
+                ? new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+                }
+                : new HttpClientHandler();
+
+            var client = new HttpClient(handler, disposeHandler: true)
+            {
+                BaseAddress = configuration.BaseUri,
+                Timeout = configuration.Timeout
+            };
+
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            return client;
+        }
+
+        private static void CacheSession(UserProfile profile)
+        {
+            PlayerPrefs.SetString(UsernameKey, profile?.Username ?? string.Empty);
+            PlayerPrefs.SetString(TokenKey, profile?.AccessToken ?? string.Empty);
             PlayerPrefs.Save();
         }
 
-        private static string GenerateSalt()
+        private static void ClearSession()
         {
-            byte[] saltBytes = new byte[32];
-            using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(saltBytes);
-            return Convert.ToBase64String(saltBytes);
+            PlayerPrefs.DeleteKey(UsernameKey);
+            PlayerPrefs.DeleteKey(TokenKey);
+            PlayerPrefs.Save();
         }
 
-        private static string HashPassword(string password, string salt)
+        private void EnsureNotDisposed()
         {
-            using var sha = SHA256.Create();
-            var combined = Encoding.UTF8.GetBytes(password + salt);
-            var hashBytes = sha.ComputeHash(combined);
-            return Convert.ToBase64String(hashBytes);
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(AuthenticationService));
+            }
         }
     }
 }

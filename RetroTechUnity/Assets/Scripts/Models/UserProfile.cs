@@ -8,10 +8,12 @@ namespace RetroTech
     public class UserProfile
     {
         public string Username { get; }
+        public string AccessToken { get; }
 
-        public UserProfile(string username)
+        public UserProfile(string username, string accessToken = null)
         {
             Username = username;
+            AccessToken = accessToken ?? string.Empty;
         }
 
         public override string ToString()

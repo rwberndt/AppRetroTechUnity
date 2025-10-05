@@ -1,16 +1,18 @@
+using System.Threading;
+using System.Threading.Tasks;
 using RetroTech;
 
 namespace RetroTech.Services
 {
     /// <summary>
     /// Abstraction over the authentication workflow used by the RetroTech prototype.  The
-    /// implementation included in the project stores credentials locally using PlayerPrefs so
-    /// it can run fully offline while mimicking a cloud backed flow.
+    /// implementation shipped with the project delegates to the remote API in order to
+    /// exchange credentials for a JWT that is later reused across the app.
     /// </summary>
     public interface IAuthenticationService
     {
-        bool TryRegister(string username, string password, out string errorMessage);
-        bool TrySignIn(string username, string password, out UserProfile profile, out string errorMessage);
+        Task<AuthenticationResult> RegisterAsync(string username, string password, CancellationToken cancellationToken = default);
+        Task<AuthenticationResult> SignInAsync(string username, string password, CancellationToken cancellationToken = default);
         bool TryAutoSignIn(out UserProfile profile);
         void SignOut();
     }

@@ -53,6 +53,20 @@ namespace RetroTech.Services
             return _serializer.DeserializeCollection<T>(content);
         }
 
+        public void SetBearerToken(string token)
+        {
+            EnsureNotDisposed();
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = null;
+            }
+            else
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+        }
+
         public void Dispose()
         {
             if (_disposed)

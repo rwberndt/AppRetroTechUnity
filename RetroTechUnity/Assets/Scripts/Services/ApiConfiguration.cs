@@ -19,6 +19,8 @@ namespace RetroTech.Services
         public string CategoriesEndpoint { get; }
         public string PiecesEndpoint { get; }
         public string QuizEndpoint { get; }
+        public string AuthLoginEndpoint { get; }
+        public string AuthRegisterEndpoint { get; }
 
         private ApiConfiguration(ApiConfigurationData data)
         {
@@ -38,6 +40,8 @@ namespace RetroTech.Services
             CategoriesEndpoint = NormalizeEndpoint(data.endpoints?.categories, "categories");
             PiecesEndpoint = NormalizeEndpoint(data.endpoints?.pieces, "pieces");
             QuizEndpoint = NormalizeEndpoint(data.endpoints?.quiz, "quiz");
+            AuthLoginEndpoint = NormalizeEndpoint(data.endpoints?.authLogin, "auth/login");
+            AuthRegisterEndpoint = NormalizeEndpoint(data.endpoints?.authRegister, "auth/register");
         }
 
         public static ApiConfiguration Load()
@@ -97,6 +101,8 @@ namespace RetroTech.Services
             public string categories = "categories";
             public string pieces = "pieces";
             public string quiz = "quiz";
+            public string authLogin = "auth/login";
+            public string authRegister = "auth/register";
         }
     }
 }
