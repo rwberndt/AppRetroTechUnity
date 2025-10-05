@@ -53,6 +53,11 @@ namespace RetroTech
         private CategoriesPage _categoriesPage;
         private QuizPage _quizPage;
 
+        private LoginPage _loginPage;
+        private IAuthenticationService _authenticationService;
+        private UserProfile _currentUser;
+        private bool _contentInitialized;
+
         [RuntimeInitializeOnLoadMethod]
         private static void InitializeOnLoad()
         {
@@ -74,19 +79,34 @@ namespace RetroTech
         {
             try
             {
-                await InitializeContentAsync();
-                CreatePages();
-                CreateNavigationBar();
-                SwitchPage(0);
+                CreateLoginPage();
+
+                if (_authenticationService != null && _authenticationService.TryAutoSignIn(out var profile))
+                {
+                    await HandleAuthenticatedAsync(profile);
+                }
+                else
+                {
+                    _loginPage?.ResetState();
+                    _loginPage?.ShowLogin();
+                }
             }
             catch (System.Exception ex)
             {
                 Debug.LogError($"Failed to initialize RetroTech content. {ex}");
+                if (_loginPage != null)
+                {
+                    _loginPage.SetBusy(false);
+                    _loginPage.ShowMessage("Não foi possível iniciar o aplicativo. Tente novamente.", true);
+                    _loginPage.ShowLogin();
+                }
             }
         }
 
         private void InitializeServices()
         {
+            _authenticationService = new AuthenticationService();
+
             try
             {
                 var configuration = ApiConfiguration.Load();
@@ -104,6 +124,126 @@ namespace RetroTech
         private async Task InitializeContentAsync()
         {
             await SampleData.InitializeAsync(_contentService);
+        }
+
+        // ========= Authentication =========
+
+        private void CreateLoginPage()
+        {
+            if (_loginPage != null)
+            {
+                return;
+            }
+
+            var loginPageContainer = new GameObject("LoginPageContainer");
+            loginPageContainer.transform.SetParent(transform, false);
+            _loginPage = loginPageContainer.AddComponent<LoginPage>();
+            var loginSurface = _loginPage.CreatePage(_canvas.transform, BuildPrototypeSurface);
+            loginSurface.transform.SetAsLastSibling();
+
+            _loginPage.OnLoginRequested += HandleLoginRequested;
+            _loginPage.OnRegisterRequested += HandleRegisterRequested;
+            _loginPage.ResetState();
+        }
+
+        private async void HandleLoginRequested(string email, string password)
+        {
+            if (_authenticationService == null)
+            {
+                return;
+            }
+
+            _loginPage?.SetBusy(true);
+            _loginPage?.ShowMessage(string.Empty, false);
+
+            if (_authenticationService.TrySignIn(email, password, out var profile, out var error))
+            {
+                await HandleAuthenticatedAsync(profile);
+            }
+            else
+            {
+                _loginPage?.SetBusy(false);
+                _loginPage?.ClearPasswords();
+                _loginPage?.ShowMessage(error, true);
+            }
+        }
+
+        private async void HandleRegisterRequested(string displayName, string email, string password)
+        {
+            if (_authenticationService == null)
+            {
+                return;
+            }
+
+            _loginPage?.SetBusy(true);
+            _loginPage?.ShowMessage(string.Empty, false);
+
+            if (_authenticationService.TryRegister(displayName, email, password, out var error))
+            {
+                if (_authenticationService.TrySignIn(email, password, out var profile, out var signInError))
+                {
+                    await HandleAuthenticatedAsync(profile);
+                }
+                else
+                {
+                    _loginPage?.SetBusy(false);
+                    _loginPage?.ClearPasswords();
+                    _loginPage?.ShowMessage(signInError, true);
+                }
+            }
+            else
+            {
+                _loginPage?.SetBusy(false);
+                _loginPage?.ClearPasswords();
+                _loginPage?.ShowMessage(error, true);
+            }
+        }
+
+        private async Task HandleAuthenticatedAsync(UserProfile profile)
+        {
+            _currentUser = profile;
+
+            try
+            {
+                await EnsureContentInitializedAsync();
+                _loginPage?.ClearPasswords();
+                _loginPage?.SetBusy(false);
+                _loginPage?.ShowMessage(string.Empty, false);
+                _loginPage?.Hide();
+
+                _activeTab = 0;
+                SwitchPage(_activeTab);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Failed to load content after authentication. {ex}");
+                _loginPage?.SetBusy(false);
+                _loginPage?.ShowMessage("Não foi possível carregar o conteúdo. Tente novamente.", true);
+                _loginPage?.ShowLogin();
+            }
+        }
+
+        private async Task EnsureContentInitializedAsync()
+        {
+            if (_contentInitialized)
+            {
+                if (_pages == null || _pages.Length == 0)
+                {
+                    CreatePages();
+                }
+
+                if (_navBar == null)
+                {
+                    CreateNavigationBar();
+                }
+
+                return;
+            }
+
+            await InitializeContentAsync();
+            CreatePages();
+            CreateNavigationBar();
+            _contentInitialized = true;
         }
 
         // ========= Canvas & Input =========
@@ -392,6 +532,11 @@ namespace RetroTech
 
         private void RefreshTabsVisual()
         {
+            if (_navBar == null)
+            {
+                return;
+            }
+
             var row = _navBar.transform.Find("Background/IconsRow");
             if (!row) return;
 
@@ -604,7 +749,12 @@ namespace RetroTech
        
         public void SwitchPage(int index)
         {
-            if (_activeTab == 3 && index != 3) 
+            if (_pages == null || index < 0 || index >= _pages.Length)
+            {
+                return;
+            }
+
+            if (_activeTab == 3 && index != 3)
             {
                 StopScanning();
             }
