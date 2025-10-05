@@ -1,5 +1,5 @@
 {
-  "baseUrl": "https://localhost:5001/api",
+  "baseUrl": "http://localhost:8080/api",
   "timeoutSeconds": 30,
   "ignoreCertificateErrors": true,
   "endpoints": {

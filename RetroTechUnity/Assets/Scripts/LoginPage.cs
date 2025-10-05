@@ -232,7 +232,7 @@ namespace RetroTech
             lrt.offsetMin = new Vector2(16, 12);
             lrt.offsetMax = new Vector2(-16, -12);
 
-            return (button, background, labelTMP);
+            return (button, background, (TextMeshProUGUI)labelTMP);
         }
 
         private void CreateForms()
@@ -391,7 +391,7 @@ namespace RetroTech
 
         private void CreateMessageLabel()
         {
-            _messageLabel = UiKit.TMP(_contentContainer, string.Empty, 26, successColor, TextAlignmentOptions.Left);
+            _messageLabel =(TextMeshProUGUI) UiKit.TMP(_contentContainer, string.Empty, 26, successColor, TextAlignmentOptions.Left);
             _messageLabel.gameObject.SetActive(false);
             _messageLabel.margin = new Vector4(0, 20, 0, 0);
         }
