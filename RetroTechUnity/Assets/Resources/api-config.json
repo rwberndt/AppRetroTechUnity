@@ -3,8 +3,8 @@
   "timeoutSeconds": 30,
   "ignoreCertificateErrors": true,
   "endpoints": {
-    "categories": "categorias",
-    "pieces": "pecas",
+    "categories": "categories",
+    "pieces": "pieces",
     "quiz": "quiz"
   }
 }

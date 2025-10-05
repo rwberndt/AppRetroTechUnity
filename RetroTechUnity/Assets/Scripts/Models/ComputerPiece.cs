@@ -11,9 +11,9 @@ namespace RetroTech
     [System.Serializable]
     public class ComputerPiece
     {
-        public string Id;
+        public long Id;
         public string Name;
-        public string Category;
+        public long CategoryId;
         public int YearManufactured;
         public string Manufacturer;
         public string Description;
@@ -22,9 +22,9 @@ namespace RetroTech
         public List<string> Specifications;
 
         public ComputerPiece(
-            string id,
+            long id,
             string name,
-            string category,
+            long categoryId,
             int yearManufactured,
             string manufacturer,
             string description,
@@ -34,7 +34,7 @@ namespace RetroTech
         {
             Id = id;
             Name = name;
-            Category = category;
+            CategoryId = categoryId;
             YearManufactured = yearManufactured;
             Manufacturer = manufacturer;
             Description = description;

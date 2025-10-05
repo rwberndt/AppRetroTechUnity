@@ -11,20 +11,20 @@ namespace RetroTech
     [System.Serializable]
     public class QuizQuestion
     {
-        public string Id;
+        public long Id;
         public string Question;
         public List<string> Options;
         public int CorrectAnswerIndex;
         public string Explanation;
-        public string RelatedPieceId;
+        public long? RelatedPieceId;
 
         public QuizQuestion(
-            string id,
+            long id,
             string question,
             List<string> options,
             int correctAnswerIndex,
             string explanation,
-            string relatedPieceId)
+            long? relatedPieceId = null)
         {
             Id = id;
             Question = question;

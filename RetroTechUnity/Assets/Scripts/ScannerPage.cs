@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using System.Globalization;
 #if ZXING_PRESENT
 using ZXing;
 using ZXing.Common;
@@ -447,31 +448,35 @@ namespace RetroTech
         /// </summary>
         private ComputerPiece FindPieceFromQRData(string qrData)
         {
-            if (string.IsNullOrEmpty(qrData)) return null;
+            if (string.IsNullOrWhiteSpace(qrData))
+            {
+                return null;
+            }
 
-            // Processar diferentes formatos de QR Code
-            string pieceId = qrData;
+            string parsedValue = qrData.Trim();
 
             // Se é uma URL, extrair o ID da peça
             const string urlPrefix = "https://retro.tech/piece/";
-            if (qrData.StartsWith(urlPrefix))
+            if (parsedValue.StartsWith(urlPrefix, System.StringComparison.OrdinalIgnoreCase))
             {
-                pieceId = qrData.Substring(urlPrefix.Length);
+                parsedValue = parsedValue.Substring(urlPrefix.Length);
             }
 
-            // Procurar peça pelo ID
-            foreach (var piece in SampleData.Pieces)
+            if (long.TryParse(parsedValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out long pieceId))
             {
-                if (piece.Id.Equals(pieceId, System.StringComparison.OrdinalIgnoreCase))
+                foreach (var piece in SampleData.Pieces)
                 {
-                    return piece;
+                    if (piece.Id == pieceId)
+                    {
+                        return piece;
+                    }
                 }
             }
 
             // Se não encontrou por ID, tentar por nome
             foreach (var piece in SampleData.Pieces)
             {
-                if (piece.Name.Equals(qrData, System.StringComparison.OrdinalIgnoreCase))
+                if (piece.Name.Equals(parsedValue, System.StringComparison.OrdinalIgnoreCase))
                 {
                     return piece;
                 }

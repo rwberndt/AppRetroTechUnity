@@ -12,12 +12,12 @@ namespace RetroTech
     [System.Serializable]
     public class Category
     {
-        public string Id;
+        public long Id;
         public string Name;
         public List<string> Subcategories;
         public bool IsExpanded;
 
-        public Category(string id, string name, List<string> subcategories, bool isExpanded = false)
+        public Category(long id, string name, List<string> subcategories, bool isExpanded = false)
         {
             Id = id;
             Name = name;
