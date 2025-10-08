@@ -89,8 +89,8 @@ namespace RetroTech
                 layout.childAlignment = TextAnchor.UpperLeft;
                 layout.childControlWidth = true;
                 layout.childForceExpandWidth = true;
-                layout.childControlHeight = true;
-                layout.childForceExpandHeight = true;
+                layout.childControlHeight = false;
+                layout.childForceExpandHeight = false;
             }
         }
 
@@ -99,7 +99,8 @@ namespace RetroTech
         /// </summary>
         private RectTransform CreateContentPanel()
         {
-            var panelGO = new GameObject("HomePanel", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
+            var panelGO = new GameObject("HomePanel", typeof(RectTransform), typeof(Image),
+                typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             panelGO.transform.SetParent(_contentContainer, false);
 
             var rect = panelGO.GetComponent<RectTransform>();
@@ -128,9 +129,13 @@ namespace RetroTech
             layout.childControlHeight = false;
             layout.childForceExpandHeight = false;
 
+            var fitter = panelGO.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
             var layoutElement = panelGO.AddComponent<LayoutElement>();
             layoutElement.minHeight = 0f;
-            layoutElement.flexibleHeight = 1f;
+            layoutElement.flexibleHeight = 0f;
 
             return rect;
         }
@@ -144,6 +149,7 @@ namespace RetroTech
                 TextAlignmentOptions.Left, bold: true);
             titleTMP.name = "Title";
             titleTMP.enableWordWrapping = false;
+            ApplyBottomSpacing(titleTMP, 12f);
         }
 
         /// <summary>
@@ -155,6 +161,7 @@ namespace RetroTech
                 TextMain, TextAlignmentOptions.Left, bold: true);
             welcomeTMP.name = "WelcomeTitle";
             welcomeTMP.enableWordWrapping = false;
+            ApplyBottomSpacing(welcomeTMP);
         }
 
         /// <summary>
@@ -168,6 +175,8 @@ namespace RetroTech
             var descTMP = UiKit.TMP(_contentPanel, descriptionText, (int)descriptionFontSize,
                 TextMuted, TextAlignmentOptions.Left);
             descTMP.name = "MainDescription";
+            descTMP.enableWordWrapping = true;
+            ApplyBottomSpacing(descTMP, 18f);
         }
 
         /// <summary>
@@ -179,6 +188,7 @@ namespace RetroTech
             var objTitleTMP = UiKit.TMP(_contentPanel, "Objetivo do aplicativo", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             objTitleTMP.name = "ObjectiveTitle";
+            ApplyBottomSpacing(objTitleTMP, 6f);
 
             // Descrição do objetivo
             var objectiveText = "Facilitar o acesso e a compreensão do acervo histórico de peças de " +
@@ -187,6 +197,8 @@ namespace RetroTech
             var objDescTMP = UiKit.TMP(_contentPanel, objectiveText, (int)sectionTextFontSize,
                 TextMuted, TextAlignmentOptions.Left);
             objDescTMP.name = "ObjectiveDescription";
+            objDescTMP.enableWordWrapping = true;
+            ApplyBottomSpacing(objDescTMP, 18f);
         }
 
         /// <summary>
@@ -198,17 +210,23 @@ namespace RetroTech
             var featTitleTMP = UiKit.TMP(_contentPanel, "Principais funcionalidades", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             featTitleTMP.name = "FeaturesTitle";
+            ApplyBottomSpacing(featTitleTMP, 6f);
 
             // Lista de funcionalidades
-            var featuresText = "Navegação por categorias de peças\n" +
-                             "Linha do tempo interativa\n" +
-                             "Leitura de QR Codes\n" +
-                             "Detalhes e curiosidades\n" +
-                             "Quiz educativo";
+            var featuresText = string.Join("\n", new[]
+            {
+                "• Navegação por categorias de peças",
+                "• Linha do tempo interativa",
+                "• Leitura de QR Codes",
+                "• Detalhes e curiosidades",
+                "• Quiz educativo"
+            });
 
             var featDescTMP = UiKit.TMP(_contentPanel, featuresText, (int)sectionTextFontSize,
                 TextMuted, TextAlignmentOptions.Left);
             featDescTMP.name = "FeaturesDescription";
+            featDescTMP.enableWordWrapping = true;
+            ApplyBottomSpacing(featDescTMP, 18f);
         }
 
         /// <summary>
@@ -220,6 +238,7 @@ namespace RetroTech
             var teamTitleTMP = UiKit.TMP(_contentPanel, "Equipe de desenvolvimento", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             teamTitleTMP.name = "TeamTitle";
+            ApplyBottomSpacing(teamTitleTMP, 6f);
 
             // Informações da equipe
             var teamText = "Integrante: Aruto Gherono de Souza dos Santos - Sistemas de Informação\n" +
@@ -229,6 +248,8 @@ namespace RetroTech
             var teamDescTMP = UiKit.TMP(_contentPanel, teamText, (int)sectionTextFontSize,
                 TextMuted, TextAlignmentOptions.Left);
             teamDescTMP.name = "TeamDescription";
+            teamDescTMP.enableWordWrapping = true;
+            ApplyBottomSpacing(teamDescTMP, 26f);
         }
 
         /// <summary>
@@ -276,6 +297,16 @@ namespace RetroTech
             buttonShadow.useGraphicAlpha = true;
 
             buttonCard.name = "CTAButton";
+        }
+
+        private void ApplyBottomSpacing(TextMeshProUGUI tmp, float margin = 12f)
+        {
+            if (tmp == null)
+            {
+                return;
+            }
+
+            tmp.margin = new Vector4(tmp.margin.x, tmp.margin.y, tmp.margin.z, margin);
         }
 
         /// <summary>
