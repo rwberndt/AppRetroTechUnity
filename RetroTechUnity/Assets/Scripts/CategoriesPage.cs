@@ -18,16 +18,20 @@ namespace RetroTech
         [SerializeField] private string pageTitle = "CategoriesPage";
 
         [Header("Visual Configuration")]
-        [SerializeField] private float categoryHeaderHeight = 56f;
-        [SerializeField] private float subcategoryItemHeight = 48f;
-        [SerializeField] private int categoryTitleFontSize = 18;
-        [SerializeField] private int subcategoryFontSize = 18;
+        [SerializeField] private float categoryHeaderHeight = 68f;
+        [SerializeField] private float subcategoryItemHeight = 56f;
+        [SerializeField] private int categoryTitleFontSize = 26;
+        [SerializeField] private int subcategoryFontSize = 20;
 
         // Colors
-        private readonly Color HeaderColor = new Color32(255, 255, 255, 38);
-        private readonly Color SubcategoryColor = new Color32(255, 255, 255, 20);
-        private readonly Color TextColor = Color.white;
-        private readonly Color ChevronColor = new Color32(120, 100, 170, 255);
+        private readonly Color HeaderGradientTop = new Color32(255, 255, 255, 70);
+        private readonly Color HeaderGradientBottom = new Color32(255, 255, 255, 25);
+        private readonly Color PanelGradientTop = new Color32(189, 164, 255, 255);
+        private readonly Color PanelGradientBottom = new Color32(255, 124, 208, 255);
+        private readonly Color SubcategoryColor = new Color32(255, 255, 255, 38);
+        private readonly Color PageTitleColor = new Color32(248, 244, 255, 255);
+        private readonly Color TextColor = new Color32(252, 247, 255, 255);
+        private readonly Color ChevronColor = new Color32(255, 255, 255, 255);
         private readonly Color ModalOverlayColor = new Color(0, 0, 0, 0.7f);
         private readonly Color ModalPanelColor = new Color(1f, 1f, 1f, 0.95f);
         private readonly Color ModalTextColor = new Color32(50, 50, 70, 255);
@@ -39,8 +43,11 @@ namespace RetroTech
         private readonly Dictionary<long, bool> _categoryExpanded = new Dictionary<long, bool>();
         private GameObject _pageObject;
         private RectTransform _contentContainer;
+        private RectTransform _categoryListContainer;
         private Canvas _parentCanvas;
         private GameObject _openModal;
+        private Sprite _panelBackgroundSprite;
+        private Sprite _headerBackgroundSprite;
 
         /// <summary>
         /// Cria e configura a página de categorias
@@ -56,9 +63,91 @@ namespace RetroTech
             _pageObject = surface.gameObject;
             _contentContainer = content;
 
+            ConfigureContentLayout();
+            CreatePageHeader();
+            _categoryListContainer = CreateCategoriesPanel();
             CreateCategoriesContent();
 
             return _pageObject;
+        }
+
+        /// <summary>
+        /// Ajusta o layout padrão recebido da superfície para combinar com o protótipo.
+        /// </summary>
+        private void ConfigureContentLayout()
+        {
+            if (_contentContainer == null)
+            {
+                return;
+            }
+
+            var layout = _contentContainer.GetComponent<VerticalLayoutGroup>();
+            if (layout != null)
+            {
+                layout.padding = new RectOffset(32, 32, 52, 52);
+                layout.spacing = 28f;
+                layout.childAlignment = TextAnchor.UpperLeft;
+            }
+        }
+
+        /// <summary>
+        /// Cria o cabeçalho principal da página com o título "RetroTech".
+        /// </summary>
+        private void CreatePageHeader()
+        {
+            var title = UiKit.TMP(_contentContainer, "RetroTech", 48, PageTitleColor,
+                TextAlignmentOptions.Left, bold: true);
+            title.name = "PageTitle";
+            title.enableWordWrapping = false;
+
+            var rect = title.rectTransform;
+            rect.anchorMin = new Vector2(0, 1);
+            rect.anchorMax = new Vector2(1, 1);
+            rect.offsetMin = new Vector2(8, 0);
+            rect.offsetMax = new Vector2(-8, 0);
+
+            var layout = title.gameObject.AddComponent<LayoutElement>();
+            layout.preferredHeight = 64f;
+        }
+
+        /// <summary>
+        /// Cria o painel que envolve a lista de categorias, aplicando gradiente e sombra.
+        /// </summary>
+        /// <returns>RectTransform do painel para adicionar as categorias.</returns>
+        private RectTransform CreateCategoriesPanel()
+        {
+            var panelGO = new GameObject("CategoriesPanel", typeof(RectTransform), typeof(Image),
+                typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+            panelGO.transform.SetParent(_contentContainer, false);
+
+            var panelRT = panelGO.GetComponent<RectTransform>();
+            panelRT.anchorMin = new Vector2(0, 1);
+            panelRT.anchorMax = new Vector2(1, 1);
+            panelRT.pivot = new Vector2(0.5f, 1f);
+            panelRT.offsetMin = Vector2.zero;
+            panelRT.offsetMax = Vector2.zero;
+
+            var panelImage = panelGO.GetComponent<Image>();
+            panelImage.sprite = EnsureRoundedGradient(ref _panelBackgroundSprite, PanelGradientTop, PanelGradientBottom, 46f, 512, 1536);
+            panelImage.type = Image.Type.Simple;
+            panelImage.color = Color.white;
+
+            var panelShadow = panelGO.AddComponent<Shadow>();
+            panelShadow.effectColor = new Color(0f, 0f, 0f, 0.25f);
+            panelShadow.effectDistance = new Vector2(0f, 12f);
+            panelShadow.useGraphicAlpha = true;
+
+            var layout = panelGO.GetComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(24, 24, 32, 32);
+            layout.spacing = 18f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            panelGO.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            return panelRT;
         }
 
         /// <summary>
@@ -66,6 +155,11 @@ namespace RetroTech
         /// </summary>
         private void CreateCategoriesContent()
         {
+            if (_categoryListContainer == null)
+            {
+                return;
+            }
+
             foreach (Category category in SampleData.Categories)
             {
                 CreateCategorySection(category);
@@ -79,10 +173,10 @@ namespace RetroTech
         private void CreateCategorySection(Category category)
         {
             // Criar header da categoria
-            var (header, chevron) = CreateCategoryHeader(category.Name);
+            var (header, chevron) = CreateCategoryHeader(_categoryListContainer, category.Name);
 
             // Criar lista de subcategorias
-            var subList = CreateSubcategoryList(category);
+            var subList = CreateSubcategoryList(_categoryListContainer, category);
 
             // Configurar estado inicial
             if (!_categoryExpanded.ContainsKey(category.Id))
@@ -102,11 +196,20 @@ namespace RetroTech
         /// </summary>
         /// <param name="categoryName">Nome da categoria</param>
         /// <returns>Tupla com o GameObject do header e Transform do chevron</returns>
-        private (GameObject header, RectTransform chevron) CreateCategoryHeader(string categoryName)
+        private (GameObject header, RectTransform chevron) CreateCategoryHeader(Transform parent, string categoryName)
         {
-            var headerCard = UiKit.CreateCard(_contentContainer.transform, new Vector2(0, categoryHeaderHeight),
-                HeaderColor, 16f, glass: true);
+            var headerCard = UiKit.CreateCard(parent, new Vector2(0, categoryHeaderHeight),
+                Color.white, 26f, glass: true);
             var header = headerCard.gameObject;
+
+            headerCard.sprite = EnsureRoundedGradient(ref _headerBackgroundSprite, HeaderGradientTop, HeaderGradientBottom, 26f);
+            headerCard.type = Image.Type.Simple;
+            headerCard.color = Color.white;
+
+            var shadow = header.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.2f);
+            shadow.effectDistance = new Vector2(0f, 6f);
+            shadow.useGraphicAlpha = true;
 
             // Adicionar botão ao header
             var btn = header.GetComponent<Button>() ?? header.AddComponent<Button>();
@@ -114,8 +217,8 @@ namespace RetroTech
 
             // Configurar cores do botão
             var colors = btn.colors;
-            colors.highlightedColor = new Color(1, 1, 1, 0.1f);
-            colors.pressedColor = new Color(1, 1, 1, 0.2f);
+            colors.highlightedColor = new Color(1, 1, 1, 0.15f);
+            colors.pressedColor = new Color(1, 1, 1, 0.25f);
             btn.colors = colors;
 
             // Adicionar título
@@ -125,8 +228,8 @@ namespace RetroTech
             titleTMP.overflowMode = TMPro.TextOverflowModes.Overflow;
             titleTMP.rectTransform.anchorMin = new Vector2(0, 0);
             titleTMP.rectTransform.anchorMax = new Vector2(1, 1);
-            titleTMP.rectTransform.offsetMin = new Vector2(16, 8);
-            titleTMP.rectTransform.offsetMax = new Vector2(-44, -8);
+            titleTMP.rectTransform.offsetMin = new Vector2(24, 10);
+            titleTMP.rectTransform.offsetMax = new Vector2(-56, -10);
             titleTMP.raycastTarget = false;
 
             // Criar chevron (seta)
@@ -178,20 +281,22 @@ namespace RetroTech
         /// </summary>
         /// <param name="category">Categoria pai</param>
         /// <returns>GameObject da lista de subcategorias</returns>
-        private GameObject CreateSubcategoryList(Category category)
+        private GameObject CreateSubcategoryList(Transform parent, Category category)
         {
             var subList = new GameObject($"SubList_{category.Id.ToString(CultureInfo.InvariantCulture)}", typeof(RectTransform),
                 typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-            subList.transform.SetParent(_contentContainer, false);
+            subList.transform.SetParent(parent, false);
 
             var subRT = subList.GetComponent<RectTransform>();
             subRT.anchorMin = new Vector2(0, 1);
             subRT.anchorMax = new Vector2(1, 1);
             subRT.pivot = new Vector2(0.5f, 1);
+            subRT.offsetMin = Vector2.zero;
+            subRT.offsetMax = Vector2.zero;
 
             var vlg = subList.GetComponent<VerticalLayoutGroup>();
-            vlg.padding = new RectOffset(16, 0, 8, 8);
-            vlg.spacing = 8;
+            vlg.padding = new RectOffset(24, 16, 6, 12);
+            vlg.spacing = 12;
             vlg.childControlWidth = true;
             vlg.childForceExpandWidth = true;
             vlg.childControlHeight = true;
@@ -217,7 +322,7 @@ namespace RetroTech
         private void CreateSubcategoryItem(Transform parent, long categoryId, string subcategoryName)
         {
             var subCard = UiKit.CreateCard(parent, new Vector2(0, subcategoryItemHeight),
-                SubcategoryColor, 14f, glass: true);
+                SubcategoryColor, 20f, glass: true);
 
             // Adicionar botão
             var btn = subCard.gameObject.GetComponent<Button>() ?? subCard.gameObject.AddComponent<Button>();
@@ -225,8 +330,8 @@ namespace RetroTech
 
             // Configurar cores do botão
             var colors = btn.colors;
-            colors.highlightedColor = new Color(1, 1, 1, 0.15f);
-            colors.pressedColor = new Color(1, 1, 1, 0.25f);
+            colors.highlightedColor = new Color(1, 1, 1, 0.2f);
+            colors.pressedColor = new Color(1, 1, 1, 0.3f);
             btn.colors = colors;
 
             // Adicionar texto
@@ -236,8 +341,8 @@ namespace RetroTech
             txt.overflowMode = TMPro.TextOverflowModes.Ellipsis;
             txt.rectTransform.anchorMin = Vector2.zero;
             txt.rectTransform.anchorMax = Vector2.one;
-            txt.rectTransform.offsetMin = new Vector2(20, 8);
-            txt.rectTransform.offsetMax = new Vector2(-20, -8);
+            txt.rectTransform.offsetMin = new Vector2(20, 10);
+            txt.rectTransform.offsetMax = new Vector2(-20, -10);
             txt.raycastTarget = false;
 
             // Configurar clique
@@ -245,6 +350,102 @@ namespace RetroTech
             btn.onClick.AddListener(() => ShowPiecesModal(categoryId, capturedSubcategory));
 
             subCard.name = $"Subcategory_{subcategoryName}";
+        }
+
+        /// <summary>
+        /// Cria (ou reutiliza) um sprite de gradiente arredondado.
+        /// </summary>
+        /// <param name="cache">Referência para armazenar o sprite gerado.</param>
+        /// <param name="top">Cor do topo do gradiente.</param>
+        /// <param name="bottom">Cor da base do gradiente.</param>
+        /// <param name="radius">Raio da borda arredondada.</param>
+        /// <param name="width">Largura da textura gerada.</param>
+        /// <param name="height">Altura da textura gerada.</param>
+        /// <returns>Sprite com gradiente vertical e cantos arredondados.</returns>
+        private Sprite EnsureRoundedGradient(ref Sprite cache, Color top, Color bottom, float radius, int width = 512, int height = 512)
+        {
+            if (cache != null)
+            {
+                return cache;
+            }
+
+            cache = CreateRoundedGradientSprite(top, bottom, radius, width, height);
+            return cache;
+        }
+
+        /// <summary>
+        /// Gera dinamicamente uma textura com gradiente vertical e cantos arredondados.
+        /// </summary>
+        /// <param name="top">Cor do topo do gradiente.</param>
+        /// <param name="bottom">Cor da base do gradiente.</param>
+        /// <param name="radius">Raio das bordas arredondadas.</param>
+        /// <param name="width">Largura da textura gerada.</param>
+        /// <param name="height">Altura da textura gerada.</param>
+        /// <returns>Sprite configurado com o gradiente.</returns>
+        private Sprite CreateRoundedGradientSprite(Color top, Color bottom, float radius, int width, int height)
+        {
+            width = Mathf.Max(8, width);
+            height = Mathf.Max(8, height);
+            radius = Mathf.Clamp(radius, 0f, Mathf.Min(width, height) * 0.5f);
+
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
+            {
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+
+            Color[] pixels = new Color[width * height];
+            float radiusSq = radius * radius;
+            float rightLimit = width - radius;
+            float topLimit = height - radius;
+
+            for (int y = 0; y < height; y++)
+            {
+                float t = y / (height - 1f);
+                Color rowColor = Color.Lerp(bottom, top, t);
+
+                for (int x = 0; x < width; x++)
+                {
+                    bool inside = true;
+                    float px = x + 0.5f;
+                    float py = y + 0.5f;
+
+                    if (x < radius && y < radius)
+                    {
+                        float dx = radius - px;
+                        float dy = radius - py;
+                        inside = dx * dx + dy * dy <= radiusSq;
+                    }
+                    else if (x >= rightLimit && y < radius)
+                    {
+                        float dx = px - rightLimit;
+                        float dy = radius - py;
+                        inside = dx * dx + dy * dy <= radiusSq;
+                    }
+                    else if (x < radius && y >= topLimit)
+                    {
+                        float dx = radius - px;
+                        float dy = py - topLimit;
+                        inside = dx * dx + dy * dy <= radiusSq;
+                    }
+                    else if (x >= rightLimit && y >= topLimit)
+                    {
+                        float dx = px - rightLimit;
+                        float dy = py - topLimit;
+                        inside = dx * dx + dy * dy <= radiusSq;
+                    }
+
+                    pixels[y * width + x] = inside ? rowColor : new Color(0f, 0f, 0f, 0f);
+                }
+            }
+
+            texture.SetPixels(pixels);
+            texture.Apply();
+
+            var sprite = Sprite.Create(texture, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0.5f), 100f);
+            sprite.name = $"RoundedGradient_{width}x{height}";
+            return sprite;
         }
 
         /// <summary>
@@ -536,7 +737,8 @@ namespace RetroTech
                 _categoryExpanded[categoryId] = expand;
 
                 // Encontrar e atualizar a UI se necessário
-                var subListGO = _contentContainer?.Find($"SubList_{categoryId.ToString(CultureInfo.InvariantCulture)}")?.gameObject;
+                var searchRoot = (Transform)_categoryListContainer ?? _contentContainer;
+                var subListGO = searchRoot?.Find($"SubList_{categoryId.ToString(CultureInfo.InvariantCulture)}")?.gameObject;
                 if (subListGO != null)
                 {
                     subListGO.SetActive(expand);
