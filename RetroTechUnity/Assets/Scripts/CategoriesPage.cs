@@ -87,6 +87,10 @@ namespace RetroTech
                 layout.padding = new RectOffset(32, 32, 52, 52);
                 layout.spacing = 28f;
                 layout.childAlignment = TextAnchor.UpperLeft;
+                layout.childControlHeight = true;
+                layout.childForceExpandHeight = true;
+                layout.childControlWidth = true;
+                layout.childForceExpandWidth = true;
             }
         }
 
@@ -145,7 +149,13 @@ namespace RetroTech
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            panelGO.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var fitter = panelGO.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+            var layoutElement = panelGO.AddComponent<LayoutElement>();
+            layoutElement.minHeight = 0f;
+            layoutElement.flexibleHeight = 1f;
 
             return panelRT;
         }
