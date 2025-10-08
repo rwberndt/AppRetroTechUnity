@@ -26,8 +26,12 @@ namespace RetroTech
         // Colors
         private readonly Color HeaderColor = new Color32(255, 255, 255, 38);
         private readonly Color SubcategoryColor = new Color32(255, 255, 255, 20);
+        private readonly Color HeaderGradientTop = new Color32(188, 159, 255, 200);
+        private readonly Color HeaderGradientBottom = new Color32(108, 83, 206, 160);
+        private readonly Color SubcategoryGradientTop = new Color32(170, 140, 240, 140);
+        private readonly Color SubcategoryGradientBottom = new Color32(106, 84, 198, 110);
         private readonly Color TextColor = Color.white;
-        private readonly Color ChevronColor = new Color32(120, 100, 170, 255);
+        private readonly Color ChevronColor = new Color32(220, 210, 255, 255);
         private readonly Color ModalOverlayColor = new Color(0, 0, 0, 0.7f);
         private readonly Color ModalPanelColor = new Color(1f, 1f, 1f, 0.95f);
         private readonly Color ModalTextColor = new Color32(50, 50, 70, 255);
@@ -105,7 +109,7 @@ namespace RetroTech
         private (GameObject header, RectTransform chevron) CreateCategoryHeader(string categoryName)
         {
             var headerCard = UiKit.CreateCard(_contentContainer.transform, new Vector2(0, categoryHeaderHeight),
-                HeaderColor, 16f, glass: true);
+                HeaderColor, 16f, glass: false, gradTop: HeaderGradientTop, gradBottom: HeaderGradientBottom);
             var header = headerCard.gameObject;
 
             // Adicionar botão ao header
@@ -217,7 +221,7 @@ namespace RetroTech
         private void CreateSubcategoryItem(Transform parent, long categoryId, string subcategoryName)
         {
             var subCard = UiKit.CreateCard(parent, new Vector2(0, subcategoryItemHeight),
-                SubcategoryColor, 14f, glass: true);
+                SubcategoryColor, 14f, glass: false, gradTop: SubcategoryGradientTop, gradBottom: SubcategoryGradientBottom);
 
             // Adicionar botão
             var btn = subCard.gameObject.GetComponent<Button>() ?? subCard.gameObject.AddComponent<Button>();
