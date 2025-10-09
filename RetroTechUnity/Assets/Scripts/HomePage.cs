@@ -84,11 +84,11 @@ namespace RetroTech
             var layout = _contentContainer.GetComponent<VerticalLayoutGroup>();
             if (layout != null)
             {
-                layout.padding = new RectOffset(32, 32, 48, 48);
-                layout.spacing = 32f;
-                layout.childAlignment = TextAnchor.UpperLeft;
+                layout.padding = new RectOffset(32, 32, 64, 64);
+                layout.spacing = 0f;
+                layout.childAlignment = TextAnchor.UpperCenter;
                 layout.childControlWidth = true;
-                layout.childForceExpandWidth = true;
+                layout.childForceExpandWidth = false;
                 layout.childControlHeight = false;
                 layout.childForceExpandHeight = false;
             }
@@ -121,12 +121,12 @@ namespace RetroTech
             shadow.useGraphicAlpha = true;
 
             var layout = panelGO.GetComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(48, 48, 64, 64);
-            layout.spacing = 24f;
+            layout.padding = new RectOffset(52, 52, 72, 72);
+            layout.spacing = 0f;
             layout.childAlignment = TextAnchor.UpperLeft;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
-            layout.childControlHeight = false;
+            layout.childControlHeight = true;
             layout.childForceExpandHeight = false;
 
             var fitter = panelGO.GetComponent<ContentSizeFitter>();
@@ -135,6 +135,8 @@ namespace RetroTech
 
             var layoutElement = panelGO.AddComponent<LayoutElement>();
             layoutElement.minHeight = 0f;
+            layoutElement.preferredWidth = 720f;
+            layoutElement.flexibleWidth = 1f;
             layoutElement.flexibleHeight = 0f;
 
             return rect;
@@ -149,7 +151,7 @@ namespace RetroTech
                 TextAlignmentOptions.Left, bold: true);
             titleTMP.name = "Title";
             titleTMP.enableWordWrapping = false;
-            ApplyBottomSpacing(titleTMP, 12f);
+            AddVerticalSpacing(20f, "TitleSpacing");
         }
 
         /// <summary>
@@ -161,7 +163,7 @@ namespace RetroTech
                 TextMain, TextAlignmentOptions.Left, bold: true);
             welcomeTMP.name = "WelcomeTitle";
             welcomeTMP.enableWordWrapping = false;
-            ApplyBottomSpacing(welcomeTMP);
+            AddVerticalSpacing(20f, "WelcomeSpacing");
         }
 
         /// <summary>
@@ -176,7 +178,7 @@ namespace RetroTech
                 TextMuted, TextAlignmentOptions.Left);
             descTMP.name = "MainDescription";
             descTMP.enableWordWrapping = true;
-            ApplyBottomSpacing(descTMP, 18f);
+            AddVerticalSpacing(28f, "DescriptionSpacing");
         }
 
         /// <summary>
@@ -188,7 +190,7 @@ namespace RetroTech
             var objTitleTMP = UiKit.TMP(_contentPanel, "Objetivo do aplicativo", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             objTitleTMP.name = "ObjectiveTitle";
-            ApplyBottomSpacing(objTitleTMP, 6f);
+            AddVerticalSpacing(10f, "ObjectiveTitleSpacing");
 
             // Descrição do objetivo
             var objectiveText = "Facilitar o acesso e a compreensão do acervo histórico de peças de " +
@@ -198,7 +200,7 @@ namespace RetroTech
                 TextMuted, TextAlignmentOptions.Left);
             objDescTMP.name = "ObjectiveDescription";
             objDescTMP.enableWordWrapping = true;
-            ApplyBottomSpacing(objDescTMP, 18f);
+            AddVerticalSpacing(24f, "ObjectiveDescriptionSpacing");
         }
 
         /// <summary>
@@ -210,7 +212,7 @@ namespace RetroTech
             var featTitleTMP = UiKit.TMP(_contentPanel, "Principais funcionalidades", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             featTitleTMP.name = "FeaturesTitle";
-            ApplyBottomSpacing(featTitleTMP, 6f);
+            AddVerticalSpacing(10f, "FeaturesTitleSpacing");
 
             // Lista de funcionalidades
             var featuresText = string.Join("\n", new[]
@@ -226,7 +228,7 @@ namespace RetroTech
                 TextMuted, TextAlignmentOptions.Left);
             featDescTMP.name = "FeaturesDescription";
             featDescTMP.enableWordWrapping = true;
-            ApplyBottomSpacing(featDescTMP, 18f);
+            AddVerticalSpacing(24f, "FeaturesDescriptionSpacing");
         }
 
         /// <summary>
@@ -238,7 +240,7 @@ namespace RetroTech
             var teamTitleTMP = UiKit.TMP(_contentPanel, "Equipe de desenvolvimento", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             teamTitleTMP.name = "TeamTitle";
-            ApplyBottomSpacing(teamTitleTMP, 6f);
+            AddVerticalSpacing(10f, "TeamTitleSpacing");
 
             // Informações da equipe
             var teamText = "Integrante: Aruto Gherono de Souza dos Santos - Sistemas de Informação\n" +
@@ -249,7 +251,7 @@ namespace RetroTech
                 TextMuted, TextAlignmentOptions.Left);
             teamDescTMP.name = "TeamDescription";
             teamDescTMP.enableWordWrapping = true;
-            ApplyBottomSpacing(teamDescTMP, 26f);
+            AddVerticalSpacing(32f, "TeamDescriptionSpacing");
         }
 
         /// <summary>
@@ -257,6 +259,8 @@ namespace RetroTech
         /// </summary>
         private void CreateCTAButton()
         {
+            AddVerticalSpacing(16f, "CtaSpacing");
+
             var buttonCard = UiKit.CreateCard(_contentPanel.transform, new Vector2(0, 72),
                 Color.white, 26f);
 
@@ -299,14 +303,22 @@ namespace RetroTech
             buttonCard.name = "CTAButton";
         }
 
-        private void ApplyBottomSpacing(TextMeshProUGUI tmp, float margin = 12f)
+        private void AddVerticalSpacing(float height, string name = null)
         {
-            if (tmp == null)
+            if (_contentPanel == null || height <= 0f)
             {
                 return;
             }
 
-            tmp.margin = new Vector4(tmp.margin.x, tmp.margin.y, tmp.margin.z, margin);
+            var index = _contentPanel.childCount;
+            var spacerName = string.IsNullOrEmpty(name) ? $"Spacer_{index}" : name;
+            var spacer = new GameObject(spacerName, typeof(RectTransform), typeof(LayoutElement));
+            spacer.transform.SetParent(_contentPanel, false);
+
+            var layoutElement = spacer.GetComponent<LayoutElement>();
+            layoutElement.minHeight = height;
+            layoutElement.preferredHeight = height;
+            layoutElement.flexibleHeight = 0f;
         }
 
         /// <summary>
