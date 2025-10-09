@@ -55,7 +55,7 @@ namespace RetroTech
             return img;
         }
 
-        public static TMP_Text TMP(Transform parent, string text, int size, Color32 color,
+        public static TextMeshProUGUI TMP(Transform parent, string text, int size, Color32 color,
                                    TextAlignmentOptions align = TextAlignmentOptions.MidlineLeft,
                                    bool bold = false)
         {
