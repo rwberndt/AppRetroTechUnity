@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -21,6 +21,7 @@ namespace RetroTech
         [SerializeField] private float questionCardHeight = 120f;
         [SerializeField] private float optionHeight = 48f;
         [SerializeField] private float explanationHeight = 100f;
+        [SerializeField] private float infoCardHeight = 160f;
         [SerializeField] private int titleFontSize = 28;
         [SerializeField] private int scoreFontSize = 20;
         [SerializeField] private int questionFontSize = 20;
@@ -36,6 +37,8 @@ namespace RetroTech
         private readonly Color CorrectOptionColor = new Color32(76, 175, 80, 255); // Green
         private readonly Color WrongOptionColor = new Color32(244, 67, 54, 255); // Red
         private readonly Color DisabledOptionColor = new Color32(200, 200, 200, 255); // Gray
+        private readonly Color InfoCardColor = new Color(1f, 1f, 1f, 0.12f);
+        private readonly Color InfoTextColor = new Color32(220, 220, 245, 255);
 
         // Events
         public System.Action<int, int> OnScoreUpdated; // currentScore, totalQuestions
@@ -88,6 +91,8 @@ namespace RetroTech
             System.Func<Transform, float, Image> createGlassCardFunc,
             System.Func<Transform, string, UnityEngine.Events.UnityAction, GameObject> createCTAButtonFunc)
         {
+            CreateQuizIntroCard(createGlassCardFunc);
+            CreateScoreHelpCard(createGlassCardFunc);
             // Quiz header with progress
             CreateQuizHeader(createGlassCardFunc);
 
@@ -105,6 +110,83 @@ namespace RetroTech
 
             // Next button
             CreateNextButton(createCTAButtonFunc);
+        }
+
+        /// <summary>
+        /// Configura um cartão informativo com layout flexível.
+        /// </summary>
+        private void ConfigureInfoCard(Image card, string name)
+        {
+            if (card == null)
+            {
+                return;
+            }
+
+            card.color = InfoCardColor;
+            card.gameObject.name = name;
+
+            var layout = card.gameObject.GetComponent<VerticalLayoutGroup>() ?? card.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(24, 24, 20, 20);
+            layout.spacing = 12f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var fitter = card.gameObject.GetComponent<ContentSizeFitter>() ?? card.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var le = card.GetComponent<LayoutElement>() ?? card.gameObject.AddComponent<LayoutElement>();
+            le.minHeight = infoCardHeight;
+            le.preferredHeight = -1f;
+        }
+
+        /// <summary>
+        /// Cria o cartão introdutório do quiz.
+        /// </summary>
+        private void CreateQuizIntroCard(System.Func<Transform, float, Image> createGlassCardFunc)
+        {
+            var introCard = createGlassCardFunc(_contentContainer, infoCardHeight);
+            ConfigureInfoCard(introCard, "QuizIntroCard");
+
+            var title = UiKit.TMP(introCard.transform, "Prepare-se para o desafio", titleFontSize + 4,
+                Color.white, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var description = UiKit.TMP(introCard.transform,
+                "As perguntas abordam curiosidades do acervo RetroTech. O layout responsivo ajusta espaçamentos e tamanhos de fonte automaticamente, mantendo o quiz confortável em qualquer celular.",
+                optionFontSize + 2, InfoTextColor, TextAlignmentOptions.Left);
+            description.enableWordWrapping = true;
+
+            var tip = UiKit.TMP(introCard.transform,
+                "Dica: utilize fones ou leitores de tela para ouvir cada alternativa antes de responder.",
+                Mathf.Max(12, optionFontSize), InfoTextColor, TextAlignmentOptions.Left);
+            tip.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// Cria um cartão com orientações de pontuação e ritmo.
+        /// </summary>
+        private void CreateScoreHelpCard(System.Func<Transform, float, Image> createGlassCardFunc)
+        {
+            var infoCard = createGlassCardFunc(_contentContainer, infoCardHeight);
+            ConfigureInfoCard(infoCard, "QuizScoreHelpCard");
+
+            var title = UiKit.TMP(infoCard.transform, "Como funcionam os pontos", titleFontSize,
+                Color.white, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var rules = UiKit.TMP(infoCard.transform,
+                "• Cada resposta correta vale 1 ponto e o placar é atualizado instantaneamente.\n" +
+                "• Se errar, leia a explicação para descobrir o contexto histórico da peça.\n" +
+                "• Complete todas as perguntas para desbloquear mensagens motivacionais e registrar seu melhor resultado.",
+                optionFontSize + 2, InfoTextColor, TextAlignmentOptions.Left);
+            rules.enableWordWrapping = true;
+
+            var persistence = UiKit.TMP(infoCard.transform,
+                "Os dados do seu dispositivo ficam salvos para que você acompanhe a evolução em diferentes sessões de estudo.",
+                Mathf.Max(12, optionFontSize), InfoTextColor, TextAlignmentOptions.Left);
+            persistence.enableWordWrapping = true;
         }
 
         /// <summary>
@@ -550,6 +632,7 @@ namespace RetroTech
             questionCardHeight = Mathf.Max(60f, questionCardHeight);
             optionHeight = Mathf.Max(30f, optionHeight);
             explanationHeight = Mathf.Max(60f, explanationHeight);
+            infoCardHeight = Mathf.Max(120f, infoCardHeight);
             titleFontSize = Mathf.Max(8, titleFontSize);
             scoreFontSize = Mathf.Max(8, scoreFontSize);
             questionFontSize = Mathf.Max(8, questionFontSize);

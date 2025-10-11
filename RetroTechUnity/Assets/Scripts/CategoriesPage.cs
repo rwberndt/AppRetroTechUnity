@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -22,12 +23,15 @@ namespace RetroTech
         [SerializeField] private float subcategoryItemHeight = 48f;
         [SerializeField] private int categoryTitleFontSize = 18;
         [SerializeField] private int subcategoryFontSize = 18;
+        [SerializeField] private float infoCardMinimumHeight = 160f;
 
         // Colors
         private readonly Color HeaderColor = new Color32(255, 255, 255, 38);
         private readonly Color SubcategoryColor = new Color32(255, 255, 255, 20);
         private readonly Color TextColor = Color.white;
         private readonly Color ChevronColor = new Color32(120, 100, 170, 255);
+        private readonly Color InfoCardColor = new Color32(255, 255, 255, 26);
+        private readonly Color InfoTextColor = new Color32(220, 220, 245, 255);
         private readonly Color ModalOverlayColor = new Color(0, 0, 0, 0.7f);
         private readonly Color ModalPanelColor = new Color(1f, 1f, 1f, 0.95f);
         private readonly Color ModalTextColor = new Color32(50, 50, 70, 255);
@@ -66,10 +70,124 @@ namespace RetroTech
         /// </summary>
         private void CreateCategoriesContent()
         {
+            CreateIntroSection();
+            CreateLegendSection();
+            CreateSummarySection();
+
             foreach (Category category in SampleData.Categories)
             {
                 CreateCategorySection(category);
             }
+        }
+
+        /// <summary>
+        /// Cria um card informativo com layout responsivo.
+        /// </summary>
+        private Image CreateInfoCard(string name)
+        {
+            var card = UiKit.CreateCard(_contentContainer.transform, new Vector2(0, infoCardMinimumHeight),
+                InfoCardColor, 18f, glass: true);
+
+            var layout = card.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(24, 24, 20, 20);
+            layout.spacing = 12f;
+            layout.childControlWidth = true;
+            layout.childForceExpandWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandHeight = false;
+
+            var fitter = card.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var le = card.GetComponent<LayoutElement>();
+            le.minHeight = infoCardMinimumHeight;
+            le.preferredHeight = -1f;
+
+            card.gameObject.name = name;
+
+            return card;
+        }
+
+        /// <summary>
+        /// Cria a seção introdutória com orientações gerais.
+        /// </summary>
+        private void CreateIntroSection()
+        {
+            var card = CreateInfoCard("IntroCard");
+
+            var title = UiKit.TMP(card.transform, "Organize sua exploração", categoryTitleFontSize + 6,
+                TextColor, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var introText =
+                "A lista de categorias foi pensada para telas de diferentes tamanhos. Os elementos ajustam automaticamente margens e espaçamentos, garantindo leitura confortável em celulares compactos ou tablets maiores.";
+
+            var introTMP = UiKit.TMP(card.transform, introText, subcategoryFontSize,
+                InfoTextColor, TextAlignmentOptions.Left);
+            introTMP.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// Cria uma seção com dicas de uso e acessibilidade.
+        /// </summary>
+        private void CreateLegendSection()
+        {
+            var card = CreateInfoCard("LegendCard");
+
+            var title = UiKit.TMP(card.transform, "Dicas rápidas", categoryTitleFontSize + 4,
+                TextColor, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var legend =
+                "• Toque no cabeçalho para expandir ou recolher cada categoria.\n" +
+                "• Os subtítulos foram otimizados para até duas linhas; em telas menores o texto quebra automaticamente.\n" +
+                "• Use gestos de rolagem com o polegar para percorrer longas listas sem perder o contexto.";
+
+            var legendTMP = UiKit.TMP(card.transform, legend, subcategoryFontSize,
+                InfoTextColor, TextAlignmentOptions.Left);
+            legendTMP.enableWordWrapping = true;
+
+            var extraTip = UiKit.TMP(card.transform,
+                "Com fones ou leitores de tela, os títulos são lidos em sequência graças à hierarquia simples de botões e cartões.",
+                Mathf.Max(12, subcategoryFontSize - 2), InfoTextColor, TextAlignmentOptions.Left);
+            extraTip.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// Cria uma seção com estatísticas rápidas das categorias.
+        /// </summary>
+        private void CreateSummarySection()
+        {
+            var card = CreateInfoCard("SummaryCard");
+
+            var title = UiKit.TMP(card.transform, "Resumo do acervo", categoryTitleFontSize + 4,
+                TextColor, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            int categoryCount = SampleData.Categories.Count;
+            int subcategoryCount = SampleData.Categories.Sum(c => c.Subcategories?.Count ?? 0);
+            var largestCategory = SampleData.Categories
+                .OrderByDescending(c => c.Subcategories?.Count ?? 0)
+                .FirstOrDefault();
+
+            var summaryText = UiKit.TMP(card.transform,
+                $"{categoryCount} categorias principais • {subcategoryCount} subcategorias mapeadas",
+                subcategoryFontSize, InfoTextColor, TextAlignmentOptions.Left);
+            summaryText.enableWordWrapping = true;
+
+            if (largestCategory != null)
+            {
+                var highlight = UiKit.TMP(card.transform,
+                    $"Destaque: " +
+                    $"{largestCategory.Name} reúne {largestCategory.Subcategories.Count} temas complementares.",
+                    Mathf.Max(12, subcategoryFontSize - 2), InfoTextColor, TextAlignmentOptions.Left);
+                highlight.enableWordWrapping = true;
+            }
+
+            var closing = UiKit.TMP(card.transform,
+                "Atualizamos os dados conforme novas peças são catalogadas. Ao sincronizar, a página reorganiza os blocos sem perder fluidez na rolagem.",
+                Mathf.Max(12, subcategoryFontSize - 2), InfoTextColor, TextAlignmentOptions.Left);
+            closing.enableWordWrapping = true;
         }
 
         /// <summary>
@@ -293,6 +411,7 @@ namespace RetroTech
             CreateModalHeader(modalPanel.transform, subcategoryName);
             var scrollContent = CreateModalScrollView(modalPanel.transform);
             PopulateModalWithPieces(scrollContent, categoryId);
+            CreateModalFooter(modalPanel.transform, subcategoryName);
         }
 
         /// <summary>
@@ -477,6 +596,41 @@ namespace RetroTech
         }
 
         /// <summary>
+        /// Cria um rodapé com dicas adicionais no modal.
+        /// </summary>
+        private void CreateModalFooter(Transform parent, string subcategoryName)
+        {
+            var footerCard = UiKit.CreateCard(parent, new Vector2(0, 120f),
+                new Color(1f, 1f, 1f, 0.15f), 12f, glass: true);
+
+            var layout = footerCard.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(20, 20, 16, 16);
+            layout.spacing = 8f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var fitter = footerCard.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            UiKit.TMP(footerCard.transform, "Como aproveitar", 20,
+                ModalTextColor, TextAlignmentOptions.Left, bold: true).enableWordWrapping = true;
+
+            var tipText =
+                $"Explore as peças de {subcategoryName} para descobrir fichas técnicas detalhadas, fotos adicionais e curiosidades históricas. Toque novamente na categoria para voltar à lista principal.";
+
+            var tipTMP = UiKit.TMP(footerCard.transform, tipText, 16,
+                ModalTextColor, TextAlignmentOptions.Left);
+            tipTMP.enableWordWrapping = true;
+
+            var accessibility = UiKit.TMP(footerCard.transform,
+                "Dica: em telas pequenas o modal ocupa toda a altura disponível, mantendo espaçamentos seguros para gestos de deslize.",
+                14, ModalTextColor, TextAlignmentOptions.Left);
+            accessibility.enableWordWrapping = true;
+        }
+
+        /// <summary>
         /// Fecha o modal ativo
         /// </summary>
         public void CloseModal()
@@ -566,6 +720,7 @@ namespace RetroTech
             subcategoryItemHeight = Mathf.Max(20f, subcategoryItemHeight);
             categoryTitleFontSize = Mathf.Max(8, categoryTitleFontSize);
             subcategoryFontSize = Mathf.Max(8, subcategoryFontSize);
+            infoCardMinimumHeight = Mathf.Max(80f, infoCardMinimumHeight);
         }
 #endif
         #endregion
