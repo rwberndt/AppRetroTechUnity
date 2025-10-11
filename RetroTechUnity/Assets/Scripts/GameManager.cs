@@ -260,6 +260,12 @@ namespace RetroTech
 
             content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+            var contentLayoutElement = content.AddComponent<LayoutElement>();
+            contentLayoutElement.flexibleHeight = 1f;
+
+            var prototypeContentFitter = content.AddComponent<PrototypeSurfaceContentFitter>();
+            prototypeContentFitter.Initialize(vpRT, contentLayoutElement);
+
             return (surface, crt);
         }
 
