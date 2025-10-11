@@ -6,7 +6,7 @@ using static RetroTech.UiKit;
 namespace RetroTech
 {
     /// <summary>
-    /// P·gina inicial do RetroTech que apresenta informaÁıes sobre o aplicativo,
+    /// P√°gina inicial do RetroTech que apresenta informa√ß√µes sobre o aplicativo,
     /// seus objetivos, funcionalidades principais e equipe de desenvolvimento.
     /// </summary>
     public class HomePage : MonoBehaviour
@@ -20,11 +20,13 @@ namespace RetroTech
         [SerializeField] private float descriptionFontSize = 35f;
         [SerializeField] private float sectionTitleFontSize = 40f;
         [SerializeField] private float sectionTextFontSize = 35f;
+        [SerializeField] private float cardMinimumHeight = 180f;
 
         // Colors
         private readonly Color TextMain = new Color32(245, 245, 255, 255);
         private readonly Color TextMuted = new Color32(210, 210, 235, 255);
         private readonly Color PrimaryColor = new Color32(114, 74, 160, 255);
+        private readonly Color CardColor = new Color32(255, 255, 255, 30);
 
         // Events
         public System.Action OnSearchPiecesClicked;
@@ -33,11 +35,11 @@ namespace RetroTech
         private RectTransform _contentContainer;
 
         /// <summary>
-        /// Cria e configura a p·gina inicial
+        /// Cria e configura a p√°gina inicial
         /// </summary>
-        /// <param name="parent">Transform pai onde a p·gina ser· criada</param>
-        /// <param name="buildSurfaceFunc">FunÁ„o para criar a superfÌcie base da p·gina</param>
-        /// <returns>GameObject da p·gina criada</returns>
+        /// <param name="parent">Transform pai onde a p√°gina ser√° criada</param>
+        /// <param name="buildSurfaceFunc">Fun√ß√£o para criar a superf√≠cie base da p√°gina</param>
+        /// <returns>GameObject da p√°gina criada</returns>
         public GameObject CreatePage(Transform parent, System.Func<string, (GameObject surface, RectTransform content)> buildSurfaceFunc)
         {
             var (surface, content) = buildSurfaceFunc(pageTitle);
@@ -50,7 +52,7 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// Cria todo o conte˙do da p·gina inicial
+        /// Cria todo o conte√∫do da p√°gina inicial
         /// </summary>
         private void CreateContent()
         {
@@ -59,12 +61,16 @@ namespace RetroTech
             CreateDescriptionSection();
             CreateObjectiveSection();
             CreateFeaturesSection();
+            CreateHighlightsSection();
+            CreateHowToExploreSection();
             CreateTeamSection();
+            CreateVisitSection();
+            CreateFeedbackSection();
             CreateCTAButton();
         }
 
         /// <summary>
-        /// Cria o tÌtulo principal do aplicativo
+        /// Cria o t√≠tulo principal do aplicativo
         /// </summary>
         private void CreateTitle()
         {
@@ -74,7 +80,7 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// Cria a seÁ„o de boas-vindas
+        /// Cria a se√ß√£o de boas-vindas
         /// </summary>
         private void CreateWelcomeSection()
         {
@@ -84,12 +90,12 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// Cria a descriÁ„o principal do aplicativo
+        /// Cria a descri√ß√£o principal do aplicativo
         /// </summary>
         private void CreateDescriptionSection()
         {
-            var descriptionText = "Explore e aprenda sobre o acervo de peÁas de computaÁ„o do " +
-                                "Departamento de Sistemas e ComputaÁ„o (DSC) da FURB de forma interativa.";
+            var descriptionText = "Explore e aprenda sobre o acervo de pe√ßas de computa√ß√£o do " +
+                                "Departamento de Sistemas e Computa√ß√£o (DSC) da FURB de forma interativa.";
 
             var descTMP = UiKit.TMP(_contentContainer, descriptionText, (int)descriptionFontSize,
                 TextMuted, TextAlignmentOptions.Left);
@@ -97,18 +103,18 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// Cria a seÁ„o sobre o objetivo do aplicativo
+        /// Cria a se√ß√£o sobre o objetivo do aplicativo
         /// </summary>
         private void CreateObjectiveSection()
         {
-            // TÌtulo da seÁ„o
+            // T√≠tulo da se√ß√£o
             var objTitleTMP = UiKit.TMP(_contentContainer, "Objetivo do aplicativo", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             objTitleTMP.name = "ObjectiveTitle";
 
-            // DescriÁ„o do objetivo
-            var objectiveText = "Facilitar o acesso e a compreens„o do acervo histÛrico de peÁas de " +
-                              "computaÁ„o do DSC, proporcionando uma experiÍncia educativa e imersiva.";
+            // Descri√ß√£o do objetivo
+            var objectiveText = "Facilitar o acesso e a compreens√£o do acervo hist√≥rico de pe√ßas de " +
+                              "computa√ß√£o do DSC, proporcionando uma experi√™ncia educativa e imersiva.";
 
             var objDescTMP = UiKit.TMP(_contentContainer, objectiveText, (int)sectionTextFontSize,
                 TextMuted, TextAlignmentOptions.Left);
@@ -116,21 +122,21 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// Cria a seÁ„o das principais funcionalidades
+        /// Cria a se√ß√£o das principais funcionalidades
         /// </summary>
         private void CreateFeaturesSection()
         {
-            // TÌtulo da seÁ„o
+            // T√≠tulo da se√ß√£o
             var featTitleTMP = UiKit.TMP(_contentContainer, "Principais funcionalidades", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             featTitleTMP.name = "FeaturesTitle";
 
             // Lista de funcionalidades
-            var featuresText = "ï NavegaÁ„o por categorias\n" +
-                             "ï Linha do tempo interativa\n" +
-                             "ï Leitura de QR Codes\n" +
-                             "ï Detalhes e curiosidades\n" +
-                             "ï Quiz educativo";
+            var featuresText = "¬ï Navega√ß√£o por categorias\n" +
+                             "¬ï Linha do tempo interativa\n" +
+                             "¬ï Leitura de QR Codes\n" +
+                             "¬ï Detalhes e curiosidades\n" +
+                             "¬ï Quiz educativo";
 
             var featDescTMP = UiKit.TMP(_contentContainer, featuresText, (int)sectionTextFontSize,
                 TextMuted, TextAlignmentOptions.Left);
@@ -138,17 +144,17 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// Cria a seÁ„o da equipe de desenvolvimento
+        /// Cria a se√ß√£o da equipe de desenvolvimento
         /// </summary>
         private void CreateTeamSection()
         {
-            // TÌtulo da seÁ„o
+            // T√≠tulo da se√ß√£o
             var teamTitleTMP = UiKit.TMP(_contentContainer, "Equipe de desenvolvimento", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             teamTitleTMP.name = "TeamTitle";
 
-            // InformaÁıes da equipe
-            var teamText = "Ricardo Berndt - CiÍncia da ComputaÁ„o\n\n" +
+            // Informa√ß√µes da equipe
+            var teamText = "Ricardo Berndt - Ci√™ncia da Computa√ß√£o\n\n" +
                           "Orientador: Dalton Solano dos Reis\n" +
                           "Supervisor: Miguel A. Wistainater";
 
@@ -158,7 +164,139 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// Cria o bot„o de call-to-action para buscar peÁas
+        /// Cria um card responsivo reaproveitado pelas se√ß√µes expandidas.
+        /// </summary>
+        private Image CreateResponsiveCard(string name)
+        {
+            var card = UiKit.CreateCard(_contentContainer.transform, new Vector2(0, cardMinimumHeight),
+                CardColor, 22f, glass: true);
+
+            var layout = card.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(28, 28, 24, 24);
+            layout.spacing = 16f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var fitter = card.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var le = card.GetComponent<LayoutElement>();
+            le.minHeight = cardMinimumHeight;
+            le.preferredHeight = -1f;
+
+            card.gameObject.name = name;
+
+            return card;
+        }
+
+        /// <summary>
+        /// Cria uma se√ß√£o com destaques adicionais do acervo.
+        /// </summary>
+        private void CreateHighlightsSection()
+        {
+            var card = CreateResponsiveCard("HighlightsCard");
+
+            var title = UiKit.TMP(card.transform, "Destaques do acervo", (int)sectionTitleFontSize,
+                TextMain, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var bulletText =
+                "‚Ä¢ Mais de 40 anos de evolu√ß√£o em um acervo curado pela comunidade acad√™mica.\n" +
+                "‚Ä¢ Pe√ßas restauradas com descri√ß√µes t√©cnicas, curiosidades e imagens de alta resolu√ß√£o.\n" +
+                "‚Ä¢ Conte√∫do alinhado com disciplinas de Hist√≥ria da Computa√ß√£o, Arquitetura e Engenharias.";
+
+            var description = UiKit.TMP(card.transform, bulletText, (int)sectionTextFontSize,
+                TextMuted, TextAlignmentOptions.Left);
+            description.enableWordWrapping = true;
+            description.margin = new Vector4(0, 0, 0, 8f);
+
+            var complement = UiKit.TMP(card.transform,
+                "Todo o material segue um layout responsivo, ideal para consultar rapidamente durante visitas guiadas ou aulas.",
+                Mathf.Max(20, (int)sectionTextFontSize - 4), TextMuted, TextAlignmentOptions.Left);
+            complement.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// Cria uma se√ß√£o com orienta√ß√µes de uso do aplicativo.
+        /// </summary>
+        private void CreateHowToExploreSection()
+        {
+            var card = CreateResponsiveCard("HowToExploreCard");
+
+            var title = UiKit.TMP(card.transform, "Como explorar o RetroTech", (int)sectionTitleFontSize,
+                TextMain, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var steps =
+                "1. Use a busca por categorias para encontrar rapidamente um tema espec√≠fico.\n" +
+                "2. Acesse a linha do tempo para comparar as pe√ßas por ano de fabrica√ß√£o.\n" +
+                "3. Utilize o scanner QR durante a visita f√≠sica para abrir os detalhes instantaneamente.\n" +
+                "4. Finalize com o quiz para testar o que aprendeu e compartilhar o resultado com colegas.";
+
+            var stepsText = UiKit.TMP(card.transform, steps, (int)sectionTextFontSize,
+                TextMuted, TextAlignmentOptions.Left);
+            stepsText.enableWordWrapping = true;
+
+            var tip = UiKit.TMP(card.transform,
+                "O layout da p√°gina se adapta de forma fluida a diferentes larguras de tela, mantendo margens confort√°veis mesmo em smartphones compactos.",
+                Mathf.Max(20, (int)sectionTextFontSize - 4), TextMuted, TextAlignmentOptions.Left);
+            tip.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// Cria uma se√ß√£o com informa√ß√µes para visitas e acessibilidade.
+        /// </summary>
+        private void CreateVisitSection()
+        {
+            var card = CreateResponsiveCard("VisitInfoCard");
+
+            var title = UiKit.TMP(card.transform, "Planeje sua visita", (int)sectionTitleFontSize,
+                TextMain, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var visitText =
+                "‚Ä¢ Hor√°rios sugeridos: segunda a sexta-feira, das 8h √†s 12h e das 13h √†s 18h.\n" +
+                "‚Ä¢ As pe√ßas mais procuradas est√£o sinalizadas com QR Codes pr√≥ximos ao pedestal.\n" +
+                "‚Ä¢ Recursos de contraste e tamanhos de fonte ajust√°veis diretamente pelo sistema do seu dispositivo.";
+
+            var visitTMP = UiKit.TMP(card.transform, visitText, (int)sectionTextFontSize,
+                TextMuted, TextAlignmentOptions.Left);
+            visitTMP.enableWordWrapping = true;
+
+            var complementary = UiKit.TMP(card.transform,
+                "Para visitas em grupo, entre em contato com o DSC para agendar uma experi√™ncia mediada pela equipe do RetroTech.",
+                Mathf.Max(20, (int)sectionTextFontSize - 4), TextMuted, TextAlignmentOptions.Left);
+            complementary.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// Cria uma se√ß√£o refor√ßando feedbacks e contribui√ß√µes.
+        /// </summary>
+        private void CreateFeedbackSection()
+        {
+            var card = CreateResponsiveCard("FeedbackCard");
+
+            var title = UiKit.TMP(card.transform, "Compartilhe descobertas", (int)sectionTitleFontSize,
+                TextMain, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var text =
+                "Gostou de alguma pe√ßa ou percebeu algo que pode ser aprimorado? Utilize o formul√°rio dispon√≠vel no portal do DSC ou fale diretamente com a equipe para sugerir novos registros, fotos ou depoimentos de ex-alunos.";
+
+            var feedbackTMP = UiKit.TMP(card.transform, text, (int)sectionTextFontSize,
+                TextMuted, TextAlignmentOptions.Left);
+            feedbackTMP.enableWordWrapping = true;
+
+            var closing = UiKit.TMP(card.transform,
+                "O retorno constante da comunidade garante que o aplicativo continue atualizado e acess√≠vel em smartphones de diferentes resolu√ß√µes.",
+                Mathf.Max(20, (int)sectionTextFontSize - 4), TextMuted, TextAlignmentOptions.Left);
+            closing.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// Cria o bot√£o de call-to-action para buscar pe√ßas
         /// </summary>
         private void CreateCTAButton()
         {
@@ -172,12 +310,12 @@ namespace RetroTech
             var button = buttonCard.gameObject.AddComponent<Button>();
             button.onClick.AddListener(() => OnSearchPiecesClicked?.Invoke());
 
-            var buttonText = UiKit.TMP(buttonCard.transform, "Buscar PeÁas", 30,
+            var buttonText = UiKit.TMP(buttonCard.transform, "Buscar Pe√ßas", 30,
                 PrimaryColor, TextAlignmentOptions.Center, bold: true);
             buttonText.name = "CTAButtonText";
             buttonText.enableWordWrapping = false;
 
-            // Posicionar o texto no centro do bot„o
+            // Posicionar o texto no centro do bot√£o
             var textRT = buttonText.rectTransform;
             textRT.anchorMin = Vector2.zero;
             textRT.anchorMax = Vector2.one;
@@ -188,18 +326,18 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// Atualiza as configuraÁıes visuais da p·gina
+        /// Atualiza as configura√ß√µes visuais da p√°gina
         /// </summary>
-        /// <param name="newTitleSize">Novo tamanho da fonte do tÌtulo</param>
+        /// <param name="newTitleSize">Novo tamanho da fonte do t√≠tulo</param>
         /// <param name="newWelcomeSize">Novo tamanho da fonte de boas-vindas</param>
-        /// <param name="newDescSize">Novo tamanho da fonte de descriÁ„o</param>
+        /// <param name="newDescSize">Novo tamanho da fonte de descri√ß√£o</param>
         public void UpdateFontSizes(float newTitleSize, float newWelcomeSize, float newDescSize)
         {
             titleFontSize = newTitleSize;
             welcomeFontSize = newWelcomeSize;
             descriptionFontSize = newDescSize;
 
-            // Atualizar elementos existentes se a p·gina j· foi criada
+            // Atualizar elementos existentes se a p√°gina j√° foi criada
             if (_contentContainer != null)
             {
                 var title = _contentContainer.Find("Title")?.GetComponent<TextMeshProUGUI>();
@@ -214,27 +352,27 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// ObtÈm referÍncia ao GameObject da p·gina
+        /// Obt√©m refer√™ncia ao GameObject da p√°gina
         /// </summary>
-        /// <returns>GameObject da p·gina ou null se n„o foi criada</returns>
+        /// <returns>GameObject da p√°gina ou null se n√£o foi criada</returns>
         public GameObject GetPageObject()
         {
             return _pageObject;
         }
 
         /// <summary>
-        /// ObtÈm referÍncia ao container de conte˙do
+        /// Obt√©m refer√™ncia ao container de conte√∫do
         /// </summary>
-        /// <returns>RectTransform do container de conte˙do ou null se n„o foi criado</returns>
+        /// <returns>RectTransform do container de conte√∫do ou null se n√£o foi criado</returns>
         public RectTransform GetContentContainer()
         {
             return _contentContainer;
         }
 
         /// <summary>
-        /// Define se a p·gina est· ativa ou n„o
+        /// Define se a p√°gina est√° ativa ou n√£o
         /// </summary>
-        /// <param name="active">Estado de ativaÁ„o</param>
+        /// <param name="active">Estado de ativa√ß√£o</param>
         public void SetActive(bool active)
         {
             if (_pageObject != null)
@@ -244,7 +382,7 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// Limpa recursos da p·gina
+        /// Limpa recursos da p√°gina
         /// </summary>
         private void OnDestroy()
         {
@@ -254,16 +392,17 @@ namespace RetroTech
         #region Editor Methods
 #if UNITY_EDITOR
         /// <summary>
-        /// Valida as configuraÁıes no editor
+        /// Valida as configura√ß√µes no editor
         /// </summary>
         private void OnValidate()
         {
-            // Garantir que os tamanhos de fonte sejam v·lidos
+            // Garantir que os tamanhos de fonte sejam v√°lidos
             titleFontSize = Mathf.Max(10f, titleFontSize);
             welcomeFontSize = Mathf.Max(10f, welcomeFontSize);
             descriptionFontSize = Mathf.Max(10f, descriptionFontSize);
             sectionTitleFontSize = Mathf.Max(10f, sectionTitleFontSize);
             sectionTextFontSize = Mathf.Max(10f, sectionTextFontSize);
+            cardMinimumHeight = Mathf.Max(80f, cardMinimumHeight);
         }
 #endif
         #endregion

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,6 +26,7 @@ namespace RetroTech
         [SerializeField] private int descriptionFontSize = 16;
         [SerializeField] private int buttonFontSize = 16;
         [SerializeField] private float buttonHeight = 40f;
+        [SerializeField] private float infoCardHeight = 180f;
 
         // Colors
         private readonly Color PageTitleColor = Color.white;
@@ -33,6 +34,8 @@ namespace RetroTech
         private readonly Color YearBadgeColor = new Color32(147, 112, 219, 255); // Purple
         private readonly Color PieceNameColor = Color.white;
         private readonly Color DescriptionColor = new Color32(255, 255, 255, 180);
+        private readonly Color SummaryCardColor = new Color(1f, 1f, 1f, 0.12f);
+        private readonly Color SummaryTextColor = new Color32(220, 220, 245, 255);
 
         // Sorting options
         public enum SortOrder
@@ -83,8 +86,13 @@ namespace RetroTech
             System.Func<Transform, float, Image> createGlassCardFunc,
             System.Func<Transform, string, UnityEngine.Events.UnityAction, GameObject> createCTAButtonFunc)
         {
+            CreateIntroSection(createGlassCardFunc);
             // Page title
             CreatePageTitle();
+
+            // Timeline overview and tips
+            CreateTimelineSummary(createGlassCardFunc);
+            CreateNavigationTips(createGlassCardFunc);
 
             // Sort controls (optional - can be enabled later)
             // CreateSortControls(createCTAButtonFunc);
@@ -94,6 +102,123 @@ namespace RetroTech
 
             // Generate timeline
             GenerateTimeline(createGlassCardFunc, createCTAButtonFunc);
+        }
+
+        /// <summary>
+        /// Configura cards informativos com layout responsivo.
+        /// </summary>
+        private void ConfigureInfoCard(Image card, string name)
+        {
+            if (card == null)
+            {
+                return;
+            }
+
+            card.color = SummaryCardColor;
+            card.gameObject.name = name;
+
+            var layout = card.gameObject.GetComponent<VerticalLayoutGroup>() ?? card.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(24, 24, 20, 20);
+            layout.spacing = 12f;
+            layout.childControlWidth = true;
+            layout.childForceExpandWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandHeight = false;
+
+            var fitter = card.gameObject.GetComponent<ContentSizeFitter>() ?? card.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var le = card.GetComponent<LayoutElement>() ?? card.gameObject.AddComponent<LayoutElement>();
+            le.minHeight = infoCardHeight;
+            le.preferredHeight = -1f;
+        }
+
+        /// <summary>
+        /// Cria uma introdução textual antes da linha do tempo.
+        /// </summary>
+        private void CreateIntroSection(System.Func<Transform, float, Image> createGlassCardFunc)
+        {
+            var introCard = createGlassCardFunc(_contentContainer, infoCardHeight);
+            ConfigureInfoCard(introCard, "TimelineIntroCard");
+
+            var title = UiKit.TMP(introCard.transform, "Viagem pelo tempo digital", pageTitleFontSize,
+                PageTitleColor, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var description = UiKit.TMP(introCard.transform,
+                "Cada cartão reúne dados históricos, fabricantes e curiosidades. A composição flexível garante leitura confortável tanto em smartphones verticais quanto em telas largas.",
+                descriptionFontSize, SummaryTextColor, TextAlignmentOptions.Left);
+            description.enableWordWrapping = true;
+
+            var note = UiKit.TMP(introCard.transform,
+                "Role livremente: o espaçamento automático evita cortes de texto mesmo quando o teclado ou outros painéis ocupam parte da tela.",
+                Mathf.Max(12, descriptionFontSize - 2), SummaryTextColor, TextAlignmentOptions.Left);
+            note.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// Exibe um resumo estatístico da linha do tempo.
+        /// </summary>
+        private void CreateTimelineSummary(System.Func<Transform, float, Image> createGlassCardFunc)
+        {
+            var summaryCard = createGlassCardFunc(_contentContainer, infoCardHeight);
+            ConfigureInfoCard(summaryCard, "TimelineSummaryCard");
+
+            var statsTitle = UiKit.TMP(summaryCard.transform, "Panorama do acervo", pageTitleFontSize - 2,
+                PageTitleColor, TextAlignmentOptions.Left, bold: true);
+            statsTitle.enableWordWrapping = true;
+
+            var (totalPieces, earliestYear, latestYear) = GetTimelineStats();
+
+            var statsText = UiKit.TMP(summaryCard.transform,
+                $"{totalPieces} peças catalogadas entre {earliestYear} e {latestYear}.",
+                descriptionFontSize, SummaryTextColor, TextAlignmentOptions.Left);
+            statsText.enableWordWrapping = true;
+
+            var decades = SampleData.Pieces
+                .Select(p => p.YearManufactured / 10 * 10)
+                .Where(y => y > 0)
+                .Distinct()
+                .OrderBy(y => y)
+                .ToList();
+
+            if (decades.Count > 0)
+            {
+                var decadesText = UiKit.TMP(summaryCard.transform,
+                    $"Décadas representadas: {string.Join(", ", decades.Select(d => $"{d}s"))}.",
+                    Mathf.Max(12, descriptionFontSize - 2), SummaryTextColor, TextAlignmentOptions.Left);
+                decadesText.enableWordWrapping = true;
+            }
+
+            var updateHint = UiKit.TMP(summaryCard.transform,
+                "Sincronize periodicamente para adicionar novas peças: o resumo se atualiza automaticamente e mantém o layout responsivo.",
+                Mathf.Max(12, descriptionFontSize - 2), SummaryTextColor, TextAlignmentOptions.Left);
+            updateHint.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// Adiciona recomendações de navegação responsiva para usuários móveis.
+        /// </summary>
+        private void CreateNavigationTips(System.Func<Transform, float, Image> createGlassCardFunc)
+        {
+            var tipsCard = createGlassCardFunc(_contentContainer, infoCardHeight);
+            ConfigureInfoCard(tipsCard, "TimelineTipsCard");
+
+            var title = UiKit.TMP(tipsCard.transform, "Como navegar", pageTitleFontSize - 4,
+                PageTitleColor, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var tipsText = UiKit.TMP(tipsCard.transform,
+                "• Toque nos cartões para abrir detalhes completos da peça.\n" +
+                "• Arraste verticalmente com o polegar e use gestos laterais para saltar rapidamente entre décadas.\n" +
+                "• Em telas menores, os títulos priorizam legibilidade e as margens extras evitam cliques acidentais.",
+                descriptionFontSize, SummaryTextColor, TextAlignmentOptions.Left);
+            tipsText.enableWordWrapping = true;
+
+            var accessibility = UiKit.TMP(tipsCard.transform,
+                "Compatível com leitores de tela: os anos são lidos antes do nome da peça para facilitar a compreensão cronológica.",
+                Mathf.Max(12, descriptionFontSize - 2), SummaryTextColor, TextAlignmentOptions.Left);
+            accessibility.enableWordWrapping = true;
         }
 
         /// <summary>
@@ -532,6 +657,7 @@ namespace RetroTech
             descriptionFontSize = Mathf.Max(8, descriptionFontSize);
             buttonFontSize = Mathf.Max(8, buttonFontSize);
             buttonHeight = Mathf.Max(20f, buttonHeight);
+            infoCardHeight = Mathf.Max(120f, infoCardHeight);
         }
 #endif
         #endregion

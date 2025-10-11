@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -26,11 +26,16 @@ namespace RetroTech
         [SerializeField] private float previewCardHeight = 280f;
         [SerializeField] private float tipsCardHeight = 140f;
         [SerializeField] private float qrFrameSize = 180f;
+        [SerializeField] private float infoCardMinimumHeight = 160f;
         [SerializeField] private int titleFontSize = 36;
         [SerializeField] private int scanTitleFontSize = 24;
         [SerializeField] private int scanDescFontSize = 18;
         [SerializeField] private int tipsTitleFontSize = 20;
         [SerializeField] private int tipsFontSize = 16;
+
+        // Colors auxiliares
+        private readonly Color InfoCardColor = new Color32(255, 255, 255, 32);
+        private readonly Color InfoTextColor = new Color32(220, 220, 245, 255);
 
         // Events
         public System.Action<ComputerPiece> OnPieceScanned;
@@ -89,6 +94,10 @@ namespace RetroTech
             CreateScanButton();
             AddSpacer(_contentContainer, 24);
             CreateTipsCard();
+            AddSpacer(_contentContainer, 16);
+            CreateStepByStepCard();
+            CreateEnvironmentCard();
+            CreateManualAccessCard();
         }
 
         /// <summary>
@@ -251,6 +260,106 @@ namespace RetroTech
                 "• Certifique-se que o código esteja completo na tela",
                 tipsFontSize, new Color32(255, 255, 255, 180), TextAlignmentOptions.Left);
             tipsTMP.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// Cria um cartão base para informações complementares.
+        /// </summary>
+        private Image CreateInfoCard(string name)
+        {
+            var card = CreateGlassCard(_contentContainer, infoCardMinimumHeight);
+            card.color = InfoCardColor;
+            card.gameObject.name = name;
+
+            var layout = card.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(24, 24, 20, 20);
+            layout.spacing = 12f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var fitter = card.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var le = card.GetComponent<LayoutElement>();
+            if (le != null)
+            {
+                le.minHeight = infoCardMinimumHeight;
+                le.preferredHeight = -1f;
+            }
+
+            return card;
+        }
+
+        /// <summary>
+        /// Cria um passo a passo rápido para orientar novos usuários.
+        /// </summary>
+        private void CreateStepByStepCard()
+        {
+            var card = CreateInfoCard("StepByStepCard");
+
+            var title = UiKit.TMP(card.transform, "Passo a passo", tipsTitleFontSize + 4,
+                Color.white, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var steps = UiKit.TMP(card.transform,
+                "1. Abra o aplicativo e permita o acesso à câmera quando solicitado.\n" +
+                "2. Aponte o enquadramento para o QR code até o indicador ficar alinhado.\n" +
+                "3. Aguarde alguns segundos: ao encontrar uma peça compatível, o painel de detalhes será aberto automaticamente.",
+                tipsFontSize, InfoTextColor, TextAlignmentOptions.Left);
+            steps.enableWordWrapping = true;
+
+            var hint = UiKit.TMP(card.transform,
+                "Todo o conteúdo se ajusta à orientação do dispositivo para que você possa escanear tanto em pé quanto em modo paisagem.",
+                Mathf.Max(12, tipsFontSize - 2), InfoTextColor, TextAlignmentOptions.Left);
+            hint.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// Cria um cartão com recomendações de ambiente e acessibilidade.
+        /// </summary>
+        private void CreateEnvironmentCard()
+        {
+            var card = CreateInfoCard("EnvironmentCard");
+
+            var title = UiKit.TMP(card.transform, "Ambiente ideal", tipsTitleFontSize + 2,
+                Color.white, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var content = UiKit.TMP(card.transform,
+                "• Prefira locais com boa iluminação difusa para evitar sombras sobre o código.\n" +
+                "• Afaste-se levemente do pedestal em dispositivos com telas menores para enquadrar o QR por completo.\n" +
+                "• O leitor respeita as áreas seguras (safe area) do seu aparelho, mantendo botões acessíveis mesmo em telas com notch.",
+                tipsFontSize, InfoTextColor, TextAlignmentOptions.Left);
+            content.enableWordWrapping = true;
+
+            var extra = UiKit.TMP(card.transform,
+                "Se utilizar leitores de tela, o botão principal recebe foco automaticamente após cada leitura, facilitando novas interações.",
+                Mathf.Max(12, tipsFontSize - 2), InfoTextColor, TextAlignmentOptions.Left);
+            extra.enableWordWrapping = true;
+        }
+
+        /// <summary>
+        /// Cria um cartão com alternativas ao escaneamento.
+        /// </summary>
+        private void CreateManualAccessCard()
+        {
+            var card = CreateInfoCard("ManualAccessCard");
+
+            var title = UiKit.TMP(card.transform, "Sem QR code?", tipsTitleFontSize + 2,
+                Color.white, TextAlignmentOptions.Left, bold: true);
+            title.enableWordWrapping = true;
+
+            var text = UiKit.TMP(card.transform,
+                "Você pode procurar peças manualmente nas abas de categorias ou na linha do tempo. Também é possível informar o código numérico exibido na placa do museu ao time do RetroTech para atualizar o cadastro.",
+                tipsFontSize, InfoTextColor, TextAlignmentOptions.Left);
+            text.enableWordWrapping = true;
+
+            var closing = UiKit.TMP(card.transform,
+                "O aplicativo armazena as últimas leituras localmente, permitindo revisitar informações mesmo em áreas com conexão limitada.",
+                Mathf.Max(12, tipsFontSize - 2), InfoTextColor, TextAlignmentOptions.Left);
+            closing.enableWordWrapping = true;
         }
 
         /// <summary>
@@ -649,6 +758,7 @@ namespace RetroTech
             scanDescFontSize = Mathf.Max(8, scanDescFontSize);
             tipsTitleFontSize = Mathf.Max(8, tipsTitleFontSize);
             tipsFontSize = Mathf.Max(8, tipsFontSize);
+            infoCardMinimumHeight = Mathf.Max(120f, infoCardMinimumHeight);
         }
 #endif
         #endregion
