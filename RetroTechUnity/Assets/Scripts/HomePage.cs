@@ -25,6 +25,7 @@ namespace RetroTech
 
         [Header("Layout")]
         [SerializeField] private float heroMinimumHeight = 280f;
+        [SerializeField, Range(0.3f, 0.85f)] private float heroViewportHeightRatio = 0.55f;
         [SerializeField] private float sectionSpacing = 20f;
         [SerializeField] private Vector4 contentPadding = new Vector4(36f, 36f, 48f, 48f);
         [SerializeField] private Vector4 cardPadding = new Vector4(32f, 32f, 36f, 36f);
@@ -358,7 +359,24 @@ namespace RetroTech
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             var layout = card.AddComponent<LayoutElement>();
-            layout.minHeight = heroGradient ? heroMinimumHeight : 0f;
+            if (heroGradient)
+            {
+                var reference = GetEffectiveReferenceResolution();
+                var screenSize = new Vector2(Screen.width, Screen.height);
+                var heightRatio = reference.y > 0f ? screenSize.y / reference.y : 1f;
+                var widthRatio = reference.x > 0f ? screenSize.x / reference.x : 1f;
+                var scale = adaptToScreenSize ? Mathf.Clamp(Mathf.Min(widthRatio, heightRatio), minimumScale, maximumScale) : 1f;
+                var heroHeight = CalculateHeroHeight(scale, heightRatio);
+
+                layout.minHeight = heroHeight;
+                layout.preferredHeight = heroHeight;
+                heroMinimumHeight = heroHeight;
+            }
+            else
+            {
+                layout.minHeight = 0f;
+                layout.preferredHeight = -1f;
+            }
 
             _cardLayouts.Add(new CardLayoutInfo
             {
@@ -491,7 +509,17 @@ namespace RetroTech
                 }
 
                 if (card.LayoutElement != null)
-                    card.LayoutElement.minHeight = card.IsHero ? _heroMinimumHeightBase * scale : 0f;
+                {
+                    if (card.IsHero)
+                    {
+                        UpdateHeroCardHeight(card.LayoutElement, scale, heightRatio);
+                    }
+                    else
+                    {
+                        card.LayoutElement.minHeight = 0f;
+                        card.LayoutElement.preferredHeight = -1f;
+                    }
+                }
             }
 
             if (_callToActionLayoutElement != null)
@@ -510,7 +538,7 @@ namespace RetroTech
                 _callToActionLabelRect.offsetMax = new Vector2(-padding.x, -padding.y);
             }
 
-            heroMinimumHeight = _heroMinimumHeightBase * scale;
+            heroMinimumHeight = CalculateHeroHeight(scale, heightRatio);
             sectionSpacing = _sectionSpacingBase * scale;
             cardSpacing = _cardSpacingBase * scale;
             contentPadding = new Vector4(_contentPaddingBase.x * scale, _contentPaddingBase.y * scale,
@@ -540,6 +568,34 @@ namespace RetroTech
             target.right = Mathf.RoundToInt(padding.y);
             target.top = Mathf.RoundToInt(padding.z);
             target.bottom = Mathf.RoundToInt(padding.w);
+        }
+
+        private void UpdateHeroCardHeight(LayoutElement layoutElement, float scale, float heightRatio)
+        {
+            if (layoutElement == null)
+                return;
+
+            var heroHeight = CalculateHeroHeight(scale, heightRatio);
+
+            layoutElement.minHeight = heroHeight;
+            layoutElement.preferredHeight = heroHeight;
+        }
+
+        private float CalculateHeroHeight(float scale, float heightRatio)
+        {
+            var reference = GetEffectiveReferenceResolution();
+            var scaledMinimum = _heroMinimumHeightBase * scale;
+            var scaledReference = reference.y * heroViewportHeightRatio * scale;
+            var actualHeight = reference.y * heroViewportHeightRatio * Mathf.Max(heightRatio, 1f);
+
+            return Mathf.Max(scaledMinimum, scaledReference, actualHeight);
+        }
+
+        private Vector2 GetEffectiveReferenceResolution()
+        {
+            return referenceResolution.x > 0f && referenceResolution.y > 0f
+                ? referenceResolution
+                : new Vector2(1080f, 1920f);
         }
 
         private void UpdateSectionTitleFontSizes(int newSize)
