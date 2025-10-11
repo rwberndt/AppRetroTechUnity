@@ -70,7 +70,8 @@ namespace RetroTech
             CreateCanvas();
             SetupBackground();
 
-            _navBarReservedHeight = NavBarHeight + Screen.safeArea.y;
+            float navBarHeight = GetNavBarHeight();
+            _navBarReservedHeight = navBarHeight + Screen.safeArea.y;
             InitializeServices();
         }
 
@@ -122,7 +123,13 @@ namespace RetroTech
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1080, 1920);
-            scaler.matchWidthOrHeight = 0.5f;
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = ResponsiveMetrics.GetCanvasMatch();
+
+            var responsiveScaler = canvasGO.AddComponent<ResponsiveCanvasScaler>();
+            responsiveScaler.BaseReferenceResolution = new Vector2(1080f, 1920f);
+            responsiveScaler.SmallScreenScale = 1.25f;
+            responsiveScaler.LargeScreenScale = 0.95f;
 
             canvasGO.AddComponent<GraphicRaycaster>();
 
@@ -206,8 +213,9 @@ namespace RetroTech
             var srt = surface.AddComponent<RectTransform>();
             srt.anchorMin = Vector2.zero;
             srt.anchorMax = Vector2.one;
-            srt.offsetMin = new Vector2(16f, 16f);
-            srt.offsetMax = new Vector2(-16f, -16f);
+            float surfacePadding = ResponsiveMetrics.LerpByDevice(12f, 24f);
+            srt.offsetMin = new Vector2(surfacePadding, surfacePadding);
+            srt.offsetMax = new Vector2(-surfacePadding, -surfacePadding);
 
             // Scrollable content container
             var scrollGO = new GameObject("ScrollView", typeof(RectTransform), typeof(ScrollRect));
@@ -247,11 +255,12 @@ namespace RetroTech
             scroll.content = crt;
 
             var vlg = content.GetComponent<VerticalLayoutGroup>();
-            int horizontalPadding = 32;
-            int topPadding = 40;
-            int bottomPadding = Mathf.CeilToInt(40f + _navBarReservedHeight);
+            int horizontalPadding = Mathf.RoundToInt(ResponsiveMetrics.LerpByDevice(24f, 40f));
+            int topPadding = Mathf.RoundToInt(ResponsiveMetrics.LerpByDevice(32f, 56f));
+            float bottomPaddingBase = ResponsiveMetrics.LerpByDevice(32f, 48f);
+            int bottomPadding = Mathf.CeilToInt(bottomPaddingBase + _navBarReservedHeight);
             vlg.padding = new RectOffset(horizontalPadding, horizontalPadding, topPadding, bottomPadding);
-            vlg.spacing = 24f;
+            vlg.spacing = ResponsiveMetrics.LerpByDevice(20f, 30f);
             vlg.childAlignment = TextAnchor.UpperLeft;
             vlg.childControlWidth = true;
             vlg.childForceExpandWidth = true;
@@ -270,7 +279,10 @@ namespace RetroTech
         }
 
         // ========= Navigation =========
-        private const float NavBarHeight = 80f;
+        private float GetNavBarHeight()
+        {
+            return ResponsiveMetrics.LerpByDevice(72f, 90f);
+        }
 
         private void CreateNavigationBar()
         {
@@ -284,8 +296,9 @@ namespace RetroTech
             rt.pivot = new Vector2(0.5f, 0f);
             rt.anchoredPosition = Vector2.zero;
 
+            float navBarHeight = GetNavBarHeight();
             float bottomInset = Screen.safeArea.y;
-            _navBarReservedHeight = NavBarHeight + bottomInset;
+            _navBarReservedHeight = navBarHeight + bottomInset;
             rt.sizeDelta = new Vector2(0f, _navBarReservedHeight);
 
             // Glass background effect
@@ -306,12 +319,14 @@ namespace RetroTech
             var rowRT = row.GetComponent<RectTransform>();
             rowRT.anchorMin = Vector2.zero;
             rowRT.anchorMax = Vector2.one;
-            rowRT.offsetMin = new Vector2(16, 12 + bottomInset);
-            rowRT.offsetMax = new Vector2(-16, -12);
+            float rowHorizontalPadding = ResponsiveMetrics.LerpByDevice(12f, 24f);
+            float rowVerticalPadding = ResponsiveMetrics.LerpByDevice(10f, 16f);
+            rowRT.offsetMin = new Vector2(rowHorizontalPadding, rowVerticalPadding + bottomInset);
+            rowRT.offsetMax = new Vector2(-rowHorizontalPadding, -rowVerticalPadding);
 
             var hlg = row.GetComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.spacing = 8f;
+            hlg.spacing = ResponsiveMetrics.LerpByDevice(6f, 10f);
             hlg.childControlWidth = true;
             hlg.childForceExpandWidth = true;
             hlg.childControlHeight = true;
@@ -335,7 +350,7 @@ namespace RetroTech
 
             var le = tab.GetComponent<LayoutElement>();
             le.flexibleWidth = 1;
-            le.preferredHeight = 56;
+            le.preferredHeight = ResponsiveMetrics.LerpByDevice(56f, 68f);
 
             var bg = tab.GetComponent<Image>();
             bg.color = new Color(1, 1, 1, 0);
@@ -359,8 +374,9 @@ namespace RetroTech
             // Layout for icon + text
             var vlg = tab.AddComponent<VerticalLayoutGroup>();
             vlg.childAlignment = TextAnchor.MiddleCenter;
-            vlg.spacing = 4f;
-            vlg.padding = new RectOffset(4, 4, 4, 4);
+            vlg.spacing = ResponsiveMetrics.LerpByDevice(3f, 6f);
+            int tabPadding = Mathf.RoundToInt(ResponsiveMetrics.LerpByDevice(4f, 8f));
+            vlg.padding = new RectOffset(tabPadding, tabPadding, tabPadding, tabPadding);
             vlg.childControlHeight = false;
             vlg.childForceExpandHeight = false;
             vlg.childControlWidth = true;
@@ -386,10 +402,11 @@ namespace RetroTech
             }
 
             var iconRT = iconGO.GetComponent<RectTransform>();
-            iconRT.sizeDelta = new Vector2(24, 24);
+            float iconSize = ResponsiveMetrics.LerpByDevice(26f, 32f);
+            iconRT.sizeDelta = new Vector2(iconSize, iconSize);
             var iconLE = iconGO.AddComponent<LayoutElement>();
-            iconLE.preferredWidth = 24;
-            iconLE.preferredHeight = 24;
+            iconLE.preferredWidth = iconSize;
+            iconLE.preferredHeight = iconSize;
 
             // Label using TMP
             var labelGO = new GameObject("Label", typeof(RectTransform));
@@ -399,9 +416,10 @@ namespace RetroTech
             labelTMP.overflowMode = TMPro.TextOverflowModes.Ellipsis;
 
             var labelRT = labelTMP.GetComponent<RectTransform>();
-            labelRT.sizeDelta = new Vector2(0, 14);
+            float labelHeight = Mathf.Ceil(labelTMP.fontSize + ResponsiveMetrics.LerpByDevice(6f, 8f));
+            labelRT.sizeDelta = new Vector2(0f, labelHeight);
             var labelLE = labelGO.AddComponent<LayoutElement>();
-            labelLE.preferredHeight = 14;
+            labelLE.preferredHeight = labelHeight;
         }
 
         private void RefreshTabsVisual()

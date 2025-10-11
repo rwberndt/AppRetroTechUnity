@@ -62,10 +62,12 @@ namespace RetroTech
             var go = new GameObject("TMP");
             go.transform.SetParent(parent, false);
             var rt = go.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(0, size + 18);
+            float fontScale = ResponsiveMetrics.GetFontScale();
+            float finalSize = Mathf.Max(1f, size * fontScale);
+            rt.sizeDelta = new Vector2(0f, finalSize + 18f);
             var t = go.AddComponent<TextMeshProUGUI>();
             t.text = text;
-            t.fontSize = size;
+            t.fontSize = finalSize;
             t.color = color;
             t.alignment = align;
             t.enableWordWrapping = true;
