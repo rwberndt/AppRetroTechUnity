@@ -15,10 +15,10 @@ namespace RetroTech
         private Vector2 _baseReferenceResolution = new(1080f, 1920f);
 
         [SerializeField, Min(0.01f)]
-        private float _smallScreenScale = 1.2f;
+        private float _smallScreenScale = 1.3f;
 
         [SerializeField, Min(0.01f)]
-        private float _largeScreenScale = 0.95f;
+        private float _largeScreenScale = 1.05f;
 
         [SerializeField]
         private bool _applyMatchWidthOrHeight = true;

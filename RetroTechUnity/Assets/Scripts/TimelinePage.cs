@@ -20,11 +20,11 @@ namespace RetroTech
         [Header("Visual Configuration")]
         [SerializeField] private float titleMarginBottom = 24f;
         [SerializeField] private float timelineCardHeight = 200f;
-        [SerializeField] private int pageTitleFontSize = 36;
-        [SerializeField] private int yearFontSize = 16;
-        [SerializeField] private int nameCardFontSize = 22;
-        [SerializeField] private int descriptionFontSize = 16;
-        [SerializeField] private int buttonFontSize = 16;
+        [SerializeField] private int pageTitleFontSize = 44;
+        [SerializeField] private int yearFontSize = 22;
+        [SerializeField] private int nameCardFontSize = 28;
+        [SerializeField] private int descriptionFontSize = 22;
+        [SerializeField] private int buttonFontSize = 22;
         [SerializeField] private float buttonHeight = 40f;
 
         // Colors

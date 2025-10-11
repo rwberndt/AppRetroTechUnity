@@ -21,10 +21,10 @@ namespace RetroTech
         [SerializeField] private float questionCardHeight = 120f;
         [SerializeField] private float optionHeight = 48f;
         [SerializeField] private float explanationHeight = 100f;
-        [SerializeField] private int titleFontSize = 28;
-        [SerializeField] private int scoreFontSize = 20;
-        [SerializeField] private int questionFontSize = 20;
-        [SerializeField] private int optionFontSize = 16;
+        [SerializeField] private int titleFontSize = 36;
+        [SerializeField] private int scoreFontSize = 26;
+        [SerializeField] private int questionFontSize = 28;
+        [SerializeField] private int optionFontSize = 22;
 
         // Colors
         private readonly Color HeaderColor = new Color32(255, 255, 255, 15);
@@ -207,11 +207,11 @@ namespace RetroTech
             expVLG.padding = new RectOffset(16, 16, 12, 12);
             expVLG.spacing = 8;
 
-            var expTitle = UiKit.TMP(expCard.transform, "❌ Incorreto!", 16, Color.white,
+            var expTitle = UiKit.TMP(expCard.transform, "❌ Incorreto!", 22, Color.white,
                 TextAlignmentOptions.Left, bold: true);
             expTitle.name = "ExpTitle";
 
-            _explanationText = (TextMeshProUGUI)UiKit.TMP(expCard.transform, "", 16,
+            _explanationText = (TextMeshProUGUI)UiKit.TMP(expCard.transform, "", 22,
                 new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
             _explanationText.enableWordWrapping = true;
 
@@ -397,11 +397,11 @@ namespace RetroTech
             // Score text
             var scoreTMP = UiKit.TMP(resultCard.transform,
                 $"Você acertou {_quizScore} de {SampleData.QuizQuestions.Count} perguntas!",
-                24, Color.white, TextAlignmentOptions.Center, bold: true);
+                32, Color.white, TextAlignmentOptions.Center, bold: true);
 
             // Message based on performance
             string message = GetResultMessage();
-            var msgTMP = UiKit.TMP(resultCard.transform, message, 18,
+            var msgTMP = UiKit.TMP(resultCard.transform, message, 24,
                 new Color32(255, 255, 255, 200), TextAlignmentOptions.Center);
 
             // Save high score
@@ -415,7 +415,7 @@ namespace RetroTech
             restartBtn.targetGraphic = restartCard;
             restartBtn.onClick.AddListener(RestartQuiz);
 
-            var restartTMP = UiKit.TMP(restartCard.transform, "Reiniciar Quiz", 18,
+            var restartTMP = UiKit.TMP(restartCard.transform, "Reiniciar Quiz", 24,
                 OptionTextColor, TextAlignmentOptions.Center, bold: true);
             restartTMP.raycastTarget = false;
 

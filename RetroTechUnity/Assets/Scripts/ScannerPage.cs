@@ -26,11 +26,11 @@ namespace RetroTech
         [SerializeField] private float previewCardHeight = 280f;
         [SerializeField] private float tipsCardHeight = 140f;
         [SerializeField] private float qrFrameSize = 180f;
-        [SerializeField] private int titleFontSize = 36;
-        [SerializeField] private int scanTitleFontSize = 24;
-        [SerializeField] private int scanDescFontSize = 18;
-        [SerializeField] private int tipsTitleFontSize = 20;
-        [SerializeField] private int tipsFontSize = 16;
+        [SerializeField] private int titleFontSize = 48;
+        [SerializeField] private int scanTitleFontSize = 30;
+        [SerializeField] private int scanDescFontSize = 24;
+        [SerializeField] private int tipsTitleFontSize = 26;
+        [SerializeField] private int tipsFontSize = 22;
 
         // Events
         public System.Action<ComputerPiece> OnPieceScanned;
@@ -539,7 +539,7 @@ namespace RetroTech
             colors.pressedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
             btn.colors = colors;
 
-            var label = UiKit.TMP(btnCard.transform, text, 18,
+            var label = UiKit.TMP(btnCard.transform, text, 24,
                 new Color32(103, 80, 164, 255), TextAlignmentOptions.Center, bold: true);
             label.enableWordWrapping = false;
             label.raycastTarget = false;

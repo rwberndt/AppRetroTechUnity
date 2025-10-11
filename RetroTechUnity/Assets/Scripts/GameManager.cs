@@ -128,8 +128,8 @@ namespace RetroTech
 
             var responsiveScaler = canvasGO.AddComponent<ResponsiveCanvasScaler>();
             responsiveScaler.BaseReferenceResolution = new Vector2(1080f, 1920f);
-            responsiveScaler.SmallScreenScale = 1.25f;
-            responsiveScaler.LargeScreenScale = 0.95f;
+            responsiveScaler.SmallScreenScale = 1.35f;
+            responsiveScaler.LargeScreenScale = 1.05f;
 
             canvasGO.AddComponent<GraphicRaycaster>();
 
@@ -411,7 +411,7 @@ namespace RetroTech
             // Label using TMP
             var labelGO = new GameObject("Label", typeof(RectTransform));
             labelGO.transform.SetParent(tab.transform, false);
-            var labelTMP = UiKit.TMP(labelGO.transform, label, 11, new Color32(210, 210, 235, 255), TextAlignmentOptions.Center);
+            var labelTMP = UiKit.TMP(labelGO.transform, label, 14, new Color32(210, 210, 235, 255), TextAlignmentOptions.Center);
             labelTMP.enableWordWrapping = false;
             labelTMP.overflowMode = TMPro.TextOverflowModes.Ellipsis;
 
@@ -698,7 +698,7 @@ namespace RetroTech
             colors.pressedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
             btn.colors = colors;
 
-            var label = UiKit.TMP(btnCard.transform, text, 18, new Color32(103, 80, 164, 255), TextAlignmentOptions.Center, bold: true);
+            var label = UiKit.TMP(btnCard.transform, text, 24, new Color32(103, 80, 164, 255), TextAlignmentOptions.Center, bold: true);
             label.enableWordWrapping = false;
             label.raycastTarget = false;
 
@@ -726,7 +726,7 @@ namespace RetroTech
             colors.pressedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
             btn.colors = colors;
 
-            var label = UiKit.TMP(btnCard.transform, text, 28, new Color32(103, 80, 164, 255), TextAlignmentOptions.Center, bold: true);
+            var label = UiKit.TMP(btnCard.transform, text, 34, new Color32(103, 80, 164, 255), TextAlignmentOptions.Center, bold: true);
             label.enableWordWrapping = false;
             label.raycastTarget = false;
 
@@ -753,7 +753,7 @@ namespace RetroTech
             colors.pressedColor = new Color(1, 1, 1, 0.25f);
             btn.colors = colors;
 
-            var titleTMP = UiKit.TMP(headerCard.transform, title, 20, Color.white, TextAlignmentOptions.MidlineLeft, bold: false);
+            var titleTMP = UiKit.TMP(headerCard.transform, title, 26, Color.white, TextAlignmentOptions.MidlineLeft, bold: false);
             titleTMP.enableWordWrapping = false;
             titleTMP.overflowMode = TMPro.TextOverflowModes.Ellipsis;
             titleTMP.rectTransform.anchorMin = Vector2.zero;
@@ -791,7 +791,7 @@ namespace RetroTech
             {
                 // Use text as fallback
                 chevronGO.GetComponent<Image>().color = new Color(0, 0, 0, 0);
-                var textTMP = UiKit.TMP(chevronGO.transform, "▼", 16, Color.white, TextAlignmentOptions.Center);
+                var textTMP = UiKit.TMP(chevronGO.transform, "▼", 20, Color.white, TextAlignmentOptions.Center);
                 textTMP.raycastTarget = false;
                 var textRT = textTMP.rectTransform;
                 textRT.anchorMin = Vector2.zero;
@@ -1167,10 +1167,10 @@ namespace RetroTech
             backBtn.GetComponent<Image>().color = new Color(1, 1, 1, 0.2f);
             backBtn.GetComponent<Button>().onClick.AddListener(CloseModal);
 
-            UiKit.TMP(backBtn.transform, "←", 24, Color.white, TextAlignmentOptions.Center);
+            UiKit.TMP(backBtn.transform, "←", 30, Color.white, TextAlignmentOptions.Center);
 
             // App title
-            UiKit.TMP(headerGO.transform, "RetroTech", 28, Color.white, TextAlignmentOptions.Left, bold: true);
+            UiKit.TMP(headerGO.transform, "RetroTech", 36, Color.white, TextAlignmentOptions.Left, bold: true);
 
             // Content scroll view
             var contentScroll = CreateModalScrollView(detailPanel.transform, new Vector2(16, 16), new Vector2(-16, -96));
@@ -1186,7 +1186,7 @@ namespace RetroTech
             heroCard.color = new Color(1f, 1f, 1f, 0.15f);
 
             // Title
-            UiKit.TMP(parent, piece.Name, 32, Color.white, TextAlignmentOptions.Left, bold: true);
+            UiKit.TMP(parent, piece.Name, 40, Color.white, TextAlignmentOptions.Left, bold: true);
 
             // Year
             AddDetailField(parent, "Ano de fabricação", piece.YearManufactured > 0 ? piece.YearManufactured.ToString() : "-");
@@ -1207,15 +1207,15 @@ namespace RetroTech
 
         private void AddDetailField(Transform parent, string label, string value)
         {
-            UiKit.TMP(parent, label, 18, new Color32(255, 255, 255, 150), TextAlignmentOptions.Left);
-            var valueTMP = UiKit.TMP(parent, value, 20, Color.white, TextAlignmentOptions.Left, bold: true);
+            UiKit.TMP(parent, label, 24, new Color32(255, 255, 255, 150), TextAlignmentOptions.Left);
+            var valueTMP = UiKit.TMP(parent, value, 26, Color.white, TextAlignmentOptions.Left, bold: true);
             valueTMP.margin = new Vector4(0, 0, 0, 16);
         }
 
         private void AddDetailSection(Transform parent, string title, string content)
         {
-            UiKit.TMP(parent, title, 24, Color.white, TextAlignmentOptions.Left, bold: true);
-            var contentTMP = UiKit.TMP(parent, content, 18, new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
+            UiKit.TMP(parent, title, 30, Color.white, TextAlignmentOptions.Left, bold: true);
+            var contentTMP = UiKit.TMP(parent, content, 24, new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
             contentTMP.enableWordWrapping = true;
             contentTMP.margin = new Vector4(0, 0, 0, 20);
         }
@@ -1371,7 +1371,7 @@ namespace RetroTech
 
                 var resultTMP = UiKit.TMP(resultCard.transform,
                     $"{piece.Name} ({piece.YearManufactured}) - {piece.Description}",
-                    16, Color.white, TextAlignmentOptions.MidlineLeft);
+                    22, Color.white, TextAlignmentOptions.MidlineLeft);
                 resultTMP.enableWordWrapping = false;
                 resultTMP.overflowMode = TMPro.TextOverflowModes.Ellipsis;
                 resultTMP.raycastTarget = false;
@@ -1386,7 +1386,7 @@ namespace RetroTech
             // Add results count
             if (filtered.Count == 0)
             {
-                var noResultsTMP = UiKit.TMP(resultsGO, "Nenhuma peça encontrada.", 18, new Color32(255, 255, 255, 150), TextAlignmentOptions.Center);
+                var noResultsTMP = UiKit.TMP(resultsGO, "Nenhuma peça encontrada.", 24, new Color32(255, 255, 255, 150), TextAlignmentOptions.Center);
             }
         }
 

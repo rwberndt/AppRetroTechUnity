@@ -20,8 +20,8 @@ namespace RetroTech
         [Header("Visual Configuration")]
         [SerializeField] private float categoryHeaderHeight = 56f;
         [SerializeField] private float subcategoryItemHeight = 48f;
-        [SerializeField] private int categoryTitleFontSize = 18;
-        [SerializeField] private int subcategoryFontSize = 18;
+        [SerializeField] private int categoryTitleFontSize = 24;
+        [SerializeField] private int subcategoryFontSize = 22;
 
         // Colors
         private readonly Color HeaderColor = new Color32(255, 255, 255, 38);
@@ -380,7 +380,7 @@ namespace RetroTech
             closeBtn.GetComponent<Image>().color = new Color(0.9f, 0.9f, 0.9f, 1f);
             closeBtn.GetComponent<Button>().onClick.AddListener(CloseModal);
 
-            UiKit.TMP(closeBtn.transform, "✕", 18, ModalTextColor, TextAlignmentOptions.Center, bold: true);
+            UiKit.TMP(closeBtn.transform, "✕", 26, ModalTextColor, TextAlignmentOptions.Center, bold: true);
         }
 
         /// <summary>
@@ -463,7 +463,7 @@ namespace RetroTech
                     OnPieceSelected?.Invoke(piece);
                 });
 
-                var pieceTMP = UiKit.TMP(pieceCard.transform, piece.Name, 18, ModalTextColor,
+                var pieceTMP = UiKit.TMP(pieceCard.transform, piece.Name, 24, ModalTextColor,
                     TextAlignmentOptions.MidlineLeft);
                 pieceTMP.raycastTarget = false;
                 var pieceRT = pieceTMP.rectTransform;

@@ -25,7 +25,7 @@ namespace RetroTech
         /// Returns a scale that can be applied to font sizes. Smaller screens receive a
         /// slightly larger scale to improve readability.
         /// </summary>
-        public static float GetFontScale(float smallScreenScale = 1.15f, float largeScreenScale = 1.0f)
+        public static float GetFontScale(float smallScreenScale = 1.4f, float largeScreenScale = 1.18f)
         {
             float normalized = GetNormalizedMinDimension();
             return Mathf.Lerp(smallScreenScale, largeScreenScale, normalized);
@@ -56,8 +56,8 @@ namespace RetroTech
         /// </summary>
         public static Vector2 GetReferenceResolution(
             Vector2 baseReferenceResolution,
-            float smallScreenScale = 1.2f,
-            float largeScreenScale = 0.95f)
+            float smallScreenScale = 1.3f,
+            float largeScreenScale = 1.05f)
         {
             float normalized = GetNormalizedMinDimension();
             float scale = Mathf.Lerp(smallScreenScale, largeScreenScale, normalized);
