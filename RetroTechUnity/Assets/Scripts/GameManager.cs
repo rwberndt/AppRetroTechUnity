@@ -27,6 +27,8 @@ namespace RetroTech
         private GameObject[] _pages;
         private GameObject _navBar;
 
+        private float _navBarReservedHeight;
+
         // Updated Palette to match prototype
         private readonly Color BackgroundColor = new Color32(23, 22, 35, 255);
         private readonly Color CardColor = new Color32(255, 255, 255, 30); // Glass effect
@@ -73,6 +75,8 @@ namespace RetroTech
             LoadIcons();
             CreateCanvas();
             SetupBackground();
+
+            _navBarReservedHeight = NavBarHeight + Screen.safeArea.y;
             InitializeServices();
         }
 
@@ -403,10 +407,10 @@ namespace RetroTech
             surface.transform.SetParent(_canvas.transform, false);
 
             var srt = surface.AddComponent<RectTransform>();
-            srt.anchorMin = new Vector2(0f, 0.08f); // Leave space for nav bar
-            srt.anchorMax = new Vector2(1f, 1f);
-            srt.offsetMin = new Vector2(16, 16); // Small margin
-            srt.offsetMax = new Vector2(-16, -16);
+            srt.anchorMin = Vector2.zero;
+            srt.anchorMax = Vector2.one;
+            srt.offsetMin = new Vector2(16f, 16f);
+            srt.offsetMax = new Vector2(-16f, -16f);
 
             // Scrollable content container
             var scrollGO = new GameObject("ScrollView", typeof(RectTransform), typeof(ScrollRect));
@@ -446,8 +450,11 @@ namespace RetroTech
             scroll.content = crt;
 
             var vlg = content.GetComponent<VerticalLayoutGroup>();
-            vlg.padding = new RectOffset(40, 40, 60, 60); // Much more padding
-            vlg.spacing = 30; // More spacing between elements
+            int horizontalPadding = 32;
+            int topPadding = 40;
+            int bottomPadding = Mathf.CeilToInt(40f + _navBarReservedHeight);
+            vlg.padding = new RectOffset(horizontalPadding, horizontalPadding, topPadding, bottomPadding);
+            vlg.spacing = 24f;
             vlg.childAlignment = TextAnchor.UpperLeft;
             vlg.childControlWidth = true;
             vlg.childForceExpandWidth = true;
@@ -455,6 +462,12 @@ namespace RetroTech
             vlg.childForceExpandHeight = false;
 
             content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var contentLayoutElement = content.AddComponent<LayoutElement>();
+            contentLayoutElement.flexibleHeight = 1f;
+
+            var prototypeContentFitter = content.AddComponent<PrototypeSurfaceContentFitter>();
+            prototypeContentFitter.Initialize(vpRT, contentLayoutElement);
 
             return (surface, crt);
         }
@@ -475,7 +488,8 @@ namespace RetroTech
             rt.anchoredPosition = Vector2.zero;
 
             float bottomInset = Screen.safeArea.y;
-            rt.sizeDelta = new Vector2(0f, NavBarHeight + bottomInset);
+            _navBarReservedHeight = NavBarHeight + bottomInset;
+            rt.sizeDelta = new Vector2(0f, _navBarReservedHeight);
 
             // Glass background effect
             var bgGO = new GameObject("Background", typeof(RectTransform), typeof(Image));

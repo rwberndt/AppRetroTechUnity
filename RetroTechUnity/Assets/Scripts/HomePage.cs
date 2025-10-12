@@ -15,11 +15,12 @@ namespace RetroTech
         [SerializeField] private string pageTitle = "HomePage";
 
         [Header("Content Configuration")]
-        [SerializeField] private float titleFontSize = 60f;
-        [SerializeField] private float welcomeFontSize = 40f;
-        [SerializeField] private float descriptionFontSize = 35f;
-        [SerializeField] private float sectionTitleFontSize = 40f;
-        [SerializeField] private float sectionTextFontSize = 35f;
+        [SerializeField] private float titleFontSize = 80f;
+        [SerializeField] private float welcomeFontSize = 52f;
+        [SerializeField] private float descriptionFontSize = 44f;
+        [SerializeField] private float sectionTitleFontSize = 50f;
+        [SerializeField] private float sectionTextFontSize = 42f;
+        [SerializeField] private float sectionSpacing = 50f;
 
         // Colors
         private readonly Color TextMain = new Color32(245, 245, 255, 255);
@@ -55,12 +56,32 @@ namespace RetroTech
         private void CreateContent()
         {
             CreateTitle();
+            AddSpacing(30f);
             CreateWelcomeSection();
+            AddSpacing(20f);
             CreateDescriptionSection();
+            AddSpacing(sectionSpacing);
             CreateObjectiveSection();
+            AddSpacing(sectionSpacing);
             CreateFeaturesSection();
+            AddSpacing(sectionSpacing);
             CreateTeamSection();
+            AddSpacing(sectionSpacing);
             CreateCTAButton();
+        }
+
+        /// <summary>
+        /// Adiciona espaçamento entre seções
+        /// </summary>
+        /// <param name="customSpacing">Espaçamento customizado (opcional)</param>
+        private void AddSpacing(float? customSpacing = null)
+        {
+            var spacer = new GameObject("Spacer");
+            spacer.transform.SetParent(_contentContainer, false);
+
+            var spacerLE = spacer.AddComponent<LayoutElement>();
+            spacerLE.minHeight = customSpacing ?? sectionSpacing;
+            spacerLE.preferredHeight = customSpacing ?? sectionSpacing;
         }
 
         /// <summary>
@@ -102,7 +123,7 @@ namespace RetroTech
         private void CreateObjectiveSection()
         {
             // Título da seção
-            var objTitleTMP = UiKit.TMP(_contentContainer, "Objetivo do aplicativo", (int)sectionTitleFontSize,
+            var objTitleTMP = UiKit.TMP(_contentContainer, "Objetivo do aplicativo\n", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             objTitleTMP.name = "ObjectiveTitle";
 
@@ -121,7 +142,7 @@ namespace RetroTech
         private void CreateFeaturesSection()
         {
             // Título da seção
-            var featTitleTMP = UiKit.TMP(_contentContainer, "Principais funcionalidades", (int)sectionTitleFontSize,
+            var featTitleTMP = UiKit.TMP(_contentContainer, "Principais funcionalidades\n", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             featTitleTMP.name = "FeaturesTitle";
 
@@ -143,12 +164,12 @@ namespace RetroTech
         private void CreateTeamSection()
         {
             // Título da seção
-            var teamTitleTMP = UiKit.TMP(_contentContainer, "Equipe de desenvolvimento", (int)sectionTitleFontSize,
+            var teamTitleTMP = UiKit.TMP(_contentContainer, "Equipe de desenvolvimento\n", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             teamTitleTMP.name = "TeamTitle";
 
             // Informações da equipe
-            var teamText = "Ricardo Berndt - Ciência da Computação\n\n" +
+            var teamText = "Ricardo Berndt - Ciência da Computação\n" +
                           "Orientador: Dalton Solano dos Reis\n" +
                           "Supervisor: Miguel A. Wistainater";
 
@@ -162,17 +183,17 @@ namespace RetroTech
         /// </summary>
         private void CreateCTAButton()
         {
-            var buttonCard = UiKit.CreateCard(_contentContainer.transform, new Vector2(0, 60),
+            var buttonCard = UiKit.CreateCard(_contentContainer.transform, new Vector2(0, 80),
                 Color.white, 22f);
 
             var buttonLE = buttonCard.gameObject.AddComponent<LayoutElement>();
-            buttonLE.minHeight = 60;
-            buttonLE.preferredHeight = 60;
+            buttonLE.minHeight = 80;
+            buttonLE.preferredHeight = 80;
 
             var button = buttonCard.gameObject.AddComponent<Button>();
             button.onClick.AddListener(() => OnSearchPiecesClicked?.Invoke());
 
-            var buttonText = UiKit.TMP(buttonCard.transform, "Buscar Peças", 30,
+            var buttonText = UiKit.TMP(buttonCard.transform, "Buscar Peças", 38,
                 PrimaryColor, TextAlignmentOptions.Center, bold: true);
             buttonText.name = "CTAButtonText";
             buttonText.enableWordWrapping = false;
@@ -264,8 +285,11 @@ namespace RetroTech
             descriptionFontSize = Mathf.Max(10f, descriptionFontSize);
             sectionTitleFontSize = Mathf.Max(10f, sectionTitleFontSize);
             sectionTextFontSize = Mathf.Max(10f, sectionTextFontSize);
+            sectionSpacing = Mathf.Max(0f, sectionSpacing);
         }
 #endif
         #endregion
     }
 }
+
+
