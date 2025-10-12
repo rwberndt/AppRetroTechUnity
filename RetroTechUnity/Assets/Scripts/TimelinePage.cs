@@ -156,7 +156,7 @@ namespace RetroTech
             layoutGroup.padding = new RectOffset(0, 0, 0, 24);
             layoutGroup.childAlignment = TextAnchor.UpperLeft;
             layoutGroup.childControlWidth = true;
-            layoutGroup.childControlHeight = false;
+            layoutGroup.childControlHeight = true;
             layoutGroup.childForceExpandWidth = true;
             layoutGroup.childForceExpandHeight = false;
 
@@ -216,13 +216,29 @@ namespace RetroTech
             var timelineCard = createGlassCardFunc(parent, timelineCardHeight);
             timelineCard.color = TimelineCardColor;
 
-            var cardVLG = timelineCard.gameObject.AddComponent<VerticalLayoutGroup>();
+            var cardLayoutElement = timelineCard.GetComponent<LayoutElement>();
+            if (cardLayoutElement != null)
+            {
+                cardLayoutElement.minHeight = timelineCardHeight;
+                cardLayoutElement.preferredHeight = -1f;
+                cardLayoutElement.flexibleHeight = 0f;
+            }
+
+            var cardFitter = timelineCard.gameObject.GetComponent<ContentSizeFitter>();
+            if (cardFitter == null)
+                cardFitter = timelineCard.gameObject.AddComponent<ContentSizeFitter>();
+            cardFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            cardFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+            var cardVLG = timelineCard.gameObject.GetComponent<VerticalLayoutGroup>();
+            if (cardVLG == null)
+                cardVLG = timelineCard.gameObject.AddComponent<VerticalLayoutGroup>();
             cardVLG.padding = new RectOffset(20, 20, 16, 16);
             cardVLG.spacing = 12;
             cardVLG.childAlignment = TextAnchor.UpperLeft;
             cardVLG.childControlWidth = true;
             cardVLG.childForceExpandWidth = true;
-            cardVLG.childControlHeight = false;
+            cardVLG.childControlHeight = true;
             cardVLG.childForceExpandHeight = false;
 
             // Year badge
