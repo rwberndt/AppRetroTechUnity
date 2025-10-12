@@ -12,7 +12,11 @@ namespace RetroTech.Services
     {
         Task<IReadOnlyList<Category>> GetCategoriesAsync(bool forceRefresh = false, CancellationToken cancellationToken = default);
 
+        Task<Category> GetCategoryByIdAsync(long id, bool forceRefresh = false, CancellationToken cancellationToken = default);
+
         Task<IReadOnlyList<ComputerPiece>> GetPiecesAsync(bool forceRefresh = false, CancellationToken cancellationToken = default);
+
+        Task<ComputerPiece> GetPieceByIdAsync(long id, bool forceRefresh = false, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<QuizQuestion>> GetQuizQuestionsAsync(bool forceRefresh = false, CancellationToken cancellationToken = default);
     }
