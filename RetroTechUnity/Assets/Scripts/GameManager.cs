@@ -43,6 +43,7 @@ namespace RetroTech
         // Icons (Resources/Icons/*.png)
         private Sprite _iconHome, _iconCategories, _iconTimeline, _iconScanner, _iconQuiz;
 
+        private ApiConfiguration _apiConfiguration;
         private ApiClient _apiClient;
         private IContentService _contentService;
 
@@ -54,6 +55,11 @@ namespace RetroTech
         private ScannerPage _scannerPage;
         private CategoriesPage _categoriesPage;
         private QuizPage _quizPage;
+
+        private LoginPage _loginPage;
+        private IAuthenticationService _authenticationService;
+        private UserProfile _currentUser;
+        private bool _contentInitialized;
 
         [RuntimeInitializeOnLoadMethod]
         private static void InitializeOnLoad()
@@ -78,14 +84,27 @@ namespace RetroTech
         {
             try
             {
-                await InitializeContentAsync();
-                CreatePages();
-                CreateNavigationBar();
-                SwitchPage(0);
+                CreateLoginPage();
+
+                if (_authenticationService != null && _authenticationService.TryAutoSignIn(out var profile))
+                {
+                    await HandleAuthenticatedAsync(profile);
+                }
+                else
+                {
+                    _loginPage?.ResetState();
+                    _loginPage?.ShowLogin();
+                }
             }
             catch (System.Exception ex)
             {
                 Debug.LogError($"Failed to initialize RetroTech content. {ex}");
+                if (_loginPage != null)
+                {
+                    _loginPage.SetBusy(false);
+                    _loginPage.ShowMessage("Não foi possível iniciar o aplicativo. Tente novamente.", true);
+                    _loginPage.ShowLogin();
+                }
             }
         }
 
@@ -93,13 +112,37 @@ namespace RetroTech
         {
             try
             {
-                var configuration = ApiConfiguration.Load();
-                _apiClient = new ApiClient(configuration);
-                _contentService = new ContentService(_apiClient, configuration);
+                _apiConfiguration = ApiConfiguration.Load();
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"Failed to configure API services. {ex}");
+                Debug.LogError($"Failed to load API configuration. {ex}");
+                _apiConfiguration = null;
+            }
+
+            if (_apiConfiguration == null)
+            {
+                return;
+            }
+
+            try
+            {
+                _authenticationService = new AuthenticationService(_apiConfiguration);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Failed to initialize authentication service. {ex}");
+                _authenticationService = null;
+            }
+
+            try
+            {
+                _apiClient = new ApiClient(_apiConfiguration);
+                _contentService = new ContentService(_apiClient, _apiConfiguration);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Failed to configure content services. {ex}");
                 _apiClient = null;
                 _contentService = null;
             }
@@ -108,6 +151,166 @@ namespace RetroTech
         private async Task InitializeContentAsync()
         {
             await SampleData.InitializeAsync(_contentService);
+        }
+
+        // ========= Authentication =========
+
+        private void CreateLoginPage()
+        {
+            if (_loginPage != null)
+            {
+                return;
+            }
+
+            var loginPageContainer = new GameObject("LoginPageContainer");
+            loginPageContainer.transform.SetParent(transform, false);
+            _loginPage = loginPageContainer.AddComponent<LoginPage>();
+            var loginSurface = _loginPage.CreatePage(_canvas.transform, BuildPrototypeSurface);
+            loginSurface.transform.SetAsLastSibling();
+
+            _loginPage.OnLoginRequested += HandleLoginRequested;
+            _loginPage.OnRegisterRequested += HandleRegisterRequested;
+            _loginPage.ResetState();
+        }
+
+        private async void HandleLoginRequested(string username, string password)
+        {
+            if (_authenticationService == null)
+            {
+                _loginPage?.ShowMessage("Serviço de autenticação indisponível.", true);
+                return;
+            }
+
+            _loginPage?.SetBusy(true);
+            _loginPage?.ShowMessage(string.Empty, false);
+
+            try
+            {
+                var result = await _authenticationService.SignInAsync(username, password);
+                if (result.Succeeded)
+                {
+                    await HandleAuthenticatedAsync(result.Profile);
+                }
+                else
+                {
+                    _loginPage?.SetBusy(false);
+                    _loginPage?.ClearPasswords();
+                    _loginPage?.ShowMessage(result.ErrorMessage, true);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Unexpected error during sign-in. {ex}");
+                _loginPage?.SetBusy(false);
+                _loginPage?.ClearPasswords();
+                _loginPage?.ShowMessage("Não foi possível concluir o login. Tente novamente.", true);
+            }
+        }
+
+        private async void HandleRegisterRequested(string username, string password)
+        {
+            if (_authenticationService == null)
+            {
+                _loginPage?.ShowMessage("Serviço de autenticação indisponível.", true);
+                return;
+            }
+
+            _loginPage?.SetBusy(true);
+            _loginPage?.ShowMessage(string.Empty, false);
+
+            try
+            {
+                var result = await _authenticationService.RegisterAsync(username, password);
+                if (result.Succeeded)
+                {
+                    await HandleAuthenticatedAsync(result.Profile);
+                }
+                else
+                {
+                    _loginPage?.SetBusy(false);
+                    _loginPage?.ClearPasswords();
+                    _loginPage?.ShowMessage(result.ErrorMessage, true);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Unexpected error during registration. {ex}");
+                _loginPage?.SetBusy(false);
+                _loginPage?.ClearPasswords();
+                _loginPage?.ShowMessage("Não foi possível concluir o cadastro. Tente novamente.", true);
+            }
+        }
+
+        private async Task HandleAuthenticatedAsync(UserProfile profile)
+        {
+            if (profile == null)
+            {
+                Debug.LogWarning("Received a null profile after authentication.");
+                _loginPage?.SetBusy(false);
+                _loginPage?.ShowMessage("Não foi possível autenticar o usuário. Tente novamente.", true);
+                _loginPage?.ShowLogin();
+                return;
+            }
+
+            _currentUser = profile;
+
+            if (!string.IsNullOrWhiteSpace(profile?.AccessToken))
+            {
+                if (_apiClient != null)
+                {
+                    _apiClient.SetBearerToken(profile.AccessToken);
+                }
+                else
+                {
+                    Debug.LogWarning("API client is not available to receive the authentication token.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Authenticated profile did not contain a valid access token.");
+            }
+
+            try
+            {
+                await EnsureContentInitializedAsync();
+                _loginPage?.ClearPasswords();
+                _loginPage?.SetBusy(false);
+                _loginPage?.ShowMessage(string.Empty, false);
+                _loginPage?.Hide();
+
+                _activeTab = 0;
+                SwitchPage(_activeTab);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"Failed to load content after authentication. {ex}");
+                _loginPage?.SetBusy(false);
+                _loginPage?.ShowMessage("Não foi possível carregar o conteúdo. Tente novamente.", true);
+                _loginPage?.ShowLogin();
+            }
+        }
+
+        private async Task EnsureContentInitializedAsync()
+        {
+            if (_contentInitialized)
+            {
+                if (_pages == null || _pages.Length == 0)
+                {
+                    CreatePages();
+                }
+
+                if (_navBar == null)
+                {
+                    CreateNavigationBar();
+                }
+
+                return;
+            }
+
+            await InitializeContentAsync();
+            CreatePages();
+            CreateNavigationBar();
+            _contentInitialized = true;
         }
 
         // ========= Canvas & Input =========
@@ -406,6 +609,11 @@ namespace RetroTech
 
         private void RefreshTabsVisual()
         {
+            if (_navBar == null)
+            {
+                return;
+            }
+
             var row = _navBar.transform.Find("Background/IconsRow");
             if (!row) return;
 
@@ -618,7 +826,12 @@ namespace RetroTech
        
         public void SwitchPage(int index)
         {
-            if (_activeTab == 3 && index != 3) 
+            if (_pages == null || index < 0 || index >= _pages.Length)
+            {
+                return;
+            }
+
+            if (_activeTab == 3 && index != 3)
             {
                 StopScanning();
             }
