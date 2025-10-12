@@ -11,7 +11,7 @@ namespace RetroTech.Services
     public class ApiConfiguration
     {
         private const string ResourcePath = "api-config";
-        private const string DefaultBaseUrl = "https://localhost:5001/api";
+        private const string DefaultBaseUrl = "http://localhost:8080/api";
 
         public Uri BaseUri { get; }
         public TimeSpan Timeout { get; }
@@ -37,11 +37,11 @@ namespace RetroTech.Services
             Timeout = TimeSpan.FromSeconds(data.timeoutSeconds > 0 ? data.timeoutSeconds : 30f);
             IgnoreCertificateErrors = data.ignoreCertificateErrors;
 
-            CategoriesEndpoint = NormalizeEndpoint(data.endpoints?.categories, "categories");
-            PiecesEndpoint = NormalizeEndpoint(data.endpoints?.pieces, "pieces");
-            QuizEndpoint = NormalizeEndpoint(data.endpoints?.quiz, "quiz");
-            AuthLoginEndpoint = NormalizeEndpoint(data.endpoints?.authLogin, "auth/login");
-            AuthRegisterEndpoint = NormalizeEndpoint(data.endpoints?.authRegister, "auth/register");
+            CategoriesEndpoint = NormalizeEndpoint(data.endpoints?.categories, "Categories");
+            PiecesEndpoint = NormalizeEndpoint(data.endpoints?.pieces, "Pieces");
+            QuizEndpoint = NormalizeEndpoint(data.endpoints?.quiz, "Quiz");
+            AuthLoginEndpoint = NormalizeEndpoint(data.endpoints?.authLogin, "Auth/login");
+            AuthRegisterEndpoint = NormalizeEndpoint(data.endpoints?.authRegister, "Auth/register");
         }
 
         public static ApiConfiguration Load()
@@ -98,11 +98,11 @@ namespace RetroTech.Services
         [Serializable]
         private class EndpointConfiguration
         {
-            public string categories = "categories";
-            public string pieces = "pieces";
-            public string quiz = "quiz";
-            public string authLogin = "auth/login";
-            public string authRegister = "auth/register";
+            public string categories = "Categories";
+            public string pieces = "Pieces";
+            public string quiz = "Quiz";
+            public string authLogin = "Auth/login";
+            public string authRegister = "Auth/register";
         }
     }
 }
