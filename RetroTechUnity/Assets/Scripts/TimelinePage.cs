@@ -151,6 +151,18 @@ namespace RetroTech
             _timelineContainer = new GameObject("Timeline", typeof(RectTransform));
             _timelineContainer.transform.SetParent(_contentContainer, false);
 
+            var layoutGroup = _timelineContainer.AddComponent<VerticalLayoutGroup>();
+            layoutGroup.spacing = 16f;
+            layoutGroup.padding = new RectOffset(0, 0, 0, 24);
+            layoutGroup.childAlignment = TextAnchor.UpperLeft;
+            layoutGroup.childControlWidth = true;
+            layoutGroup.childControlHeight = false;
+            layoutGroup.childForceExpandWidth = true;
+            layoutGroup.childForceExpandHeight = false;
+
+            var contentSizeFitter = _timelineContainer.AddComponent<ContentSizeFitter>();
+            contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
             var timelineLE = _timelineContainer.AddComponent<LayoutElement>();
             timelineLE.flexibleHeight = 1f;
         }
