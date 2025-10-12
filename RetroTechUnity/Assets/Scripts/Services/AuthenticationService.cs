@@ -68,7 +68,7 @@ namespace RetroTech.Services
                 return AuthenticationResult.Failure(validationError);
             }
 
-            return await SendAuthRequestAsync(_registerEndpoint, NormalizeUsername(username), password, cancellationToken).ConfigureAwait(false);
+            return await SendAuthRequestAsync(_registerEndpoint, NormalizeUsername(username), password, cancellationToken);
         }
 
         public async Task<AuthenticationResult> SignInAsync(string username, string password, CancellationToken cancellationToken = default)
@@ -79,7 +79,7 @@ namespace RetroTech.Services
                 return AuthenticationResult.Failure(validationError);
             }
 
-            return await SendAuthRequestAsync(_loginEndpoint, NormalizeUsername(username), password, cancellationToken).ConfigureAwait(false);
+            return await SendAuthRequestAsync(_loginEndpoint, NormalizeUsername(username), password, cancellationToken);
         }
 
         public bool TryAutoSignIn(out UserProfile profile)
@@ -134,10 +134,9 @@ namespace RetroTech.Services
             try
             {
                 using HttpResponseMessage response = await _httpClient
-                    .PostAsync(endpoint, content, cancellationToken)
-                    .ConfigureAwait(false);
+                    .PostAsync(endpoint, content, cancellationToken);
 
-                string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                string responseContent = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
                 {
