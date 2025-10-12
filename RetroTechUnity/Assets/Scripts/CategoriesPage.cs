@@ -18,10 +18,10 @@ namespace RetroTech
         [SerializeField] private string pageTitle = "CategoriesPage";
 
         [Header("Visual Configuration")]
-        [SerializeField] private float categoryHeaderHeight = 56f;
-        [SerializeField] private float subcategoryItemHeight = 48f;
-        [SerializeField] private int categoryTitleFontSize = 18;
-        [SerializeField] private int subcategoryFontSize = 18;
+        [SerializeField] private float categoryHeaderHeight = 80f; 
+        [SerializeField] private float subcategoryItemHeight = 70f; 
+        [SerializeField] private int categoryTitleFontSize = 36; 
+        [SerializeField] private int subcategoryFontSize = 32; 
 
         // Colors
         private readonly Color HeaderColor = new Color32(255, 255, 255, 38);
@@ -66,10 +66,42 @@ namespace RetroTech
         /// </summary>
         private void CreateCategoriesContent()
         {
+            // Criar título da página
+            CreatePageTitle();
+
             foreach (Category category in SampleData.Categories)
             {
                 CreateCategorySection(category);
             }
+        }
+
+        /// <summary>
+        /// Cria o título da página de categorias
+        /// </summary>
+        private void CreatePageTitle()
+        {
+            var titleContainer = new GameObject("PageTitleContainer", typeof(RectTransform));
+            titleContainer.transform.SetParent(_contentContainer, false);
+
+            var titleRT = titleContainer.GetComponent<RectTransform>();
+            titleRT.anchorMin = new Vector2(0, 1);
+            titleRT.anchorMax = new Vector2(1, 1);
+            titleRT.pivot = new Vector2(0.5f, 1);
+            titleRT.sizeDelta = new Vector2(0, 120); // Altura maior do container
+
+            // Criar texto do título
+            var titleTMP = UiKit.TMP(titleContainer.transform, "Categorias", 56,
+                TextColor, TextAlignmentOptions.Center, bold: true);
+
+            titleTMP.rectTransform.anchorMin = Vector2.zero;
+            titleTMP.rectTransform.anchorMax = Vector2.one;
+            titleTMP.rectTransform.offsetMin = new Vector2(24, 24);
+            titleTMP.rectTransform.offsetMax = new Vector2(-24, -24);
+            titleTMP.raycastTarget = false;
+            titleTMP.fontStyle = FontStyles.Bold;
+            titleTMP.fontSize = 56;
+
+            titleContainer.transform.SetAsFirstSibling(); // Colocar como primeiro elemento
         }
 
         /// <summary>
@@ -121,12 +153,12 @@ namespace RetroTech
             // Adicionar título
             var titleTMP = UiKit.TMP(header.transform, categoryName, categoryTitleFontSize,
                 TextColor, TextAlignmentOptions.MidlineLeft, bold: true);
-            titleTMP.enableWordWrapping = false;
-            titleTMP.overflowMode = TMPro.TextOverflowModes.Overflow;
+            titleTMP.enableWordWrapping = true; // ALTERADO de false para true
+            titleTMP.overflowMode = TMPro.TextOverflowModes.Ellipsis; // ALTERADO de Overflow para Ellipsis
             titleTMP.rectTransform.anchorMin = new Vector2(0, 0);
             titleTMP.rectTransform.anchorMax = new Vector2(1, 1);
-            titleTMP.rectTransform.offsetMin = new Vector2(16, 8);
-            titleTMP.rectTransform.offsetMax = new Vector2(-44, -8);
+            titleTMP.rectTransform.offsetMin = new Vector2(20, 12); // AUMENTADO padding de 16,8 para 20,12
+            titleTMP.rectTransform.offsetMax = new Vector2(-60, -12); // AUMENTADO espaço para chevron
             titleTMP.raycastTarget = false;
 
             // Criar chevron (seta)
@@ -151,8 +183,8 @@ namespace RetroTech
             chevronRT.anchorMin = new Vector2(1, 0.5f);
             chevronRT.anchorMax = new Vector2(1, 0.5f);
             chevronRT.pivot = new Vector2(1, 0.5f);
-            chevronRT.sizeDelta = new Vector2(18, 18);
-            chevronRT.anchoredPosition = new Vector2(-14, 0);
+            chevronRT.sizeDelta = new Vector2(24, 24); // AUMENTADO de 18x18 para 24x24
+            chevronRT.anchoredPosition = new Vector2(-18, 0); // AJUSTADO posição
 
             var chevronImg = chevronGO.GetComponent<Image>();
             var chevronSprite = Resources.Load<Sprite>("Sprites/Chevron");
@@ -190,8 +222,8 @@ namespace RetroTech
             subRT.pivot = new Vector2(0.5f, 1);
 
             var vlg = subList.GetComponent<VerticalLayoutGroup>();
-            vlg.padding = new RectOffset(16, 0, 8, 8);
-            vlg.spacing = 8;
+            vlg.padding = new RectOffset(20, 20, 12, 12); // AUMENTADO padding de 16,0,8,8 para 20,20,12,12
+            vlg.spacing = 10; // AUMENTADO de 8 para 10
             vlg.childControlWidth = true;
             vlg.childForceExpandWidth = true;
             vlg.childControlHeight = true;
@@ -232,13 +264,17 @@ namespace RetroTech
             // Adicionar texto
             var txt = UiKit.TMP(subCard.transform, subcategoryName, subcategoryFontSize,
                 TextColor, TextAlignmentOptions.MidlineLeft);
-            txt.enableWordWrapping = false;
+            txt.enableWordWrapping = true; // ALTERADO de false para true
             txt.overflowMode = TMPro.TextOverflowModes.Ellipsis;
             txt.rectTransform.anchorMin = Vector2.zero;
             txt.rectTransform.anchorMax = Vector2.one;
-            txt.rectTransform.offsetMin = new Vector2(20, 8);
-            txt.rectTransform.offsetMax = new Vector2(-20, -8);
+            txt.rectTransform.offsetMin = new Vector2(24, 12); // AUMENTADO padding de 20,8 para 24,12
+            txt.rectTransform.offsetMax = new Vector2(-24, -12); // AUMENTADO padding
             txt.raycastTarget = false;
+
+            // ADICIONADO: Garantir que o texto seja sempre visível
+            txt.fontSizeMin = 20; // Tamanho mínimo da fonte
+            txt.enableAutoSizing = false; // Desabilitar auto-sizing para manter tamanho consistente
 
             // Configurar clique
             string capturedSubcategory = subcategoryName;
@@ -380,7 +416,7 @@ namespace RetroTech
             closeBtn.GetComponent<Image>().color = new Color(0.9f, 0.9f, 0.9f, 1f);
             closeBtn.GetComponent<Button>().onClick.AddListener(CloseModal);
 
-            UiKit.TMP(closeBtn.transform, "✕", 18, ModalTextColor, TextAlignmentOptions.Center, bold: true);
+            UiKit.TMP(closeBtn.transform, "✕", 26, ModalTextColor, TextAlignmentOptions.Center, bold: true);
         }
 
         /// <summary>
