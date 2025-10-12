@@ -49,9 +49,12 @@ namespace RetroTech
         // State
         private SortOrder _currentSortOrder = SortOrder.Ascending;
         private List<ComputerPiece> _sortedPieces;
+        private List<ComputerPiece> _filteredPieces;
         private GameObject _pageObject;
         private RectTransform _contentContainer;
         private GameObject _timelineContainer;
+        private System.Func<Transform, float, Image> _createGlassCardFunc;
+        private System.Func<Transform, string, UnityEngine.Events.UnityAction, GameObject> _createCTAButtonFunc;
 
         /// <summary>
         /// Cria e configura a página da linha do tempo
@@ -159,19 +162,9 @@ namespace RetroTech
             System.Func<Transform, float, Image> createGlassCardFunc,
             System.Func<Transform, string, UnityEngine.Events.UnityAction, GameObject> createCTAButtonFunc)
         {
-            // Clear existing timeline
-            ClearTimeline();
-
-            // Sort pieces
-            SortPieces();
-
-            // Create timeline cards
-            foreach (var piece in _sortedPieces)
-            {
-                CreateTimelineCard(_timelineContainer.transform, piece, createGlassCardFunc, createCTAButtonFunc);
-            }
-
-            OnTimelineGenerated?.Invoke(_sortedPieces);
+            _createGlassCardFunc = createGlassCardFunc;
+            _createCTAButtonFunc = createCTAButtonFunc;
+            RefreshTimeline();
         }
 
         /// <summary>
@@ -179,7 +172,8 @@ namespace RetroTech
         /// </summary>
         private void SortPieces()
         {
-            _sortedPieces = new List<ComputerPiece>(SampleData.Pieces);
+            var sourcePieces = _filteredPieces ?? SampleData.Pieces ?? new List<ComputerPiece>();
+            _sortedPieces = new List<ComputerPiece>(sourcePieces);
 
             switch (_currentSortOrder)
             {
@@ -328,27 +322,25 @@ namespace RetroTech
         /// </summary>
         public void RefreshTimeline()
         {
-            if (_timelineContainer == null) return;
-
-            // Store reference to the old cards for smooth transition
-            var oldCards = new List<GameObject>();
-            foreach (Transform child in _timelineContainer.transform)
+            if (_timelineContainer == null)
             {
-                if (child.gameObject.name.StartsWith("TimelineCard_"))
-                    oldCards.Add(child.gameObject);
+                return;
             }
 
-            // Sort pieces with new order
             SortPieces();
 
-            // Remove old cards
-            foreach (var card in oldCards)
+            if (_createGlassCardFunc == null || _createCTAButtonFunc == null)
             {
-                Destroy(card);
+                return;
             }
 
-            // This would need the creation functions passed in - 
-            // for now, just trigger a complete regeneration
+            ClearTimeline();
+
+            foreach (var piece in _sortedPieces)
+            {
+                CreateTimelineCard(_timelineContainer.transform, piece, _createGlassCardFunc, _createCTAButtonFunc);
+            }
+
             OnTimelineGenerated?.Invoke(_sortedPieces);
         }
 
@@ -359,8 +351,9 @@ namespace RetroTech
         {
             if (_timelineContainer != null)
             {
-                foreach (Transform child in _timelineContainer.transform)
+                for (int i = _timelineContainer.transform.childCount - 1; i >= 0; i--)
                 {
+                    var child = _timelineContainer.transform.GetChild(i);
                     Destroy(child.gameObject);
                 }
             }
@@ -371,23 +364,10 @@ namespace RetroTech
         /// </summary>
         public void FilterByYearRange(int startYear, int endYear)
         {
-            var filteredPieces = SampleData.Pieces
+            var pieces = SampleData.Pieces ?? new List<ComputerPiece>();
+            _filteredPieces = pieces
                 .Where(p => p.YearManufactured >= startYear && p.YearManufactured <= endYear)
                 .ToList();
-
-            _sortedPieces = filteredPieces;
-
-            // Apply current sort order
-            switch (_currentSortOrder)
-            {
-                case SortOrder.Ascending:
-                    _sortedPieces.Sort((a, b) => a.YearManufactured.CompareTo(b.YearManufactured));
-                    break;
-                case SortOrder.Descending:
-                    _sortedPieces.Sort((a, b) => b.YearManufactured.CompareTo(a.YearManufactured));
-                    break;
-            }
-
             RefreshTimeline();
         }
 
@@ -396,6 +376,7 @@ namespace RetroTech
         /// </summary>
         public void ClearFilters()
         {
+            _filteredPieces = null;
             RefreshTimeline();
         }
 
@@ -411,25 +392,18 @@ namespace RetroTech
             }
 
             searchTerm = searchTerm.ToLower();
-            var searchResults = SampleData.Pieces
-                .Where(p => p.Name.ToLower().Contains(searchTerm) ||
-                           p.Description.ToLower().Contains(searchTerm) ||
-                           p.Manufacturer.ToLower().Contains(searchTerm))
+            var pieces = SampleData.Pieces ?? new List<ComputerPiece>();
+            _filteredPieces = pieces
+                .Where(p =>
+                {
+                    var name = p.Name ?? string.Empty;
+                    var description = p.Description ?? string.Empty;
+                    var manufacturer = p.Manufacturer ?? string.Empty;
+                    return name.ToLower().Contains(searchTerm) ||
+                           description.ToLower().Contains(searchTerm) ||
+                           manufacturer.ToLower().Contains(searchTerm);
+                })
                 .ToList();
-
-            _sortedPieces = searchResults;
-
-            // Apply current sort order
-            switch (_currentSortOrder)
-            {
-                case SortOrder.Ascending:
-                    _sortedPieces.Sort((a, b) => a.YearManufactured.CompareTo(b.YearManufactured));
-                    break;
-                case SortOrder.Descending:
-                    _sortedPieces.Sort((a, b) => b.YearManufactured.CompareTo(a.YearManufactured));
-                    break;
-            }
-
             RefreshTimeline();
         }
 
@@ -479,7 +453,8 @@ namespace RetroTech
         /// </summary>
         public List<ComputerPiece> GetDisplayedPieces()
         {
-            return new List<ComputerPiece>(_sortedPieces ?? SampleData.Pieces);
+            var pieces = _sortedPieces ?? SampleData.Pieces ?? new List<ComputerPiece>();
+            return new List<ComputerPiece>(pieces);
         }
 
         /// <summary>
