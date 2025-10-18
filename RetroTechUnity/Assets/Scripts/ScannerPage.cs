@@ -24,13 +24,22 @@ namespace RetroTech
 
         [Header("Visual Configuration")]
         [SerializeField] private float previewCardHeight = 280f;
-        [SerializeField] private float tipsCardHeight = 140f;
+        [SerializeField] private float tipsCardHeight = 160f;
         [SerializeField] private float qrFrameSize = 180f;
         [SerializeField] private int titleFontSize = 36;
+        [SerializeField] private int subtitleFontSize = 18;
         [SerializeField] private int scanTitleFontSize = 24;
         [SerializeField] private int scanDescFontSize = 18;
         [SerializeField] private int tipsTitleFontSize = 20;
         [SerializeField] private int tipsFontSize = 16;
+
+        [Header("Color Configuration")]
+        [SerializeField] private Color32 accentColor = new Color32(98, 0, 238, 255);
+        [SerializeField] private Color32 accentSoftColor = new Color32(98, 0, 238, 48);
+        [SerializeField] private Color32 readyStatusColor = new Color32(187, 134, 252, 255);
+        [SerializeField] private Color32 scanningStatusColor = new Color32(3, 218, 197, 255);
+        [SerializeField] private Color32 successStatusColor = new Color32(0, 200, 83, 255);
+        [SerializeField] private Color32 warningStatusColor = new Color32(255, 138, 128, 255);
 
         // Events
         public System.Action<ComputerPiece> OnPieceScanned;
@@ -41,6 +50,13 @@ namespace RetroTech
         private Canvas _parentCanvas;
         private Button _scanButton;
         private bool _isScanning = false;
+        private TextMeshProUGUI _statusTMP;
+        private TextMeshProUGUI _statusSubtitleTMP;
+        private Image _statusBadgeImage;
+        private Image _scanPulseImage;
+        private Coroutine _pulseRoutine;
+        private Color _statusBadgeBaseColor;
+        private Color _pulseBaseColor;
 
 #if ZXING_PRESENT
         private WebCamTexture _webcam;
@@ -96,9 +112,49 @@ namespace RetroTech
         /// </summary>
         private void CreateTitle()
         {
-            var titleTMP = UiKit.TMP(_contentContainer, "Scanner QR", titleFontSize,
+            var titleContainer = new GameObject("TitleContainer", typeof(RectTransform));
+            titleContainer.transform.SetParent(_contentContainer, false);
+
+            var titleVLG = titleContainer.AddComponent<VerticalLayoutGroup>();
+            titleVLG.childAlignment = TextAnchor.UpperLeft;
+            titleVLG.childControlWidth = true;
+            titleVLG.childForceExpandWidth = true;
+            titleVLG.childControlHeight = false;
+            titleVLG.childForceExpandHeight = false;
+            titleVLG.spacing = 6f;
+
+            var headingRow = new GameObject("HeadingRow", typeof(RectTransform));
+            headingRow.transform.SetParent(titleContainer.transform, false);
+
+            var headingHLG = headingRow.AddComponent<HorizontalLayoutGroup>();
+            headingHLG.spacing = 12f;
+            headingHLG.childAlignment = TextAnchor.MiddleLeft;
+            headingHLG.childControlWidth = false;
+            headingHLG.childForceExpandWidth = false;
+            headingHLG.childControlHeight = false;
+            headingHLG.childForceExpandHeight = false;
+
+            var accentGO = new GameObject("AccentBar", typeof(RectTransform), typeof(Image));
+            accentGO.transform.SetParent(headingRow.transform, false);
+            var accentRT = accentGO.GetComponent<RectTransform>();
+            accentRT.sizeDelta = new Vector2(6f, 48f);
+            var accentImg = accentGO.GetComponent<Image>();
+            accentImg.color = accentColor;
+            accentImg.raycastTarget = false;
+            var accentLE = accentGO.AddComponent<LayoutElement>();
+            accentLE.preferredWidth = 6f;
+            accentLE.minWidth = 6f;
+            accentLE.preferredHeight = 48f;
+            accentLE.minHeight = 48f;
+
+            var titleTMP = UiKit.TMP(headingRow.transform, "Scanner QR", titleFontSize,
                 Color.white, TextAlignmentOptions.Left, bold: true);
-            titleTMP.margin = new Vector4(0, 0, 0, 32);
+            titleTMP.enableWordWrapping = false;
+
+            var subtitleTMP = UiKit.TMP(titleContainer.transform,
+                "Escaneie peças do museu e desbloqueie novas histórias.",
+                subtitleFontSize, new Color32(255, 255, 255, 190), TextAlignmentOptions.Left);
+            subtitleTMP.margin = new Vector4(0, 0, 0, 20f);
         }
 
         /// <summary>
@@ -120,6 +176,9 @@ namespace RetroTech
 
             // QR Code frame
             CreateQRFrame(previewCard.transform);
+            CreateStatusSection(previewCard.transform);
+            SetStatus("Pronto para escanear", readyStatusColor,
+                "Toque em \"Iniciar Scanner\" para começar");
 
             // Title
             var scanTitleTMP = UiKit.TMP(previewCard.transform, "Scanner QR Code",
@@ -156,6 +215,20 @@ namespace RetroTech
                 frameImg.sprite = frameSprite;
                 frameImg.type = Image.Type.Sliced;
             }
+
+            var pulseGO = new GameObject("ScanPulse", typeof(RectTransform), typeof(Image));
+            pulseGO.transform.SetParent(frameGO.transform, false);
+            var pulseRT = pulseGO.GetComponent<RectTransform>();
+            pulseRT.anchorMin = Vector2.zero;
+            pulseRT.anchorMax = Vector2.one;
+            pulseRT.offsetMin = Vector2.zero;
+            pulseRT.offsetMax = Vector2.zero;
+            _scanPulseImage = pulseGO.GetComponent<Image>();
+            _scanPulseImage.raycastTarget = false;
+            _pulseBaseColor = (Color)accentSoftColor;
+            _pulseBaseColor.a = accentSoftColor.a / 255f;
+            _scanPulseImage.color = _pulseBaseColor;
+            _scanPulseImage.enabled = false;
 
             var frameLE = frameGO.AddComponent<LayoutElement>();
             frameLE.preferredWidth = qrFrameSize;
@@ -245,12 +318,9 @@ namespace RetroTech
                 tipsTitleFontSize, Color.white, bold: true);
             tipsTitleTMP.enableWordWrapping = false;
 
-            var tipsTMP = UiKit.TMP(tipsCard.transform,
-                "• Mantenha o QR code bem iluminado\n" +
-                "• Mantenha a câmera estável\n" +
-                "• Certifique-se que o código esteja completo na tela",
-                tipsFontSize, new Color32(255, 255, 255, 180), TextAlignmentOptions.Left);
-            tipsTMP.enableWordWrapping = true;
+            CreateTipItem(tipsCard.transform, "🔆", "Mantenha o QR code bem iluminado e sem reflexos fortes.");
+            CreateTipItem(tipsCard.transform, "🤳", "Segure o dispositivo com firmeza para facilitar a leitura.");
+            CreateTipItem(tipsCard.transform, "🎯", "Posicione o código dentro da moldura para garantir o foco completo.");
         }
 
         /// <summary>
@@ -262,6 +332,9 @@ namespace RetroTech
 
             _isScanning = true;
             UpdateScanButtonText("Escaneando...");
+            SetStatus("Escaneando...", scanningStatusColor,
+                "Mantenha o QR code alinhado ao quadro luminoso.");
+            StartScanPulse();
 
             // Solicitar permissão de câmera no Android
             RequestCameraPermission();
@@ -279,10 +352,13 @@ namespace RetroTech
         /// </summary>
         public void StopScan()
         {
-            if (!_isScanning) return;
+            if (_isScanning)
+            {
+                _isScanning = false;
+                UpdateScanButtonText("⚡ Iniciar Scanner");
+            }
 
-            _isScanning = false;
-            UpdateScanButtonText("⚡ Iniciar Scanner");
+            StopScanPulse();
 
 #if ZXING_PRESENT
             if (_scanCoroutine != null)
@@ -297,6 +373,9 @@ namespace RetroTech
                 _webcam = null;
             }
 #endif
+
+            SetStatus("Pronto para escanear", readyStatusColor,
+                "Toque em \"Iniciar Scanner\" para começar");
         }
 
         /// <summary>
@@ -334,6 +413,135 @@ namespace RetroTech
             }
         }
 
+        /// <summary>
+        /// Atualiza o texto e as cores do indicador de status do scanner
+        /// </summary>
+        private void SetStatus(string message, Color32 statusColor, string subtitle = null)
+        {
+            if (_statusTMP != null)
+            {
+                _statusTMP.text = message;
+                _statusTMP.color = statusColor;
+            }
+
+            if (_statusSubtitleTMP != null)
+            {
+                bool hasSubtitle = !string.IsNullOrEmpty(subtitle);
+                _statusSubtitleTMP.gameObject.SetActive(hasSubtitle);
+                if (hasSubtitle)
+                {
+                    _statusSubtitleTMP.text = subtitle;
+                    Color subtitleColor = statusColor;
+                    subtitleColor.a = 0.75f;
+                    _statusSubtitleTMP.color = subtitleColor;
+                }
+                else
+                {
+                    _statusSubtitleTMP.text = string.Empty;
+                }
+            }
+
+            if (_statusBadgeImage != null)
+            {
+                _statusBadgeBaseColor = statusColor;
+                _statusBadgeBaseColor.a = 0.24f;
+                if (_pulseRoutine == null)
+                {
+                    _statusBadgeImage.color = _statusBadgeBaseColor;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Inicia a animação de pulso visual durante o scan
+        /// </summary>
+        private void StartScanPulse()
+        {
+            if (_scanPulseImage == null)
+                return;
+
+            _scanPulseImage.enabled = true;
+
+            if (_pulseRoutine != null)
+            {
+                StopCoroutine(_pulseRoutine);
+            }
+
+            _pulseRoutine = StartCoroutine(PulseIndicator());
+        }
+
+        /// <summary>
+        /// Encerra a animação de pulso e restaura as cores base
+        /// </summary>
+        private void StopScanPulse()
+        {
+            if (_pulseRoutine != null)
+            {
+                StopCoroutine(_pulseRoutine);
+                _pulseRoutine = null;
+            }
+
+            if (_scanPulseImage != null)
+            {
+                _scanPulseImage.enabled = false;
+            }
+
+            ApplyStatusBaseVisuals();
+        }
+
+        /// <summary>
+        /// Aplica as cores base do indicador de status e da moldura
+        /// </summary>
+        private void ApplyStatusBaseVisuals()
+        {
+            if (_scanPulseImage != null)
+            {
+                _scanPulseImage.color = _pulseBaseColor;
+            }
+
+            if (_statusBadgeImage != null)
+            {
+                if (_statusBadgeBaseColor.a <= 0f)
+                {
+                    _statusBadgeBaseColor.a = 0.24f;
+                }
+
+                _statusBadgeImage.color = _statusBadgeBaseColor;
+            }
+        }
+
+        /// <summary>
+        /// Corrotina que gera efeito de pulso enquanto o scanner está ativo
+        /// </summary>
+        private IEnumerator PulseIndicator()
+        {
+            float elapsed = 0f;
+
+            while (_scanPulseImage != null && _scanPulseImage.enabled)
+            {
+                elapsed += Time.deltaTime * 2f;
+                float pulse = (Mathf.Sin(elapsed) + 1f) * 0.5f;
+
+                if (_scanPulseImage != null)
+                {
+                    var pulseColor = _pulseBaseColor;
+                    pulseColor.a = Mathf.Lerp(0.05f, 0.2f, pulse);
+                    _scanPulseImage.color = pulseColor;
+                }
+
+                if (_statusBadgeImage != null)
+                {
+                    var badgeColor = _statusBadgeBaseColor;
+                    badgeColor.a = Mathf.Lerp(0.2f, 0.35f, pulse);
+                    _statusBadgeImage.color = badgeColor;
+                }
+
+                yield return null;
+            }
+
+            ApplyStatusBaseVisuals();
+        }
+
 #if ZXING_PRESENT
         /// <summary>
         /// Corrotina para escanear QR Code usando câmera real
@@ -344,6 +552,8 @@ namespace RetroTech
             if (WebCamTexture.devices.Length == 0)
             {
                 Debug.LogWarning("Nenhuma câmera encontrada. Simulando scan...");
+                SetStatus("Nenhuma câmera encontrada", warningStatusColor,
+                    "Usaremos um modo de demonstração com peças de exemplo.");
                 yield return StartCoroutine(SimulateScan());
                 yield break;
             }
@@ -359,6 +569,8 @@ namespace RetroTech
             if (!_webcam.isPlaying)
             {
                 Debug.LogWarning("Câmera não pôde ser inicializada. Simulando scan...");
+                SetStatus("Não foi possível iniciar a câmera", warningStatusColor,
+                    "Verifique as permissões e tente novamente.");
                 yield return StartCoroutine(SimulateScan());
                 yield break;
             }
@@ -403,10 +615,13 @@ namespace RetroTech
 
             _isScanning = false;
             UpdateScanButtonText("⚡ Iniciar Scanner");
+            StopScanPulse();
 
             // Processar resultado
             if (foundPiece != null)
             {
+                SetStatus($"Peça detectada: {foundPiece.Name}", successStatusColor,
+                    "Toque para ver os detalhes completos.");
                 OnPieceScanned?.Invoke(foundPiece);
             }
             else
@@ -427,6 +642,7 @@ namespace RetroTech
 
             _isScanning = false;
             UpdateScanButtonText("⚡ Iniciar Scanner");
+            StopScanPulse();
 
             // Selecionar peça aleatória para demonstração
             if (SampleData.Pieces.Count > 0)
@@ -435,11 +651,15 @@ namespace RetroTech
                 var randomPiece = SampleData.Pieces[randomIndex];
 
                 Debug.Log($"Simulando scan da peça: {randomPiece.Name}");
+                SetStatus($"Peça encontrada: {randomPiece.Name}", successStatusColor,
+                    "Toque para visualizar detalhes e curiosidades.");
                 OnPieceScanned?.Invoke(randomPiece);
             }
             else
             {
                 Debug.LogWarning("Nenhuma peça disponível para simulação");
+                SetStatus("Nenhuma peça de demonstração", warningStatusColor,
+                    "Adicione itens ao SampleData para testar o scanner.");
             }
         }
 
@@ -551,6 +771,82 @@ namespace RetroTech
             labelRT.offsetMax = new Vector2(-16, -8);
 
             return btnCard.gameObject;
+        }
+
+        /// <summary>
+        /// Cria a seção de status do scanner com badge informativo
+        /// </summary>
+        private void CreateStatusSection(Transform parent)
+        {
+            var statusContainer = new GameObject("StatusSection", typeof(RectTransform));
+            statusContainer.transform.SetParent(parent, false);
+
+            var statusVLG = statusContainer.AddComponent<VerticalLayoutGroup>();
+            statusVLG.childAlignment = TextAnchor.MiddleCenter;
+            statusVLG.spacing = 6f;
+            statusVLG.childControlWidth = true;
+            statusVLG.childForceExpandWidth = false;
+            statusVLG.childControlHeight = false;
+            statusVLG.childForceExpandHeight = false;
+
+            var badgeGO = new GameObject("StatusBadge", typeof(RectTransform), typeof(Image));
+            badgeGO.transform.SetParent(statusContainer.transform, false);
+            _statusBadgeImage = badgeGO.GetComponent<Image>();
+            _statusBadgeBaseColor = new Color(1f, 1f, 1f, 0.18f);
+            _statusBadgeImage.color = _statusBadgeBaseColor;
+            _statusBadgeImage.raycastTarget = false;
+
+            var badgeLayout = badgeGO.AddComponent<HorizontalLayoutGroup>();
+            badgeLayout.childAlignment = TextAnchor.MiddleCenter;
+            badgeLayout.childControlWidth = false;
+            badgeLayout.childForceExpandWidth = false;
+            badgeLayout.childControlHeight = false;
+            badgeLayout.childForceExpandHeight = false;
+            badgeLayout.padding = new RectOffset(18, 18, 10, 10);
+
+            var badgeCSF = badgeGO.AddComponent<ContentSizeFitter>();
+            badgeCSF.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            badgeCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            _statusTMP = UiKit.TMP(badgeGO.transform, string.Empty, scanTitleFontSize,
+                readyStatusColor, TextAlignmentOptions.Center, bold: true);
+            _statusTMP.enableWordWrapping = false;
+
+            var statusSubtitle = UiKit.TMP(statusContainer.transform, string.Empty, tipsFontSize,
+                new Color32(255, 255, 255, 200), TextAlignmentOptions.Center);
+            statusSubtitle.enableWordWrapping = true;
+            statusSubtitle.margin = new Vector4(12, 0, 12, 0);
+            statusSubtitle.gameObject.SetActive(false);
+            _statusSubtitleTMP = statusSubtitle;
+        }
+
+        /// <summary>
+        /// Cria um item individual dentro do cartão de dicas
+        /// </summary>
+        private void CreateTipItem(Transform parent, string icon, string text)
+        {
+            var row = new GameObject("TipRow", typeof(RectTransform));
+            row.transform.SetParent(parent, false);
+
+            var hlg = row.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing = 12f;
+            hlg.childAlignment = TextAnchor.UpperLeft;
+            hlg.childControlWidth = false;
+            hlg.childForceExpandWidth = false;
+            hlg.childControlHeight = false;
+            hlg.childForceExpandHeight = false;
+
+            var iconTMP = UiKit.TMP(row.transform, icon, tipsFontSize + 4,
+                Color.white, TextAlignmentOptions.Center, bold: true);
+            iconTMP.enableWordWrapping = false;
+
+            var textTMP = UiKit.TMP(row.transform, text, tipsFontSize,
+                new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
+            textTMP.enableWordWrapping = true;
+
+            var textLE = textTMP.gameObject.AddComponent<LayoutElement>();
+            textLE.flexibleWidth = 1f;
+            textLE.minWidth = 0f;
         }
 
         /// <summary>
