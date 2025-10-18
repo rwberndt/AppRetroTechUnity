@@ -141,7 +141,8 @@ namespace RetroTech
                         description: "É um meio de armazenamento usado para arquivar grandes volumes de dados em sistemas antigos e corporativos.",
                         imageUrl: "https://via.placeholder.com/300x200/9C7AB7/FFFFFF?text=Bobina+Magnetica",
                         curiosities: "A fita magnética, embora uma tecnologia antiga, ainda é usada até hoje para armazenamento de longo prazo em datacenters, especialmente para backup, isso ocorre porque as fitas magnéticas oferecem uma durabilidade superior em comparação com outros meios de armazenamento digital.",
-                        specifications: new List<string> { "Capacidade: 6250 BPI", "Velocidade: 75 IPS", "Comprimento: 2400 pés" }
+                        specifications: new List<string> { "Capacidade: 6250 BPI", "Velocidade: 75 IPS", "Comprimento: 2400 pés" },
+                        subcategory: "Bobina de fita magnética"
                     ),
                     new ComputerPiece(
                         id: Floppy525Id,
@@ -152,7 +153,8 @@ namespace RetroTech
                         description: "Disco flexível usado como meio de armazenamento removível em computadores pessoais dos anos 70 e 80.",
                         imageUrl: "https://via.placeholder.com/300x200/9C7AB7/FFFFFF?text=Disquete+5.25",
                         curiosities: "O disquete de 5.25\" foi revolucionário por ser menor que os de 8\", mas mantinha boa capacidade de armazenamento. Era comum ver pessoas carregando dezenas deles em estojos especiais.",
-                        specifications: new List<string> { "Capacidade: 160KB-1.2MB", "Rotação: 300 RPM", "Trilhas: 40-80" }
+                        specifications: new List<string> { "Capacidade: 160KB-1.2MB", "Rotação: 300 RPM", "Trilhas: 40-80" },
+                        subcategory: "Disquete de 5.25 polegadas"
                     ),
                     new ComputerPiece(
                         id: Intel8080Id,
@@ -163,7 +165,8 @@ namespace RetroTech
                         description: "Microprocessador de 8 bits que foi fundamental para o desenvolvimento dos primeiros computadores pessoais.",
                         imageUrl: "https://via.placeholder.com/300x200/9C7AB7/FFFFFF?text=Intel+8080",
                         curiosities: "O Intel 8080 foi o processador usado no primeiro computador pessoal comercialmente bem-sucedido, o Altair 8800. Custava US$ 360 na época, equivalente a mais de US$ 1.500 hoje.",
-                        specifications: new List<string> { "Clock: 2 MHz", "Arquitetura: 8 bits", "Transistores: 6000" }
+                        specifications: new List<string> { "Clock: 2 MHz", "Arquitetura: 8 bits", "Transistores: 6000" },
+                        subcategory: "Intel 8080"
                     ),
                     new ComputerPiece(
                         id: Hp35Id,
@@ -174,7 +177,8 @@ namespace RetroTech
                         description: "A primeira calculadora científica portátil do mundo, revolucionando os cálculos de engenharia.",
                         imageUrl: "https://via.placeholder.com/300x200/9C7AB7/FFFFFF?text=HP-35",
                         curiosities: "A HP-35 foi chamada de \"slide rule killer\" porque substituiu as réguas de cálculo usadas por engenheiros. Custava US$ 395, o equivalente a um carro pequeno na época.",
-                        specifications: new List<string> { "Funções: 35", "Display: LED vermelho", "Bateria: NiCad recarregável" }
+                        specifications: new List<string> { "Funções: 35", "Display: LED vermelho", "Bateria: NiCad recarregável" },
+                        subcategory: "Calculadoras eletrônicas"
                     ),
                     new ComputerPiece(
                         id: AppleIiId,
@@ -185,7 +189,8 @@ namespace RetroTech
                         description: "Um dos primeiros computadores pessoais altamente bem-sucedidos, conhecido por sua facilidade de uso.",
                         imageUrl: "https://via.placeholder.com/300x200/9C7AB7/FFFFFF?text=Apple+II",
                         curiosities: "O Apple II foi o primeiro computador pessoal a ter gráficos coloridos e som integrado. Permaneceu em produção por quase 17 anos, um recorde na indústria.",
-                        specifications: new List<string> { "CPU: MOS 6502 1MHz", "RAM: 4KB-48KB", "Cores: 6 cores" }
+                        specifications: new List<string> { "CPU: MOS 6502 1MHz", "RAM: 4KB-48KB", "Cores: 6 cores" },
+                        subcategory: "Apple II"
                     ),
                     new ComputerPiece(
                         id: HardDrive5MbId,
@@ -196,7 +201,8 @@ namespace RetroTech
                         description: "Um dos primeiros discos rígidos para computadores pessoais, com impressionantes 5MB de capacidade.",
                         imageUrl: "https://via.placeholder.com/300x200/9C7AB7/FFFFFF?text=HD+5MB",
                         curiosities: "Este disco custava US$ 1.500 e pesava 5kg. Para comparação, hoje você pode comprar um HD de 1TB (200.000 vezes maior) por menos de US$ 50.",
-                        specifications: new List<string> { "Capacidade: 5MB", "Interface: ST-506", "Rotação: 3600 RPM" }
+                        specifications: new List<string> { "Capacidade: 5MB", "Interface: ST-506", "Rotação: 3600 RPM" },
+                        subcategory: "Disco rígido portátil"
                     ),
                     new ComputerPiece(
                         id: TapeReelDuplicateOneId,
@@ -207,7 +213,8 @@ namespace RetroTech
                         description: "É um meio de armazenamento usado para arquivar grandes volumes de dados em sistemas antigos e corporativos.",
                         imageUrl: "https://via.placeholder.com/300x200/9C7AB7/FFFFFF?text=Bobina+Magnetica",
                         curiosities: "A fita magnética, embora uma tecnologia antiga, ainda é usada até hoje para armazenamento de longo prazo em datacenters, especialmente para backup, isso ocorre porque as fitas magnéticas oferecem uma durabilidade superior em comparação com outros meios de armazenamento digital.",
-                        specifications: new List<string> { "Capacidade: 6250 BPI", "Velocidade: 75 IPS", "Comprimento: 2400 pés" }
+                        specifications: new List<string> { "Capacidade: 6250 BPI", "Velocidade: 75 IPS", "Comprimento: 2400 pés" },
+                        subcategory: "Bobina de fita magnética"
                     ),
                     new ComputerPiece(
                         id: TapeReelDuplicateTwoId,
@@ -218,7 +225,8 @@ namespace RetroTech
                         description: "É um meio de armazenamento usado para arquivar grandes volumes de dados em sistemas antigos e corporativos.",
                         imageUrl: "https://via.placeholder.com/300x200/9C7AB7/FFFFFF?text=Bobina+Magnetica",
                         curiosities: "A fita magnética, embora uma tecnologia antiga, ainda é usada até hoje para armazenamento de longo prazo em datacenters, especialmente para backup, isso ocorre porque as fitas magnéticas oferecem uma durabilidade superior em comparação com outros meios de armazenamento digital.",
-                        specifications: new List<string> { "Capacidade: 6250 BPI", "Velocidade: 75 IPS", "Comprimento: 2400 pés" }
+                        specifications: new List<string> { "Capacidade: 6250 BPI", "Velocidade: 75 IPS", "Comprimento: 2400 pés" },
+                        subcategory: "Bobina de fita magnética"
                     ),
                     new ComputerPiece(
                         id: TapeReelDuplicateThreeId,
@@ -229,7 +237,8 @@ namespace RetroTech
                         description: "É um meio de armazenamento usado para arquivar grandes volumes de dados em sistemas antigos e corporativos.",
                         imageUrl: "https://via.placeholder.com/300x200/9C7AB7/FFFFFF?text=Bobina+Magnetica",
                         curiosities: "A fita magnética, embora uma tecnologia antiga, ainda é usada até hoje para armazenamento de longo prazo em datacenters, especialmente para backup, isso ocorre porque as fitas magnéticas oferecem uma durabilidade superior em comparação com outros meios de armazenamento digital.",
-                        specifications: new List<string> { "Capacidade: 6250 BPI", "Velocidade: 75 IPS", "Comprimento: 2400 pés" }
+                        specifications: new List<string> { "Capacidade: 6250 BPI", "Velocidade: 75 IPS", "Comprimento: 2400 pés" },
+                        subcategory: "Bobina de fita magnética"
                     )
                 };
 

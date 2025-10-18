@@ -6,7 +6,9 @@ namespace RetroTech
     /// Represents a single artefact in the museum.  Each ComputerPiece encapsulates
     /// metadata used throughout the app including an identifier, category, year of
     /// manufacture and descriptive fields.  Specifications are kept as a list of
-    /// strings so they can be rendered flexibly by the UI.
+    /// strings so they can be rendered flexibly by the UI.  Each artefact may also
+    /// provide the subcategory it belongs to so that pages can filter the content
+    /// more granularly.
     /// </summary>
     [System.Serializable]
     public class ComputerPiece
@@ -20,6 +22,7 @@ namespace RetroTech
         public string ImageUrl;
         public string Curiosities;
         public List<string> Specifications;
+        public string Subcategory;
 
         public ComputerPiece(
             long id,
@@ -30,7 +33,8 @@ namespace RetroTech
             string description,
             string imageUrl,
             string curiosities,
-            List<string> specifications)
+            List<string> specifications,
+            string subcategory = null)
         {
             Id = id;
             Name = name;
@@ -41,6 +45,7 @@ namespace RetroTech
             ImageUrl = imageUrl;
             Curiosities = curiosities;
             Specifications = specifications;
+            Subcategory = subcategory ?? string.Empty;
         }
     }
 }
