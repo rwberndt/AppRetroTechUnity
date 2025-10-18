@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -28,9 +30,14 @@ namespace RetroTech
         private readonly Color SubcategoryColor = new Color32(255, 255, 255, 20);
         private readonly Color TextColor = Color.white;
         private readonly Color ChevronColor = new Color32(120, 100, 170, 255);
-        private readonly Color ModalOverlayColor = new Color(0, 0, 0, 0.7f);
-        private readonly Color ModalPanelColor = new Color(1f, 1f, 1f, 0.95f);
-        private readonly Color ModalTextColor = new Color32(50, 50, 70, 255);
+        private readonly Color ModalOverlayColor = new Color(0f, 0f, 0f, 0.7f);
+        private readonly Color ModalPanelColor = new Color32(42, 26, 72, 240);
+        private readonly Color ModalPanelHighlightColor = new Color32(81, 52, 124, 255);
+        private readonly Color ModalTextColor = new Color32(242, 240, 255, 255);
+        private readonly Color PieceCardColor = new Color32(255, 255, 255, 28);
+        private readonly Color MetadataChipColor = new Color32(106, 84, 158, 160);
+        private readonly Color MetadataTextColor = new Color32(228, 220, 255, 255);
+        private readonly Color SubtitleTextColor = new Color32(198, 192, 232, 255);
 
         // Events
         public System.Action<ComputerPiece> OnPieceSelected;
@@ -99,8 +106,6 @@ namespace RetroTech
             titleTMP.rectTransform.offsetMax = new Vector2(-24, -24);
             titleTMP.raycastTarget = false;
             titleTMP.fontStyle = FontStyles.Bold;
-            titleTMP.fontSize = 56;
-
             titleContainer.transform.SetAsFirstSibling(); // Colocar como primeiro elemento
         }
 
@@ -324,11 +329,13 @@ namespace RetroTech
                 return;
             }
 
+            var pieces = GetPiecesForSubcategory(categoryId, subcategoryName);
+
             CreateModalOverlay();
             var modalPanel = CreateModalPanel();
-            CreateModalHeader(modalPanel.transform, subcategoryName);
+            CreateModalHeader(modalPanel.transform, subcategoryName, pieces.Count);
             var scrollContent = CreateModalScrollView(modalPanel.transform);
-            PopulateModalWithPieces(scrollContent, categoryId);
+            PopulateModalWithPieces(scrollContent, pieces, subcategoryName);
         }
 
         /// <summary>
@@ -348,6 +355,28 @@ namespace RetroTech
 
             overlay.GetComponent<Image>().color = ModalOverlayColor;
             overlay.GetComponent<Button>().onClick.AddListener(CloseModal);
+        }
+
+        /// <summary>
+        /// Obtém as peças que pertencem à categoria e subcategoria selecionadas
+        /// </summary>
+        private List<ComputerPiece> GetPiecesForSubcategory(long categoryId, string subcategoryName)
+        {
+            var pieces = SampleData.Pieces?
+                .Where(piece => piece.CategoryId == categoryId)
+                .ToList() ?? new List<ComputerPiece>();
+
+            if (pieces.Count == 0 || string.IsNullOrWhiteSpace(subcategoryName))
+            {
+                return pieces;
+            }
+
+            var filtered = pieces
+                .Where(piece => !string.IsNullOrWhiteSpace(piece.Subcategory) &&
+                                piece.Subcategory.Equals(subcategoryName, StringComparison.InvariantCultureIgnoreCase))
+                .ToList();
+
+            return filtered.Count > 0 ? filtered : pieces;
         }
 
         /// <summary>
@@ -375,6 +404,22 @@ namespace RetroTech
                 pImg.type = Image.Type.Sliced;
             }
 
+            var accent = new GameObject("PanelAccent", typeof(RectTransform), typeof(Image));
+            accent.transform.SetParent(panel.transform, false);
+
+            var accentRT = accent.GetComponent<RectTransform>();
+            accentRT.anchorMin = new Vector2(0f, 1f);
+            accentRT.anchorMax = new Vector2(1f, 1f);
+            accentRT.pivot = new Vector2(0.5f, 1f);
+            accentRT.sizeDelta = new Vector2(0f, 140f);
+            accentRT.anchoredPosition = Vector2.zero;
+
+            var accentImg = accent.GetComponent<Image>();
+            accentImg.color = ModalPanelHighlightColor;
+            accentImg.raycastTarget = false;
+
+            accent.transform.SetAsFirstSibling();
+
             return panel;
         }
 
@@ -383,40 +428,71 @@ namespace RetroTech
         /// </summary>
         /// <param name="parent">Transform pai</param>
         /// <param name="title">Título do modal</param>
-        private void CreateModalHeader(Transform parent, string title)
+        /// <param name="pieceCount">Quantidade de peças exibidas</param>
+        private void CreateModalHeader(Transform parent, string title, int pieceCount)
         {
-            var header = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            var header = new GameObject("Header", typeof(RectTransform), typeof(VerticalLayoutGroup));
             header.transform.SetParent(parent, false);
 
             var hRT = header.GetComponent<RectTransform>();
             hRT.anchorMin = new Vector2(0, 1);
             hRT.anchorMax = new Vector2(1, 1);
             hRT.pivot = new Vector2(0.5f, 1);
-            hRT.offsetMin = new Vector2(16, -60);
+            hRT.offsetMin = new Vector2(16, -140);
             hRT.offsetMax = new Vector2(-16, -16);
 
-            var hHLG = header.GetComponent<HorizontalLayoutGroup>();
-            hHLG.childAlignment = TextAnchor.MiddleLeft;
-            hHLG.spacing = 16;
+            var headerLayout = header.GetComponent<VerticalLayoutGroup>();
+            headerLayout.childAlignment = TextAnchor.UpperLeft;
+            headerLayout.spacing = 12;
+            headerLayout.childControlWidth = true;
+            headerLayout.childForceExpandWidth = true;
+            headerLayout.childControlHeight = true;
+            headerLayout.childForceExpandHeight = false;
 
-            // Título
-            var titleTMP = UiKit.TMP(header.transform, title, 24, ModalTextColor,
-                TextAlignmentOptions.MidlineLeft, bold: true);
+            var topRow = new GameObject("TopRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            topRow.transform.SetParent(header.transform, false);
 
-            // Spacer
+            var topRowLayout = topRow.GetComponent<HorizontalLayoutGroup>();
+            topRowLayout.childAlignment = TextAnchor.MiddleLeft;
+            topRowLayout.spacing = 12;
+            topRowLayout.childControlWidth = true;
+            topRowLayout.childForceExpandWidth = false;
+            topRowLayout.childControlHeight = false;
+            topRowLayout.childForceExpandHeight = false;
+
+            var titleTMP = UiKit.TMP(topRow.transform, title, 30, ModalTextColor,
+                TextAlignmentOptions.Left, bold: true);
+            titleTMP.enableWordWrapping = true;
+            titleTMP.margin = Vector4.zero;
+
             var spacer = new GameObject("Spacer", typeof(RectTransform), typeof(LayoutElement));
-            spacer.transform.SetParent(header.transform, false);
+            spacer.transform.SetParent(topRow.transform, false);
             spacer.GetComponent<LayoutElement>().flexibleWidth = 1;
 
-            // Botão fechar
             var closeBtn = new GameObject("CloseBtn", typeof(RectTransform), typeof(Image), typeof(Button));
-            closeBtn.transform.SetParent(header.transform, false);
+            closeBtn.transform.SetParent(topRow.transform, false);
             var cRT = closeBtn.GetComponent<RectTransform>();
-            cRT.sizeDelta = new Vector2(32, 32);
-            closeBtn.GetComponent<Image>().color = new Color(0.9f, 0.9f, 0.9f, 1f);
-            closeBtn.GetComponent<Button>().onClick.AddListener(CloseModal);
+            cRT.sizeDelta = new Vector2(40, 40);
 
-            UiKit.TMP(closeBtn.transform, "✕", 26, ModalTextColor, TextAlignmentOptions.Center, bold: true);
+            var closeImg = closeBtn.GetComponent<Image>();
+            closeImg.color = new Color32(92, 70, 142, 220);
+
+            var btn = closeBtn.GetComponent<Button>();
+            btn.onClick.AddListener(CloseModal);
+            var btnColors = btn.colors;
+            btnColors.highlightedColor = new Color32(118, 90, 176, 240);
+            btnColors.pressedColor = new Color32(66, 44, 120, 255);
+            btn.colors = btnColors;
+
+            var closeTMP = UiKit.TMP(closeBtn.transform, "✕", 26, ModalTextColor, TextAlignmentOptions.Center, bold: true);
+            closeTMP.raycastTarget = false;
+
+            string pieceCountText = pieceCount == 1
+                ? "1 peça disponível"
+                : $"{pieceCount} peças disponíveis";
+            var subtitleTMP = UiKit.TMP(header.transform, pieceCountText, 20, SubtitleTextColor, TextAlignmentOptions.Left);
+            subtitleTMP.enableWordWrapping = true;
+            subtitleTMP.margin = new Vector4(0, 0, 0, 4);
         }
 
         /// <summary>
@@ -433,12 +509,12 @@ namespace RetroTech
             sRT.anchorMin = Vector2.zero;
             sRT.anchorMax = Vector2.one;
             sRT.offsetMin = new Vector2(16, 16);
-            sRT.offsetMax = new Vector2(-16, -76);
+            sRT.offsetMax = new Vector2(-16, -160);
 
             var scrollRect = scrollGO.GetComponent<ScrollRect>();
             scrollRect.vertical = true;
             scrollRect.horizontal = false;
-            scrollGO.GetComponent<Image>().color = new Color(0, 0, 0, 0.05f);
+            scrollGO.GetComponent<Image>().color = new Color32(255, 255, 255, 18);
 
             // Viewport
             var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(RectMask2D));
@@ -479,37 +555,172 @@ namespace RetroTech
         /// Popula o modal com as peças
         /// </summary>
         /// <param name="parent">Transform pai</param>
-        /// <param name="categoryId">Categoria utilizada para filtrar as peças</param>
-        private void PopulateModalWithPieces(Transform parent, long categoryId)
+        /// <param name="pieces">Coleção de peças a serem exibidas</param>
+        /// <param name="subcategoryName">Nome da subcategoria ativa</param>
+        private void PopulateModalWithPieces(Transform parent, List<ComputerPiece> pieces, string subcategoryName)
         {
-            foreach (var piece in SampleData.Pieces)
+            if (pieces == null || pieces.Count == 0)
             {
-                if (piece.CategoryId != categoryId)
+                string emptyMessage = string.IsNullOrWhiteSpace(subcategoryName)
+                    ? "Nenhuma peça disponível nesta categoria no momento."
+                    : $"Nenhuma peça cadastrada para \"{subcategoryName}\" no momento.";
+
+                var emptyTMP = UiKit.TMP(parent, emptyMessage, 22, ModalTextColor, TextAlignmentOptions.Center);
+                emptyTMP.alignment = TextAlignmentOptions.Center;
+                emptyTMP.margin = new Vector4(0, 48, 0, 0);
+                emptyTMP.enableWordWrapping = true;
+                return;
+            }
+
+            foreach (var piece in pieces)
+            {
+                var pieceCard = UiKit.CreateCard(parent, new Vector2(0, 0),
+                    PieceCardColor, 18f, glass: true);
+
+                var layoutElement = pieceCard.GetComponent<LayoutElement>();
+                if (layoutElement != null)
                 {
-                    continue;
+                    layoutElement.minHeight = 0f;
+                    layoutElement.preferredHeight = -1f;
+                    layoutElement.flexibleHeight = 0f;
                 }
 
-                var pieceCard = UiKit.CreateCard(parent, new Vector2(0, 56),
-                    new Color(1f, 1f, 1f, 0.3f), 8f, glass: true);
+                var cardLayout = pieceCard.gameObject.GetComponent<VerticalLayoutGroup>() ??
+                                  pieceCard.gameObject.AddComponent<VerticalLayoutGroup>();
+                cardLayout.padding = new RectOffset(20, 20, 20, 20);
+                cardLayout.spacing = 12;
+                cardLayout.childAlignment = TextAnchor.UpperLeft;
+                cardLayout.childControlWidth = true;
+                cardLayout.childForceExpandWidth = true;
+                cardLayout.childControlHeight = true;
+                cardLayout.childForceExpandHeight = false;
 
-                var btn = pieceCard.gameObject.AddComponent<Button>();
-                btn.onClick.AddListener(() =>
+                var cardFitter = pieceCard.gameObject.GetComponent<ContentSizeFitter>() ??
+                                 pieceCard.gameObject.AddComponent<ContentSizeFitter>();
+                cardFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                cardFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+                var titleTMP = UiKit.TMP(pieceCard.transform, piece.Name, 26, ModalTextColor,
+                    TextAlignmentOptions.Left, bold: true);
+                titleTMP.enableWordWrapping = true;
+                titleTMP.margin = new Vector4(0, 0, 0, 4);
+
+                var metadataValues = new List<string>();
+                if (piece.YearManufactured > 0)
+                    metadataValues.Add(piece.YearManufactured.ToString(CultureInfo.InvariantCulture));
+                if (!string.IsNullOrWhiteSpace(piece.Manufacturer))
+                    metadataValues.Add(piece.Manufacturer);
+                if (!string.IsNullOrWhiteSpace(piece.Subcategory))
+                    metadataValues.Add(piece.Subcategory);
+
+                if (metadataValues.Count > 0)
                 {
-                    CloseModal();
-                    OnPieceSelected?.Invoke(piece);
-                });
+                    var metadataRow = new GameObject("MetadataRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+                    metadataRow.transform.SetParent(pieceCard.transform, false);
 
-                var pieceTMP = UiKit.TMP(pieceCard.transform, piece.Name, 18, ModalTextColor,
-                    TextAlignmentOptions.MidlineLeft);
-                pieceTMP.raycastTarget = false;
-                var pieceRT = pieceTMP.rectTransform;
-                pieceRT.anchorMin = Vector2.zero;
-                pieceRT.anchorMax = Vector2.one;
-                pieceRT.offsetMin = new Vector2(16, 8);
-                pieceRT.offsetMax = new Vector2(-16, -8);
+                    var metadataLayout = metadataRow.GetComponent<HorizontalLayoutGroup>();
+                    metadataLayout.spacing = 8;
+                    metadataLayout.childAlignment = TextAnchor.MiddleLeft;
+                    metadataLayout.childControlWidth = false;
+                    metadataLayout.childForceExpandWidth = false;
+                    metadataLayout.childControlHeight = false;
+                    metadataLayout.childForceExpandHeight = false;
 
-                pieceCard.name = $"PieceCard_{piece.Name}";
+                    foreach (var value in metadataValues)
+                    {
+                        CreateMetadataChip(metadataRow.transform, value);
+                    }
+                }
+
+                var description = string.IsNullOrWhiteSpace(piece.Description)
+                    ? "Detalhes não disponíveis."
+                    : piece.Description;
+                var descTMP = UiKit.TMP(pieceCard.transform, description, 20, new Color32(210, 205, 240, 255),
+                    TextAlignmentOptions.Left);
+                descTMP.enableWordWrapping = true;
+                descTMP.margin = new Vector4(0, 0, 0, 12);
+
+                CreatePieceDetailsButton(pieceCard.transform, piece);
+
+                pieceCard.gameObject.name = $"PieceCard_{piece.Name}";
             }
+        }
+
+        /// <summary>
+        /// Cria um chip de metadado (ano, fabricante, etc.)
+        /// </summary>
+        private void CreateMetadataChip(Transform parent, string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            var chip = new GameObject("MetadataChip", typeof(RectTransform), typeof(Image));
+            chip.transform.SetParent(parent, false);
+
+            var chipImg = chip.GetComponent<Image>();
+            chipImg.color = MetadataChipColor;
+
+            var layout = chip.AddComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(12, 12, 6, 6);
+            layout.childAlignment = TextAnchor.MiddleLeft;
+            layout.childControlWidth = true;
+            layout.childForceExpandWidth = false;
+            layout.childControlHeight = true;
+            layout.childForceExpandHeight = false;
+
+            var fitter = chip.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var textTMP = UiKit.TMP(chip.transform, value, 18, MetadataTextColor, TextAlignmentOptions.MidlineLeft);
+            textTMP.enableWordWrapping = false;
+            textTMP.raycastTarget = false;
+
+            var chipLayoutElement = chip.AddComponent<LayoutElement>();
+            chipLayoutElement.minHeight = 32f;
+            chipLayoutElement.preferredHeight = 32f;
+        }
+
+        /// <summary>
+        /// Cria o botão de detalhes de cada peça
+        /// </summary>
+        private void CreatePieceDetailsButton(Transform parent, ComputerPiece piece)
+        {
+            var buttonGO = new GameObject("DetailsButton", typeof(RectTransform), typeof(Image), typeof(Button));
+            buttonGO.transform.SetParent(parent, false);
+
+            var btnImage = buttonGO.GetComponent<Image>();
+            btnImage.color = new Color32(114, 74, 160, 255);
+
+            var btnLayout = buttonGO.AddComponent<HorizontalLayoutGroup>();
+            btnLayout.padding = new RectOffset(24, 24, 8, 8);
+            btnLayout.childAlignment = TextAnchor.MiddleCenter;
+            btnLayout.childControlWidth = true;
+            btnLayout.childForceExpandWidth = true;
+            btnLayout.childControlHeight = true;
+            btnLayout.childForceExpandHeight = false;
+
+            var layoutElement = buttonGO.AddComponent<LayoutElement>();
+            layoutElement.minHeight = 52f;
+            layoutElement.preferredHeight = 52f;
+            layoutElement.flexibleWidth = 1f;
+
+            var buttonText = UiKit.TMP(buttonGO.transform, "Ver detalhes", 20, Color.white, TextAlignmentOptions.Center, bold: true);
+            buttonText.raycastTarget = false;
+
+            var button = buttonGO.GetComponent<Button>();
+            var colors = button.colors;
+            colors.highlightedColor = new Color32(134, 94, 190, 255);
+            colors.pressedColor = new Color32(94, 54, 150, 255);
+            button.colors = colors;
+
+            button.onClick.AddListener(() =>
+            {
+                CloseModal();
+                OnPieceSelected?.Invoke(piece);
+            });
         }
 
         /// <summary>

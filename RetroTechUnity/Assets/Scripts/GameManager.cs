@@ -1457,7 +1457,7 @@ namespace RetroTech
             placeholder.text = "Buscar por nome...";
             placeholder.color = new Color(1f, 1f, 1f, 0.5f);
             placeholder.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            placeholder.fontSize = 18;
+            placeholder.fontSize = ResponsiveTypography.ResponsiveFontSize(18);
             placeholder.alignment = TextAnchor.MiddleLeft;
 
             var phRT = placeholderGO.GetComponent<RectTransform>();
@@ -1472,7 +1472,7 @@ namespace RetroTech
             var text = textGO.AddComponent<Text>();
             text.color = Color.white;
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 18;
+            text.fontSize = ResponsiveTypography.ResponsiveFontSize(18);
             text.alignment = TextAnchor.MiddleLeft;
 
             var textRT = textGO.GetComponent<RectTransform>();

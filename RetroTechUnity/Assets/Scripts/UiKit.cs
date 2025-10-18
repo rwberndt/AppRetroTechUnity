@@ -36,7 +36,8 @@ namespace RetroTech
             rt.offsetMax = Vector2.zero;
 
             var le = go.AddComponent<LayoutElement>();
-            le.preferredHeight = size.y > 0 ? size.y : 48f;
+            float targetHeight = size.y > 0 ? ResponsiveTypography.ResponsiveSpacing(size.y) : 48f;
+            le.preferredHeight = targetHeight;
             le.minHeight = le.preferredHeight;
             le.flexibleHeight = 0f;
 
@@ -65,7 +66,7 @@ namespace RetroTech
             rt.sizeDelta = new Vector2(0, size + 18);
             var t = go.AddComponent<TextMeshProUGUI>();
             t.text = text;
-            t.fontSize = size;
+            ResponsiveTypography.ApplyToTMP(t, size);
             t.color = color;
             t.alignment = align;
             t.enableWordWrapping = true;

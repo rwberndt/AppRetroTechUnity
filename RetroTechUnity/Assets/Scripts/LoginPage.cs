@@ -298,8 +298,10 @@ namespace RetroTech
             background.raycastTarget = true;
 
             var layout = fieldGO.GetComponent<LayoutElement>();
-            layout.preferredHeight = 70f;
-            layout.minHeight = 60f;
+            float responsivePreferred = ResponsiveTypography.ResponsiveSpacing(70f);
+            float responsiveMin = ResponsiveTypography.ResponsiveSpacing(60f);
+            layout.preferredHeight = responsivePreferred;
+            layout.minHeight = responsiveMin;
 
             var input = fieldGO.AddComponent<TMP_InputField>();
             input.contentType = contentType;
@@ -321,14 +323,14 @@ namespace RetroTech
             placeholderGO.transform.SetParent(textArea.transform, false);
             var placeholderTMP = placeholderGO.AddComponent<TextMeshProUGUI>();
             placeholderTMP.text = placeholder;
-            placeholderTMP.fontSize = 28f;
+            ResponsiveTypography.ApplyToTMP(placeholderTMP, 28);
             placeholderTMP.color = new Color(1f, 1f, 1f, 0.5f);
             placeholderTMP.alignment = TextAlignmentOptions.MidlineLeft;
 
             var textGO = new GameObject("Text", typeof(RectTransform));
             textGO.transform.SetParent(textArea.transform, false);
             var textTMP = textGO.AddComponent<TextMeshProUGUI>();
-            textTMP.fontSize = 30f;
+            ResponsiveTypography.ApplyToTMP(textTMP, 30, allowShrink: false);
             textTMP.color = UiKit.TextMain;
             textTMP.alignment = TextAlignmentOptions.MidlineLeft;
 
