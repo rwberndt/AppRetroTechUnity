@@ -99,8 +99,6 @@ namespace RetroTech
             titleTMP.rectTransform.offsetMax = new Vector2(-24, -24);
             titleTMP.raycastTarget = false;
             titleTMP.fontStyle = FontStyles.Bold;
-            titleTMP.fontSize = 56;
-
             titleContainer.transform.SetAsFirstSibling(); // Colocar como primeiro elemento
         }
 
