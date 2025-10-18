@@ -71,10 +71,8 @@ namespace RetroTech
         }
 
         /// <summary>
-            float spacing = ResponsiveTypography.ResponsiveSpacing(customSpacing ?? sectionSpacing);
-
-            spacerLE.minHeight = spacing;
-            spacerLE.preferredHeight = spacing;
+        /// Adiciona um espaçador vertical ao conteúdo.
+        /// </summary>
         /// <param name="customSpacing">Espaçamento customizado (opcional)</param>
         private void AddSpacing(float? customSpacing = null)
         {
@@ -82,8 +80,10 @@ namespace RetroTech
             spacer.transform.SetParent(_contentContainer, false);
 
             var spacerLE = spacer.AddComponent<LayoutElement>();
-            spacerLE.minHeight = customSpacing ?? sectionSpacing;
-            spacerLE.preferredHeight = customSpacing ?? sectionSpacing;
+            float spacing = ResponsiveTypography.ResponsiveSpacing(customSpacing ?? sectionSpacing);
+
+            spacerLE.minHeight = spacing;
+            spacerLE.preferredHeight = spacing;
         }
 
         /// <summary>
@@ -161,19 +161,14 @@ namespace RetroTech
         }
 
         /// <summary>
-            float baseButtonHeight = 80f;
-            float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(baseButtonHeight);
-
-            var buttonCard = UiKit.CreateCard(_contentContainer.transform, new Vector2(0, baseButtonHeight),
-            buttonLE.minHeight = responsiveHeight;
-            buttonLE.preferredHeight = responsiveHeight;
+        /// Cria a seção com informações da equipe do projeto.
+        /// </summary>
+        private void CreateTeamSection()
         {
-                if (title != null) ResponsiveTypography.ApplyToTMP(title, Mathf.RoundToInt(titleFontSize));
-                if (welcome != null) ResponsiveTypography.ApplyToTMP(welcome, Mathf.RoundToInt(welcomeFontSize));
-                if (desc != null) ResponsiveTypography.ApplyToTMP(desc, Mathf.RoundToInt(descriptionFontSize));
+            var teamTitleTMP = UiKit.TMP(_contentContainer, "Equipe de desenvolvimento\n", (int)sectionTitleFontSize,
+                TextMain, TextAlignmentOptions.Left, bold: true);
             teamTitleTMP.name = "TeamTitle";
 
-            // Informações da equipe
             var teamText = "Ricardo Berndt - Ciência da Computação\n" +
                           "Orientador: Dalton Solano dos Reis\n" +
                           "Supervisor: Miguel A. Wistainater";
@@ -188,12 +183,17 @@ namespace RetroTech
         /// </summary>
         private void CreateCTAButton()
         {
-            var buttonCard = UiKit.CreateCard(_contentContainer.transform, new Vector2(0, 80),
+            const float baseButtonHeight = 80f;
+            var buttonCard = UiKit.CreateCard(_contentContainer.transform, new Vector2(0, baseButtonHeight),
                 Color.white, 22f);
 
-            var buttonLE = buttonCard.gameObject.AddComponent<LayoutElement>();
-            buttonLE.minHeight = 80;
-            buttonLE.preferredHeight = 80;
+            var buttonLE = buttonCard.gameObject.GetComponent<LayoutElement>();
+            if (buttonLE != null)
+            {
+                float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(baseButtonHeight);
+                buttonLE.minHeight = responsiveHeight;
+                buttonLE.preferredHeight = responsiveHeight;
+            }
 
             var button = buttonCard.gameObject.AddComponent<Button>();
             button.onClick.AddListener(() => OnSearchPiecesClicked?.Invoke());
@@ -225,17 +225,28 @@ namespace RetroTech
             welcomeFontSize = newWelcomeSize;
             descriptionFontSize = newDescSize;
 
-            // Atualizar elementos existentes se a página já foi criada
-            if (_contentContainer != null)
+            ApplyResponsiveFontUpdates();
+        }
+
+        /// <summary>
+        /// Aplica os tamanhos de fonte responsivos nos elementos principais já criados.
+        /// </summary>
+        private void ApplyResponsiveFontUpdates()
+        {
+            if (_contentContainer == null)
+                return;
+
+            ApplyResponsiveFontToChild("Title", titleFontSize);
+            ApplyResponsiveFontToChild("WelcomeTitle", welcomeFontSize);
+            ApplyResponsiveFontToChild("MainDescription", descriptionFontSize);
+        }
+
+        private void ApplyResponsiveFontToChild(string childName, float baseFontSize)
+        {
+            var tmp = _contentContainer.Find(childName)?.GetComponent<TextMeshProUGUI>();
+            if (tmp != null)
             {
-                var title = _contentContainer.Find("Title")?.GetComponent<TextMeshProUGUI>();
-                if (title != null) title.fontSize = titleFontSize;
-
-                var welcome = _contentContainer.Find("WelcomeTitle")?.GetComponent<TextMeshProUGUI>();
-                if (welcome != null) welcome.fontSize = welcomeFontSize;
-
-                var desc = _contentContainer.Find("MainDescription")?.GetComponent<TextMeshProUGUI>();
-                if (desc != null) desc.fontSize = descriptionFontSize;
+                ResponsiveTypography.ApplyToTMP(tmp, Mathf.RoundToInt(baseFontSize));
             }
         }
 
