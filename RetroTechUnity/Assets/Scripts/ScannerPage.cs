@@ -23,14 +23,14 @@ namespace RetroTech
         [SerializeField] private string pageTitle = "ScannerPage";
 
         [Header("Visual Configuration")]
-        [SerializeField] private float previewCardHeight = 280f;
-        [SerializeField] private float tipsCardHeight = 140f;
-        [SerializeField] private float qrFrameSize = 180f;
-        [SerializeField] private int titleFontSize = 36;
-        [SerializeField] private int scanTitleFontSize = 24;
-        [SerializeField] private int scanDescFontSize = 18;
-        [SerializeField] private int tipsTitleFontSize = 20;
-        [SerializeField] private int tipsFontSize = 16;
+        [SerializeField] private float previewCardHeight = 480f;
+        [SerializeField] private float tipsCardHeight = 220f;
+        [SerializeField] private float qrFrameSize = 260f;
+        [SerializeField] private int titleFontSize = 48;
+        [SerializeField] private int scanTitleFontSize = 34;
+        [SerializeField] private int scanDescFontSize = 24;
+        [SerializeField] private int tipsTitleFontSize = 26;
+        [SerializeField] private int tipsFontSize = 22;
 
         // Events
         public System.Action<ComputerPiece> OnPieceScanned;
@@ -85,9 +85,9 @@ namespace RetroTech
         {
             CreateTitle();
             CreatePreviewArea();
-            AddSpacer(_contentContainer, 24);
+            AddSpacer(_contentContainer, 32);
             CreateScanButton();
-            AddSpacer(_contentContainer, 24);
+            AddSpacer(_contentContainer, 32);
             CreateTipsCard();
         }
 
@@ -98,7 +98,7 @@ namespace RetroTech
         {
             var titleTMP = UiKit.TMP(_contentContainer, "Scanner QR", titleFontSize,
                 Color.white, TextAlignmentOptions.Left, bold: true);
-            titleTMP.margin = new Vector4(0, 0, 0, 32);
+            titleTMP.margin = new Vector4(0, 0, 0, 40);
         }
 
         /// <summary>
@@ -108,11 +108,16 @@ namespace RetroTech
         {
             // Usar o mesmo padrão do GameManager para manter consistência
             var previewCard = CreateGlassCard(_contentContainer, previewCardHeight);
+            var previewLayout = previewCard.GetComponent<LayoutElement>();
+            if (previewLayout != null)
+            {
+                previewLayout.flexibleHeight = 1f;
+            }
 
             var previewVLG = previewCard.gameObject.AddComponent<VerticalLayoutGroup>();
             previewVLG.childAlignment = TextAnchor.MiddleCenter;
-            previewVLG.spacing = 16;
-            previewVLG.padding = new RectOffset(24, 24, 24, 24);
+            previewVLG.spacing = 24;
+            previewVLG.padding = new RectOffset(32, 32, 32, 32);
             previewVLG.childControlWidth = true;
             previewVLG.childForceExpandWidth = true;
             previewVLG.childControlHeight = false;
@@ -131,7 +136,7 @@ namespace RetroTech
                 "Aponte a câmera para o QR code de uma peça para ver seus detalhes.",
                 scanDescFontSize, new Color32(255, 255, 255, 180), TextAlignmentOptions.Center);
             scanDescTMP.enableWordWrapping = true;
-            scanDescTMP.margin = new Vector4(8, 0, 8, 0);
+            scanDescTMP.margin = new Vector4(16, 0, 16, 0);
         }
 
         /// <summary>
@@ -181,7 +186,7 @@ namespace RetroTech
             qrIconRT.anchorMin = new Vector2(0.5f, 0.5f);
             qrIconRT.anchorMax = new Vector2(0.5f, 0.5f);
             qrIconRT.pivot = new Vector2(0.5f, 0.5f);
-            qrIconRT.sizeDelta = new Vector2(80, 80);
+            qrIconRT.sizeDelta = new Vector2(96, 96);
 
             var qrIconImg = qrIconGO.GetComponent<Image>();
             qrIconImg.raycastTarget = false;
@@ -231,11 +236,16 @@ namespace RetroTech
         private void CreateTipsCard()
         {
             var tipsCard = CreateGlassCard(_contentContainer, tipsCardHeight);
+            var tipsLayout = tipsCard.GetComponent<LayoutElement>();
+            if (tipsLayout != null)
+            {
+                tipsLayout.flexibleHeight = 0.5f;
+            }
 
             var tipsVLG = tipsCard.gameObject.AddComponent<VerticalLayoutGroup>();
             tipsVLG.childAlignment = TextAnchor.UpperLeft;
-            tipsVLG.spacing = 8;
-            tipsVLG.padding = new RectOffset(20, 20, 16, 16);
+            tipsVLG.spacing = 12;
+            tipsVLG.padding = new RectOffset(28, 28, 24, 24);
             tipsVLG.childControlWidth = true;
             tipsVLG.childForceExpandWidth = true;
             tipsVLG.childControlHeight = false;
@@ -525,7 +535,7 @@ namespace RetroTech
         /// </summary>
         private GameObject CreatePrototypeCTAButton(Transform parent, string text, UnityEngine.Events.UnityAction onClick)
         {
-            var btnCard = CreateGlassCard(parent, 48f);
+            var btnCard = CreateGlassCard(parent, 72f);
             btnCard.color = Color.white; // Botão branco como no protótipo
 
             var btn = btnCard.gameObject.AddComponent<Button>();
@@ -539,7 +549,7 @@ namespace RetroTech
             colors.pressedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
             btn.colors = colors;
 
-            var label = UiKit.TMP(btnCard.transform, text, 18,
+            var label = UiKit.TMP(btnCard.transform, text, 24,
                 new Color32(103, 80, 164, 255), TextAlignmentOptions.Center, bold: true);
             label.enableWordWrapping = false;
             label.raycastTarget = false;
@@ -547,8 +557,8 @@ namespace RetroTech
             var labelRT = label.rectTransform;
             labelRT.anchorMin = Vector2.zero;
             labelRT.anchorMax = Vector2.one;
-            labelRT.offsetMin = new Vector2(16, 8);
-            labelRT.offsetMax = new Vector2(-16, -8);
+            labelRT.offsetMin = new Vector2(20, 12);
+            labelRT.offsetMax = new Vector2(-20, -12);
 
             return btnCard.gameObject;
         }
