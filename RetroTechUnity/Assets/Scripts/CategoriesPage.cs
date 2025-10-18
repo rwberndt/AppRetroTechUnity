@@ -30,13 +30,14 @@ namespace RetroTech
         private readonly Color SubcategoryColor = new Color32(255, 255, 255, 20);
         private readonly Color TextColor = Color.white;
         private readonly Color ChevronColor = new Color32(120, 100, 170, 255);
-        private readonly Color ModalOverlayColor = new Color(0, 0, 0, 0.7f);
-        private readonly Color ModalPanelColor = new Color(1f, 1f, 1f, 0.95f);
-        private readonly Color ModalTextColor = new Color32(50, 50, 70, 255);
-        private readonly Color PieceCardColor = new Color(1f, 1f, 1f, 0.3f);
-        private readonly Color MetadataChipColor = new Color(1f, 1f, 1f, 0.18f);
-        private readonly Color MetadataTextColor = new Color32(70, 65, 110, 255);
-        private readonly Color SubtitleTextColor = new Color32(120, 115, 150, 255);
+        private readonly Color ModalOverlayColor = new Color(0f, 0f, 0f, 0.7f);
+        private readonly Color ModalPanelColor = new Color32(42, 26, 72, 240);
+        private readonly Color ModalPanelHighlightColor = new Color32(81, 52, 124, 255);
+        private readonly Color ModalTextColor = new Color32(242, 240, 255, 255);
+        private readonly Color PieceCardColor = new Color32(255, 255, 255, 28);
+        private readonly Color MetadataChipColor = new Color32(106, 84, 158, 160);
+        private readonly Color MetadataTextColor = new Color32(228, 220, 255, 255);
+        private readonly Color SubtitleTextColor = new Color32(198, 192, 232, 255);
 
         // Events
         public System.Action<ComputerPiece> OnPieceSelected;
@@ -403,6 +404,22 @@ namespace RetroTech
                 pImg.type = Image.Type.Sliced;
             }
 
+            var accent = new GameObject("PanelAccent", typeof(RectTransform), typeof(Image));
+            accent.transform.SetParent(panel.transform, false);
+
+            var accentRT = accent.GetComponent<RectTransform>();
+            accentRT.anchorMin = new Vector2(0f, 1f);
+            accentRT.anchorMax = new Vector2(1f, 1f);
+            accentRT.pivot = new Vector2(0.5f, 1f);
+            accentRT.sizeDelta = new Vector2(0f, 140f);
+            accentRT.anchoredPosition = Vector2.zero;
+
+            var accentImg = accent.GetComponent<Image>();
+            accentImg.color = ModalPanelHighlightColor;
+            accentImg.raycastTarget = false;
+
+            accent.transform.SetAsFirstSibling();
+
             return panel;
         }
 
@@ -458,13 +475,13 @@ namespace RetroTech
             cRT.sizeDelta = new Vector2(40, 40);
 
             var closeImg = closeBtn.GetComponent<Image>();
-            closeImg.color = new Color(0.92f, 0.92f, 0.96f, 0.9f);
+            closeImg.color = new Color32(92, 70, 142, 220);
 
             var btn = closeBtn.GetComponent<Button>();
             btn.onClick.AddListener(CloseModal);
             var btnColors = btn.colors;
-            btnColors.highlightedColor = new Color(1f, 1f, 1f, 0.85f);
-            btnColors.pressedColor = new Color(0.8f, 0.8f, 0.85f, 0.95f);
+            btnColors.highlightedColor = new Color32(118, 90, 176, 240);
+            btnColors.pressedColor = new Color32(66, 44, 120, 255);
             btn.colors = btnColors;
 
             var closeTMP = UiKit.TMP(closeBtn.transform, "✕", 26, ModalTextColor, TextAlignmentOptions.Center, bold: true);
@@ -497,7 +514,7 @@ namespace RetroTech
             var scrollRect = scrollGO.GetComponent<ScrollRect>();
             scrollRect.vertical = true;
             scrollRect.horizontal = false;
-            scrollGO.GetComponent<Image>().color = new Color(0, 0, 0, 0.05f);
+            scrollGO.GetComponent<Image>().color = new Color32(255, 255, 255, 18);
 
             // Viewport
             var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(RectMask2D));
@@ -618,7 +635,7 @@ namespace RetroTech
                 var description = string.IsNullOrWhiteSpace(piece.Description)
                     ? "Detalhes não disponíveis."
                     : piece.Description;
-                var descTMP = UiKit.TMP(pieceCard.transform, description, 20, new Color32(90, 90, 120, 255),
+                var descTMP = UiKit.TMP(pieceCard.transform, description, 20, new Color32(210, 205, 240, 255),
                     TextAlignmentOptions.Left);
                 descTMP.enableWordWrapping = true;
                 descTMP.margin = new Vector4(0, 0, 0, 12);
