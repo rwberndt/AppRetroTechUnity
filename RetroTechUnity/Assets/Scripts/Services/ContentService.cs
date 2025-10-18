@@ -298,7 +298,8 @@ namespace RetroTech.Services
                 dto.description,
                 dto.imageUrl ?? dto.imageData ?? string.Empty,
                 dto.curiosities,
-                dto.specifications != null ? new List<string>(dto.specifications) : new List<string>());
+                dto.specifications != null ? new List<string>(dto.specifications) : new List<string>(),
+                dto.subcategory);
         }
 
         private static List<QuizQuestion> MapQuizQuestions(IReadOnlyList<QuizQuestionDto> source)
@@ -359,6 +360,7 @@ namespace RetroTech.Services
             public string imageContentType;
             public string curiosities;
             public string[] specifications;
+            public string subcategory;
         }
 
         [Serializable]
