@@ -41,6 +41,13 @@ namespace RetroTech
         private Canvas _parentCanvas;
         private Button _scanButton;
         private bool _isScanning = false;
+        private bool _pageInitialized = false;
+
+        // Cached responsive references
+        private LayoutElement _previewCardLayout;
+        private LayoutElement _tipsCardLayout;
+        private LayoutElement _qrFrameLayout;
+        private RectTransform _qrFrameRect;
 
 #if ZXING_PRESENT
         private WebCamTexture _webcam;
@@ -60,6 +67,9 @@ namespace RetroTech
 
             InitializeQRReader();
             CreateScannerContent();
+
+            _pageInitialized = true;
+            ApplyResponsiveMetrics();
 
             return _pageObject;
         }
@@ -89,6 +99,7 @@ namespace RetroTech
             CreateScanButton();
             AddSpacer(_contentContainer, 24);
             CreateTipsCard();
+            ApplyResponsiveMetrics();
         }
 
         /// <summary>
@@ -106,16 +117,25 @@ namespace RetroTech
         /// </summary>
         private void CreatePreviewArea()
         {
+            float responsivePreviewHeight = GetResponsivePreviewHeight();
+
             // Usar o mesmo padrão do GameManager para manter consistência
-            var previewCard = CreateGlassCard(_contentContainer, previewCardHeight);
+            var previewCard = CreateGlassCard(_contentContainer, responsivePreviewHeight);
+            _previewCardLayout = previewCard.GetComponent<LayoutElement>();
+            if (_previewCardLayout != null)
+            {
+                _previewCardLayout.flexibleHeight = 0.5f;
+            }
 
             var previewVLG = previewCard.gameObject.AddComponent<VerticalLayoutGroup>();
             previewVLG.childAlignment = TextAnchor.MiddleCenter;
-            previewVLG.spacing = 16;
-            previewVLG.padding = new RectOffset(24, 24, 24, 24);
+            int previewSpacing = Mathf.RoundToInt(ResponsiveTypography.ResponsiveSpacing(16f));
+            previewVLG.spacing = previewSpacing;
+            int previewPadding = Mathf.RoundToInt(ResponsiveTypography.ResponsiveSpacing(24f));
+            previewVLG.padding = new RectOffset(previewPadding, previewPadding, previewPadding, previewPadding);
             previewVLG.childControlWidth = true;
             previewVLG.childForceExpandWidth = true;
-            previewVLG.childControlHeight = false;
+            previewVLG.childControlHeight = true;
             previewVLG.childForceExpandHeight = false;
 
             // QR Code frame
@@ -129,7 +149,7 @@ namespace RetroTech
             // Description
             var scanDescTMP = UiKit.TMP(previewCard.transform,
                 "Aponte a câmera para o QR code de uma peça para ver seus detalhes.",
-                scanDescFontSize, new Color32(255, 255, 255, 180), TextAlignmentOptions.Center);
+                scanDescFontSize, new Color32(255, 255, 255, 200), TextAlignmentOptions.Center);
             scanDescTMP.enableWordWrapping = true;
             scanDescTMP.margin = new Vector4(8, 0, 8, 0);
         }
@@ -143,7 +163,9 @@ namespace RetroTech
             frameGO.transform.SetParent(parent, false);
 
             var frameRT = frameGO.GetComponent<RectTransform>();
-            frameRT.sizeDelta = new Vector2(qrFrameSize, qrFrameSize);
+            float responsiveFrame = GetResponsiveFrameSize();
+            frameRT.sizeDelta = new Vector2(responsiveFrame, responsiveFrame);
+            _qrFrameRect = frameRT;
 
             var frameImg = frameGO.GetComponent<Image>();
             frameImg.color = new Color(1f, 1f, 1f, 0.2f);
@@ -158,10 +180,17 @@ namespace RetroTech
             }
 
             var frameLE = frameGO.AddComponent<LayoutElement>();
-            frameLE.preferredWidth = qrFrameSize;
-            frameLE.preferredHeight = qrFrameSize;
-            frameLE.minWidth = qrFrameSize;
-            frameLE.minHeight = qrFrameSize;
+            frameLE.preferredWidth = responsiveFrame;
+            frameLE.preferredHeight = responsiveFrame;
+            frameLE.minWidth = responsiveFrame;
+            frameLE.minHeight = responsiveFrame;
+            frameLE.flexibleWidth = 0f;
+            frameLE.flexibleHeight = 0f;
+            _qrFrameLayout = frameLE;
+
+            var fitter = frameGO.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
+            fitter.aspectRatio = 1f;
 
             // Ícone QR Code interno
             CreateQRIcon(frameGO.transform);
@@ -230,20 +259,30 @@ namespace RetroTech
         /// </summary>
         private void CreateTipsCard()
         {
-            var tipsCard = CreateGlassCard(_contentContainer, tipsCardHeight);
+            float responsiveTipsHeight = GetResponsiveTipsHeight();
+            var tipsCard = CreateGlassCard(_contentContainer, responsiveTipsHeight);
+            _tipsCardLayout = tipsCard.GetComponent<LayoutElement>();
+            if (_tipsCardLayout != null)
+            {
+                _tipsCardLayout.flexibleHeight = 0.2f;
+            }
 
             var tipsVLG = tipsCard.gameObject.AddComponent<VerticalLayoutGroup>();
             tipsVLG.childAlignment = TextAnchor.UpperLeft;
-            tipsVLG.spacing = 8;
-            tipsVLG.padding = new RectOffset(20, 20, 16, 16);
+            int tipsSpacing = Mathf.RoundToInt(ResponsiveTypography.ResponsiveSpacing(8f));
+            tipsVLG.spacing = tipsSpacing;
+            int horizontalPadding = Mathf.RoundToInt(ResponsiveTypography.ResponsiveSpacing(20f));
+            int verticalPadding = Mathf.RoundToInt(ResponsiveTypography.ResponsiveSpacing(16f));
+            tipsVLG.padding = new RectOffset(horizontalPadding, horizontalPadding, verticalPadding, verticalPadding);
             tipsVLG.childControlWidth = true;
             tipsVLG.childForceExpandWidth = true;
-            tipsVLG.childControlHeight = false;
+            tipsVLG.childControlHeight = true;
             tipsVLG.childForceExpandHeight = false;
 
             var tipsTitleTMP = UiKit.TMP(tipsCard.transform, "Dicas para escanear:",
                 tipsTitleFontSize, Color.white, bold: true);
             tipsTitleTMP.enableWordWrapping = false;
+            tipsTitleTMP.margin = new Vector4(4, 0, 4, 0);
 
             var tipsTMP = UiKit.TMP(tipsCard.transform,
                 "• Mantenha o QR code bem iluminado\n" +
@@ -251,6 +290,7 @@ namespace RetroTech
                 "• Certifique-se que o código esteja completo na tela",
                 tipsFontSize, new Color32(255, 255, 255, 180), TextAlignmentOptions.Left);
             tipsTMP.enableWordWrapping = true;
+            tipsTMP.margin = new Vector4(4, 0, 4, 0);
         }
 
         /// <summary>
@@ -506,7 +546,7 @@ namespace RetroTech
             cardLE.flexibleHeight = 0f;
 
             var cardImg = cardGO.GetComponent<Image>();
-            cardImg.color = new Color(1f, 1f, 1f, 0.1f); // Glass effect
+            cardImg.color = new Color(1f, 1f, 1f, 0.14f); // Glass effect
             cardImg.raycastTarget = true;
 
             // Add rounded corners if available
@@ -517,6 +557,17 @@ namespace RetroTech
                 cardImg.type = Image.Type.Sliced;
             }
 
+            // Subtle outline and drop shadow for better visual hierarchy
+            var outline = cardGO.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 1f, 1f, 0.18f);
+            outline.effectDistance = new Vector2(1f, -1f);
+            outline.useGraphicAlpha = true;
+
+            var shadow = cardGO.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.35f);
+            shadow.effectDistance = new Vector2(0f, -6f);
+            shadow.useGraphicAlpha = false;
+
             return cardImg;
         }
 
@@ -525,7 +576,8 @@ namespace RetroTech
         /// </summary>
         private GameObject CreatePrototypeCTAButton(Transform parent, string text, UnityEngine.Events.UnityAction onClick)
         {
-            var btnCard = CreateGlassCard(parent, 48f);
+            float buttonHeight = EvaluateResponsiveHeight(48f, 0.12f, 0.18f, 0.9f, 1.3f);
+            var btnCard = CreateGlassCard(parent, buttonHeight);
             btnCard.color = Color.white; // Botão branco como no protótipo
 
             var btn = btnCard.gameObject.AddComponent<Button>();
@@ -547,8 +599,10 @@ namespace RetroTech
             var labelRT = label.rectTransform;
             labelRT.anchorMin = Vector2.zero;
             labelRT.anchorMax = Vector2.one;
-            labelRT.offsetMin = new Vector2(16, 8);
-            labelRT.offsetMax = new Vector2(-16, -8);
+            float horizontalInset = ResponsiveTypography.ResponsiveSpacing(16f);
+            float verticalInset = ResponsiveTypography.ResponsiveSpacing(8f);
+            labelRT.offsetMin = new Vector2(horizontalInset, verticalInset);
+            labelRT.offsetMax = new Vector2(-horizontalInset, -verticalInset);
 
             return btnCard.gameObject;
         }
@@ -561,8 +615,9 @@ namespace RetroTech
             var spacerGO = new GameObject("Spacer", typeof(RectTransform), typeof(LayoutElement));
             spacerGO.transform.SetParent(parent, false);
             var le = spacerGO.GetComponent<LayoutElement>();
-            le.minHeight = height;
-            le.preferredHeight = height;
+            float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(height);
+            le.minHeight = responsiveHeight;
+            le.preferredHeight = responsiveHeight;
             le.flexibleHeight = 0f;
         }
 
@@ -599,6 +654,7 @@ namespace RetroTech
             previewCardHeight = previewHeight;
             tipsCardHeight = tipsHeight;
             qrFrameSize = frameSize;
+            ApplyResponsiveMetrics();
         }
 
         /// <summary>
@@ -610,6 +666,7 @@ namespace RetroTech
             scanTitleFontSize = scanTitleSize;
             scanDescFontSize = descSize;
             tipsFontSize = tipsSize;
+            ApplyResponsiveMetrics();
         }
 
         /// <summary>
@@ -633,6 +690,14 @@ namespace RetroTech
 #endif
         }
 
+        private void OnRectTransformDimensionsChange()
+        {
+            if (_pageInitialized)
+            {
+                ApplyResponsiveMetrics();
+            }
+        }
+
         #region Editor Methods
 #if UNITY_EDITOR
         /// <summary>
@@ -652,5 +717,128 @@ namespace RetroTech
         }
 #endif
         #endregion
+
+        private float GetCanvasScaleFactor()
+        {
+            if (_parentCanvas == null)
+                return 1f;
+
+            return Mathf.Max(0.1f, _parentCanvas.scaleFactor);
+        }
+
+        private float GetCanvasHeight()
+        {
+            if (_parentCanvas == null)
+                return -1f;
+
+            return _parentCanvas.pixelRect.height / GetCanvasScaleFactor();
+        }
+
+        private float GetCanvasWidth()
+        {
+            if (_parentCanvas == null)
+                return -1f;
+
+            return _parentCanvas.pixelRect.width / GetCanvasScaleFactor();
+        }
+
+        private float GetCanvasMinDimension()
+        {
+            float width = GetCanvasWidth();
+            float height = GetCanvasHeight();
+
+            if (width <= 0f || height <= 0f)
+                return -1f;
+
+            return Mathf.Min(width, height);
+        }
+
+        private bool IsLandscapeLayout()
+        {
+            return Screen.width > Screen.height;
+        }
+
+        private float EvaluateResponsiveHeight(float baseHeight, float portraitRatio, float landscapeRatio, float minMultiplier, float maxMultiplier)
+        {
+            float height = baseHeight;
+            float canvasHeight = GetCanvasHeight();
+
+            if (canvasHeight > 0f)
+            {
+                float ratio = IsLandscapeLayout() ? landscapeRatio : portraitRatio;
+                height = Mathf.Clamp(canvasHeight * ratio, baseHeight * minMultiplier, baseHeight * maxMultiplier);
+            }
+
+            return ResponsiveTypography.ResponsiveSpacing(height);
+        }
+
+        private float EvaluateResponsiveSquareSize(float baseSize, float portraitRatio, float landscapeRatio, float minMultiplier, float maxMultiplier)
+        {
+            float size = baseSize;
+            float minDimension = GetCanvasMinDimension();
+
+            if (minDimension > 0f)
+            {
+                float ratio = IsLandscapeLayout() ? landscapeRatio : portraitRatio;
+                size = Mathf.Clamp(minDimension * ratio, baseSize * minMultiplier, baseSize * maxMultiplier);
+            }
+
+            return ResponsiveTypography.ResponsiveSpacing(size);
+        }
+
+        private float GetResponsivePreviewHeight()
+        {
+            return EvaluateResponsiveHeight(previewCardHeight, 0.42f, 0.55f, 0.75f, 1.55f);
+        }
+
+        private float GetResponsiveTipsHeight()
+        {
+            return EvaluateResponsiveHeight(tipsCardHeight, 0.22f, 0.32f, 0.8f, 1.4f);
+        }
+
+        private float GetResponsiveFrameSize()
+        {
+            return EvaluateResponsiveSquareSize(qrFrameSize, 0.28f, 0.32f, 0.7f, 1.4f);
+        }
+
+        private void ApplyResponsiveMetrics()
+        {
+            if (!_pageInitialized)
+                return;
+
+            float responsivePreview = GetResponsivePreviewHeight();
+            if (_previewCardLayout != null)
+            {
+                _previewCardLayout.preferredHeight = responsivePreview;
+                _previewCardLayout.minHeight = responsivePreview;
+            }
+
+            float responsiveTips = GetResponsiveTipsHeight();
+            if (_tipsCardLayout != null)
+            {
+                _tipsCardLayout.preferredHeight = responsiveTips;
+                _tipsCardLayout.minHeight = responsiveTips;
+            }
+
+            float responsiveFrame = GetResponsiveFrameSize();
+            if (_qrFrameLayout != null)
+            {
+                _qrFrameLayout.preferredWidth = responsiveFrame;
+                _qrFrameLayout.preferredHeight = responsiveFrame;
+                _qrFrameLayout.minWidth = responsiveFrame;
+                _qrFrameLayout.minHeight = responsiveFrame;
+            }
+
+            if (_qrFrameRect != null)
+            {
+                _qrFrameRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, responsiveFrame);
+                _qrFrameRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, responsiveFrame);
+            }
+
+            if (_contentContainer != null)
+            {
+                LayoutRebuilder.MarkLayoutForRebuild(_contentContainer);
+            }
+        }
     }
 }
