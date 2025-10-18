@@ -116,8 +116,10 @@ namespace RetroTech
             headerCard.color = HeaderColor;
 
             var headerHLG = headerCard.gameObject.AddComponent<HorizontalLayoutGroup>();
-            headerHLG.padding = new RectOffset(20, 20, 12, 12);
-            headerHLG.spacing = 16;
+            int headerHorizontal = Mathf.RoundToInt(ResponsiveLayout.CalculateCardPadding(20f));
+            int headerVertical = Mathf.RoundToInt(ResponsiveLayout.CalculateCardPadding(12f));
+            headerHLG.padding = new RectOffset(headerHorizontal, headerHorizontal, headerVertical, headerVertical);
+            headerHLG.spacing = ResponsiveLayout.CalculateSpacing(16f);
             headerHLG.childAlignment = TextAnchor.MiddleCenter;
             headerHLG.childForceExpandWidth = false;
 
@@ -170,7 +172,9 @@ namespace RetroTech
             questionCard.color = QuestionColor;
 
             var questionVLG = questionCard.gameObject.AddComponent<VerticalLayoutGroup>();
-            questionVLG.padding = new RectOffset(20, 20, 16, 16);
+            int questionHorizontal = Mathf.RoundToInt(ResponsiveLayout.CalculateCardPadding(20f));
+            int questionVertical = Mathf.RoundToInt(ResponsiveLayout.CalculateCardPadding(16f));
+            questionVLG.padding = new RectOffset(questionHorizontal, questionHorizontal, questionVertical, questionVertical);
             questionVLG.spacing = 0;
 
             _questionText = (TextMeshProUGUI)UiKit.TMP(questionCard.transform, "", questionFontSize,
@@ -187,8 +191,9 @@ namespace RetroTech
             _optionsContainer.transform.SetParent(_contentContainer, false);
 
             var optionsVLG = _optionsContainer.GetComponent<VerticalLayoutGroup>();
-            optionsVLG.spacing = 12;
-            optionsVLG.padding = new RectOffset(0, 0, 8, 8);
+            optionsVLG.spacing = ResponsiveLayout.CalculateSpacing(12f);
+            int optionsVertical = Mathf.RoundToInt(ResponsiveLayout.CalculateCardPadding(8f));
+            optionsVLG.padding = new RectOffset(0, 0, optionsVertical, optionsVertical);
             optionsVLG.childControlHeight = true;
             optionsVLG.childForceExpandHeight = false;
             optionsVLG.childControlWidth = true;
@@ -204,8 +209,10 @@ namespace RetroTech
             _explanationCard = expCard.gameObject;
 
             var expVLG = expCard.gameObject.AddComponent<VerticalLayoutGroup>();
-            expVLG.padding = new RectOffset(16, 16, 12, 12);
-            expVLG.spacing = 8;
+            int explanationHorizontal = Mathf.RoundToInt(ResponsiveLayout.CalculateCardPadding(16f));
+            int explanationVertical = Mathf.RoundToInt(ResponsiveLayout.CalculateCardPadding(12f));
+            expVLG.padding = new RectOffset(explanationHorizontal, explanationHorizontal, explanationVertical, explanationVertical);
+            expVLG.spacing = ResponsiveLayout.CalculateSpacing(8f);
 
             var expTitle = UiKit.TMP(expCard.transform, "❌ Incorreto!", 16, Color.white,
                 TextAlignmentOptions.Left, bold: true);
