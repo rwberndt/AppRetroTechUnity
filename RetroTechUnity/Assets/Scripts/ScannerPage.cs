@@ -23,14 +23,14 @@ namespace RetroTech
         [SerializeField] private string pageTitle = "ScannerPage";
 
         [Header("Visual Configuration")]
-        [SerializeField] private float previewCardHeight = 280f;
-        [SerializeField] private float tipsCardHeight = 140f;
-        [SerializeField] private float qrFrameSize = 180f;
-        [SerializeField] private int titleFontSize = 36;
-        [SerializeField] private int scanTitleFontSize = 24;
-        [SerializeField] private int scanDescFontSize = 18;
-        [SerializeField] private int tipsTitleFontSize = 20;
-        [SerializeField] private int tipsFontSize = 16;
+        [SerializeField] private float previewCardHeight = 340f;
+        [SerializeField] private float tipsCardHeight = 160f;
+        [SerializeField] private float qrFrameSize = 200f;
+        [SerializeField] private int titleFontSize = 42;
+        [SerializeField] private int scanTitleFontSize = 30;
+        [SerializeField] private int scanDescFontSize = 22;
+        [SerializeField] private int tipsTitleFontSize = 24;
+        [SerializeField] private int tipsFontSize = 20;
 
         // Events
         public System.Action<ComputerPiece> OnPieceScanned;
@@ -525,7 +525,7 @@ namespace RetroTech
         /// </summary>
         private GameObject CreatePrototypeCTAButton(Transform parent, string text, UnityEngine.Events.UnityAction onClick)
         {
-            var btnCard = CreateGlassCard(parent, 48f);
+            var btnCard = CreateGlassCard(parent, 56f);
             btnCard.color = Color.white; // Botão branco como no protótipo
 
             var btn = btnCard.gameObject.AddComponent<Button>();
@@ -539,7 +539,7 @@ namespace RetroTech
             colors.pressedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
             btn.colors = colors;
 
-            var label = UiKit.TMP(btnCard.transform, text, 18,
+            var label = UiKit.TMP(btnCard.transform, text, 20,
                 new Color32(103, 80, 164, 255), TextAlignmentOptions.Center, bold: true);
             label.enableWordWrapping = false;
             label.raycastTarget = false;
