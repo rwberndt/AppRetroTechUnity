@@ -1389,24 +1389,35 @@ namespace RetroTech
         private void AddDetailSection(Transform parent, ComputerPiece piece)
         {
             // Hero image
-            var heroCard = CreateGlassCard(parent, 240f);
-            var heroLayout = heroCard.GetComponent<LayoutElement>();
-            if (heroLayout != null)
-            {
-                heroLayout.preferredHeight = 240f;
-                heroLayout.minHeight = 240f;
-            }
+            const float heroImageHeight = 260f;
+            var heroCard = CreateGlassCard(parent, heroImageHeight);
+            var heroLayout = heroCard.GetComponent<LayoutElement>() ?? heroCard.gameObject.AddComponent<LayoutElement>();
+            heroLayout.preferredHeight = heroImageHeight;
+            heroLayout.minHeight = heroImageHeight;
+            heroLayout.flexibleHeight = 0f;
+            heroCard.raycastTarget = false;
+
+            heroCard.gameObject.GetComponent<RectMask2D>() ?? heroCard.gameObject.AddComponent<RectMask2D>();
 
             var heroSprite = PieceImageFactory.GetSprite(piece);
             if (heroSprite != null)
             {
-                heroCard.sprite = heroSprite;
-                heroCard.color = Color.white;
-                heroCard.type = Image.Type.Simple;
-                heroCard.preserveAspect = true;
+                var imageGO = new GameObject("HeroImage", typeof(RectTransform), typeof(Image));
+                imageGO.transform.SetParent(heroCard.transform, false);
 
-                var aspect = heroCard.gameObject.GetComponent<AspectRatioFitter>() ??
-                             heroCard.gameObject.AddComponent<AspectRatioFitter>();
+                var imageRT = imageGO.GetComponent<RectTransform>();
+                imageRT.anchorMin = Vector2.zero;
+                imageRT.anchorMax = Vector2.one;
+                imageRT.offsetMin = new Vector2(16f, 16f);
+                imageRT.offsetMax = new Vector2(-16f, -16f);
+
+                var heroImage = imageGO.GetComponent<Image>();
+                heroImage.sprite = heroSprite;
+                heroImage.color = Color.white;
+                heroImage.preserveAspect = true;
+                heroImage.raycastTarget = false;
+
+                var aspect = imageGO.GetComponent<AspectRatioFitter>() ?? imageGO.AddComponent<AspectRatioFitter>();
                 aspect.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
                 if (heroSprite.rect.height > 0f)
                 {
