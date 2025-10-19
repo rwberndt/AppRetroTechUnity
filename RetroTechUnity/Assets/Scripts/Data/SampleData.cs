@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using RetroTech.Services;
@@ -64,6 +65,11 @@ namespace RetroTech
                     QuizQuestions = new List<QuizQuestion>(quiz ?? Array.Empty<QuizQuestion>());
                     _isInitialized = true;
                 }
+            }
+            catch (ApiException apiEx) when (apiEx.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                Debug.LogWarning("API returned 401 Unauthorized while loading content; user authentication is required.");
+                throw new UnauthorizedAccessException("É necessário autenticar-se novamente para carregar o conteúdo remoto.", apiEx);
             }
             catch (Exception ex)
             {

@@ -281,6 +281,18 @@ namespace RetroTech
                 _activeTab = 0;
                 SwitchPage(_activeTab);
             }
+            catch (System.UnauthorizedAccessException authEx)
+            {
+                Debug.LogWarning($"Content loading requires authentication. {authEx}");
+                _authenticationService?.SignOut();
+                _apiClient?.SetBearerToken(null);
+                _currentUser = null;
+
+                _loginPage?.SetBusy(false);
+                _loginPage?.ClearPasswords();
+                _loginPage?.ShowMessage("Sua sessão expirou. Faça login novamente.", true);
+                _loginPage?.ShowLogin();
+            }
             catch (System.Exception ex)
             {
                 Debug.LogError($"Failed to load content after authentication. {ex}");

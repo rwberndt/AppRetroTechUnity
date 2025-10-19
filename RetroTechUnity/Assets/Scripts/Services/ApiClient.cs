@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -33,8 +34,11 @@ namespace RetroTech.Services
                 .GetAsync(NormalizeEndpoint(endpoint), cancellationToken)
                 .ConfigureAwait(false);
 
-            response.EnsureSuccessStatusCode();
             string content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                throw CreateApiException(response, content);
+            }
 
             return _serializer.Deserialize<T>(content);
         }
@@ -47,8 +51,11 @@ namespace RetroTech.Services
                 .GetAsync(NormalizeEndpoint(endpoint), cancellationToken)
                 .ConfigureAwait(false);
 
-            response.EnsureSuccessStatusCode();
             string content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                throw CreateApiException(response, content);
+            }
 
             return _serializer.DeserializeCollection<T>(content);
         }
@@ -106,6 +113,15 @@ namespace RetroTech.Services
         private static string NormalizeEndpoint(string endpoint)
         {
             return string.IsNullOrWhiteSpace(endpoint) ? string.Empty : endpoint.Trim().TrimStart('/');
+        }
+
+        private static ApiException CreateApiException(HttpResponseMessage response, string responseContent)
+        {
+            HttpStatusCode statusCode = response.StatusCode;
+            string endpoint = response.RequestMessage?.RequestUri?.ToString();
+            string message = $"Request to '{endpoint}' failed with status {(int)statusCode} ({statusCode}).";
+
+            return new ApiException(statusCode, message, responseContent, endpoint);
         }
 
         private void EnsureNotDisposed()
