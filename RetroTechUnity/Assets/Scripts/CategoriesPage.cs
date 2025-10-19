@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using RetroTech.Services;
 using static RetroTech.UiKit;
 
 namespace RetroTech
@@ -22,8 +23,9 @@ namespace RetroTech
         [Header("Visual Configuration")]
         [SerializeField] private float categoryHeaderHeight = 80f; 
         [SerializeField] private float subcategoryItemHeight = 70f; 
-        [SerializeField] private int categoryTitleFontSize = 36; 
-        [SerializeField] private int subcategoryFontSize = 32; 
+        [SerializeField] private int categoryTitleFontSize = 36;
+        [SerializeField] private int subcategoryFontSize = 32;
+        [SerializeField] private float pieceThumbnailHeight = 220f;
 
         // Colors
         private readonly Color HeaderColor = new Color32(255, 255, 255, 38);
@@ -38,6 +40,7 @@ namespace RetroTech
         private readonly Color MetadataChipColor = new Color32(106, 84, 158, 160);
         private readonly Color MetadataTextColor = new Color32(228, 220, 255, 255);
         private readonly Color SubtitleTextColor = new Color32(198, 192, 232, 255);
+        private readonly Color PieceThumbnailBackground = new Color(1f, 1f, 1f, 0.08f);
 
         // Events
         public System.Action<ComputerPiece> OnPieceSelected;
@@ -600,6 +603,8 @@ namespace RetroTech
                 cardFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
                 cardFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
+                CreatePieceThumbnail(pieceCard.transform, piece);
+
                 var titleTMP = UiKit.TMP(pieceCard.transform, piece.Name, 26, ModalTextColor,
                     TextAlignmentOptions.Left, bold: true);
                 titleTMP.enableWordWrapping = true;
@@ -643,6 +648,59 @@ namespace RetroTech
                 CreatePieceDetailsButton(pieceCard.transform, piece);
 
                 pieceCard.gameObject.name = $"PieceCard_{piece.Name}";
+            }
+        }
+
+        private void CreatePieceThumbnail(Transform parent, ComputerPiece piece)
+        {
+            var frameGO = new GameObject("PieceThumbnail", typeof(RectTransform), typeof(Image), typeof(RectMask2D));
+            frameGO.transform.SetParent(parent, false);
+            frameGO.transform.SetAsFirstSibling();
+
+            var frameRT = frameGO.GetComponent<RectTransform>();
+            frameRT.anchorMin = new Vector2(0f, 1f);
+            frameRT.anchorMax = new Vector2(1f, 1f);
+            frameRT.pivot = new Vector2(0.5f, 1f);
+            frameRT.offsetMin = Vector2.zero;
+            frameRT.offsetMax = Vector2.zero;
+
+            var layout = frameGO.AddComponent<LayoutElement>();
+            layout.preferredHeight = pieceThumbnailHeight;
+            layout.minHeight = pieceThumbnailHeight;
+            layout.flexibleHeight = 0f;
+
+            var background = frameGO.GetComponent<Image>();
+            background.color = PieceThumbnailBackground;
+            background.raycastTarget = false;
+            background.type = Image.Type.Simple;
+
+            var sprite = PieceImageFactory.GetSprite(piece);
+            if (sprite == null)
+            {
+                return;
+            }
+
+            var imageGO = new GameObject("Image", typeof(RectTransform), typeof(Image));
+            imageGO.transform.SetParent(frameGO.transform, false);
+
+            var imageRT = imageGO.GetComponent<RectTransform>();
+            imageRT.anchorMin = Vector2.zero;
+            imageRT.anchorMax = Vector2.one;
+            imageRT.offsetMin = new Vector2(12f, 12f);
+            imageRT.offsetMax = new Vector2(-12f, -12f);
+
+            var thumbnailImage = imageGO.GetComponent<Image>();
+            thumbnailImage.sprite = sprite;
+            thumbnailImage.color = Color.white;
+            thumbnailImage.preserveAspect = true;
+            thumbnailImage.raycastTarget = false;
+
+            var fitter = imageGO.GetComponent<AspectRatioFitter>() ??
+                         imageGO.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            if (sprite.rect.height > 0f)
+            {
+                fitter.aspectRatio = sprite.rect.width / sprite.rect.height;
             }
         }
 

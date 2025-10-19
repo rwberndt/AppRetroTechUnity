@@ -281,6 +281,18 @@ namespace RetroTech
                 _activeTab = 0;
                 SwitchPage(_activeTab);
             }
+            catch (System.UnauthorizedAccessException authEx)
+            {
+                Debug.LogWarning($"Content loading requires authentication. {authEx}");
+                _authenticationService?.SignOut();
+                _apiClient?.SetBearerToken(null);
+                _currentUser = null;
+
+                _loginPage?.SetBusy(false);
+                _loginPage?.ClearPasswords();
+                _loginPage?.ShowMessage("Sua sessão expirou. Faça login novamente.", true);
+                _loginPage?.ShowLogin();
+            }
             catch (System.Exception ex)
             {
                 Debug.LogError($"Failed to load content after authentication. {ex}");
@@ -1376,9 +1388,49 @@ namespace RetroTech
 
         private void AddDetailSection(Transform parent, ComputerPiece piece)
         {
-            // Hero image placeholder
-            var heroCard = CreateGlassCard(parent, 200f);
-            heroCard.color = new Color(1f, 1f, 1f, 0.15f);
+            // Hero image
+            const float heroImageHeight = 260f;
+            var heroCard = CreateGlassCard(parent, heroImageHeight);
+            var heroLayout = heroCard.GetComponent<LayoutElement>() ?? heroCard.gameObject.AddComponent<LayoutElement>();
+            heroLayout.preferredHeight = heroImageHeight;
+            heroLayout.minHeight = heroImageHeight;
+            heroLayout.flexibleHeight = 0f;
+            heroCard.raycastTarget = false;
+
+            if (!heroCard.gameObject.TryGetComponent<RectMask2D>(out _))
+            {
+                heroCard.gameObject.AddComponent<RectMask2D>();
+            }
+
+            var heroSprite = PieceImageFactory.GetSprite(piece);
+            if (heroSprite != null)
+            {
+                var imageGO = new GameObject("HeroImage", typeof(RectTransform), typeof(Image));
+                imageGO.transform.SetParent(heroCard.transform, false);
+
+                var imageRT = imageGO.GetComponent<RectTransform>();
+                imageRT.anchorMin = Vector2.zero;
+                imageRT.anchorMax = Vector2.one;
+                imageRT.offsetMin = new Vector2(16f, 16f);
+                imageRT.offsetMax = new Vector2(-16f, -16f);
+
+                var heroImage = imageGO.GetComponent<Image>();
+                heroImage.sprite = heroSprite;
+                heroImage.color = Color.white;
+                heroImage.preserveAspect = true;
+                heroImage.raycastTarget = false;
+
+                var aspect = imageGO.GetComponent<AspectRatioFitter>() ?? imageGO.AddComponent<AspectRatioFitter>();
+                aspect.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+                if (heroSprite.rect.height > 0f)
+                {
+                    aspect.aspectRatio = heroSprite.rect.width / heroSprite.rect.height;
+                }
+            }
+            else
+            {
+                heroCard.color = new Color(1f, 1f, 1f, 0.15f);
+            }
 
             // Title
             UiKit.TMP(parent, piece.Name, 32, Color.white, TextAlignmentOptions.Left, bold: true);

@@ -3,6 +3,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using RetroTech.Services;
 using static RetroTech.UiKit;
 
 namespace RetroTech
@@ -26,6 +27,7 @@ namespace RetroTech
         [SerializeField] private int descriptionFontSize = 16;
         [SerializeField] private int buttonFontSize = 16;
         [SerializeField] private float buttonHeight = 40f;
+        [SerializeField] private float thumbnailHeight = 200f;
 
         // Colors
         private readonly Color PageTitleColor = Color.white;
@@ -33,6 +35,7 @@ namespace RetroTech
         private readonly Color YearBadgeColor = new Color32(147, 112, 219, 255); // Purple
         private readonly Color PieceNameColor = Color.white;
         private readonly Color DescriptionColor = new Color32(255, 255, 255, 180);
+        private readonly Color ThumbnailBackgroundColor = new Color(1f, 1f, 1f, 0.08f);
 
         // Sorting options
         public enum SortOrder
@@ -241,6 +244,9 @@ namespace RetroTech
             cardVLG.childControlHeight = true;
             cardVLG.childForceExpandHeight = false;
 
+            // Piece image
+            CreatePieceThumbnail(timelineCard.transform, piece);
+
             // Year badge
             CreateYearBadge(timelineCard.transform, piece);
 
@@ -256,6 +262,58 @@ namespace RetroTech
             timelineCard.gameObject.name = $"TimelineCard_{piece.Name}_{piece.YearManufactured}";
 
             return timelineCard.gameObject;
+        }
+
+        private void CreatePieceThumbnail(Transform parent, ComputerPiece piece)
+        {
+            var frameGO = new GameObject("PieceThumbnail", typeof(RectTransform), typeof(Image), typeof(RectMask2D));
+            frameGO.transform.SetParent(parent, false);
+            frameGO.transform.SetAsFirstSibling();
+
+            var frameRT = frameGO.GetComponent<RectTransform>();
+            frameRT.anchorMin = new Vector2(0f, 1f);
+            frameRT.anchorMax = new Vector2(1f, 1f);
+            frameRT.pivot = new Vector2(0.5f, 1f);
+            frameRT.offsetMin = Vector2.zero;
+            frameRT.offsetMax = Vector2.zero;
+
+            var layout = frameGO.AddComponent<LayoutElement>();
+            layout.preferredHeight = thumbnailHeight;
+            layout.minHeight = thumbnailHeight;
+            layout.flexibleHeight = 0f;
+
+            var background = frameGO.GetComponent<Image>();
+            background.color = ThumbnailBackgroundColor;
+            background.raycastTarget = false;
+            background.type = Image.Type.Simple;
+
+            var sprite = PieceImageFactory.GetSprite(piece);
+            if (sprite == null)
+            {
+                return;
+            }
+
+            var imageGO = new GameObject("Image", typeof(RectTransform), typeof(Image));
+            imageGO.transform.SetParent(frameGO.transform, false);
+
+            var imageRT = imageGO.GetComponent<RectTransform>();
+            imageRT.anchorMin = Vector2.zero;
+            imageRT.anchorMax = Vector2.one;
+            imageRT.offsetMin = new Vector2(12f, 12f);
+            imageRT.offsetMax = new Vector2(-12f, -12f);
+
+            var image = imageGO.GetComponent<Image>();
+            image.sprite = sprite;
+            image.color = Color.white;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+
+            var fitter = imageGO.GetComponent<AspectRatioFitter>() ?? imageGO.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            if (sprite.rect.height > 0f)
+            {
+                fitter.aspectRatio = sprite.rect.width / sprite.rect.height;
+            }
         }
 
         /// <summary>
