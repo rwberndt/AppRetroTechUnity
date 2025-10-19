@@ -1397,7 +1397,10 @@ namespace RetroTech
             heroLayout.flexibleHeight = 0f;
             heroCard.raycastTarget = false;
 
-            heroCard.gameObject.GetComponent<RectMask2D>() ?? heroCard.gameObject.AddComponent<RectMask2D>();
+            if (!heroCard.gameObject.TryGetComponent<RectMask2D>(out _))
+            {
+                heroCard.gameObject.AddComponent<RectMask2D>();
+            }
 
             var heroSprite = PieceImageFactory.GetSprite(piece);
             if (heroSprite != null)
