@@ -98,7 +98,8 @@ namespace RetroTech
         {
             var titleTMP = UiKit.TMP(_contentContainer, "Scanner QR", titleFontSize,
                 Color.white, TextAlignmentOptions.Left, bold: true);
-            titleTMP.margin = new Vector4(0, 0, 0, 40);
+            float bottomMargin = ResponsiveLayout.CalculateSpacing(40f);
+            titleTMP.margin = new Vector4(0, 0, 0, bottomMargin);
         }
 
         /// <summary>
@@ -116,8 +117,9 @@ namespace RetroTech
 
             var previewVLG = previewCard.gameObject.AddComponent<VerticalLayoutGroup>();
             previewVLG.childAlignment = TextAnchor.MiddleCenter;
-            previewVLG.spacing = 24;
-            previewVLG.padding = new RectOffset(32, 32, 32, 32);
+            previewVLG.spacing = ResponsiveLayout.CalculateSpacing(24f);
+            int previewPadding = Mathf.RoundToInt(ResponsiveLayout.CalculateCardPadding(32f));
+            previewVLG.padding = new RectOffset(previewPadding, previewPadding, previewPadding, previewPadding);
             previewVLG.childControlWidth = true;
             previewVLG.childForceExpandWidth = true;
             previewVLG.childControlHeight = false;
@@ -136,7 +138,8 @@ namespace RetroTech
                 "Aponte a câmera para o QR code de uma peça para ver seus detalhes.",
                 scanDescFontSize, new Color32(255, 255, 255, 180), TextAlignmentOptions.Center);
             scanDescTMP.enableWordWrapping = true;
-            scanDescTMP.margin = new Vector4(16, 0, 16, 0);
+            float descHorizontal = ResponsiveLayout.CalculateCardPadding(16f);
+            scanDescTMP.margin = new Vector4(descHorizontal, 0, descHorizontal, 0);
         }
 
         /// <summary>
@@ -148,7 +151,8 @@ namespace RetroTech
             frameGO.transform.SetParent(parent, false);
 
             var frameRT = frameGO.GetComponent<RectTransform>();
-            frameRT.sizeDelta = new Vector2(qrFrameSize, qrFrameSize);
+            float responsiveSize = ResponsiveTypography.ResponsiveSpacing(qrFrameSize);
+            frameRT.sizeDelta = new Vector2(responsiveSize, responsiveSize);
 
             var frameImg = frameGO.GetComponent<Image>();
             frameImg.color = new Color(1f, 1f, 1f, 0.2f);
@@ -163,10 +167,10 @@ namespace RetroTech
             }
 
             var frameLE = frameGO.AddComponent<LayoutElement>();
-            frameLE.preferredWidth = qrFrameSize;
-            frameLE.preferredHeight = qrFrameSize;
-            frameLE.minWidth = qrFrameSize;
-            frameLE.minHeight = qrFrameSize;
+            frameLE.preferredWidth = responsiveSize;
+            frameLE.preferredHeight = responsiveSize;
+            frameLE.minWidth = responsiveSize;
+            frameLE.minHeight = responsiveSize;
 
             // Ícone QR Code interno
             CreateQRIcon(frameGO.transform);
@@ -186,7 +190,8 @@ namespace RetroTech
             qrIconRT.anchorMin = new Vector2(0.5f, 0.5f);
             qrIconRT.anchorMax = new Vector2(0.5f, 0.5f);
             qrIconRT.pivot = new Vector2(0.5f, 0.5f);
-            qrIconRT.sizeDelta = new Vector2(96, 96);
+            float iconSize = ResponsiveTypography.ResponsiveSpacing(96f);
+            qrIconRT.sizeDelta = new Vector2(iconSize, iconSize);
 
             var qrIconImg = qrIconGO.GetComponent<Image>();
             qrIconImg.raycastTarget = false;
@@ -244,8 +249,10 @@ namespace RetroTech
 
             var tipsVLG = tipsCard.gameObject.AddComponent<VerticalLayoutGroup>();
             tipsVLG.childAlignment = TextAnchor.UpperLeft;
-            tipsVLG.spacing = 12;
-            tipsVLG.padding = new RectOffset(28, 28, 24, 24);
+            tipsVLG.spacing = ResponsiveLayout.CalculateSpacing(12f);
+            int tipsHorizontal = Mathf.RoundToInt(ResponsiveLayout.CalculateCardPadding(28f));
+            int tipsVertical = Mathf.RoundToInt(ResponsiveLayout.CalculateCardPadding(24f));
+            tipsVLG.padding = new RectOffset(tipsHorizontal, tipsHorizontal, tipsVertical, tipsVertical);
             tipsVLG.childControlWidth = true;
             tipsVLG.childForceExpandWidth = true;
             tipsVLG.childControlHeight = false;
@@ -511,8 +518,9 @@ namespace RetroTech
             cardRT.offsetMax = Vector2.zero;
 
             var cardLE = cardGO.AddComponent<LayoutElement>();
-            cardLE.preferredHeight = height;
-            cardLE.minHeight = height;
+            float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(height);
+            cardLE.preferredHeight = responsiveHeight;
+            cardLE.minHeight = responsiveHeight;
             cardLE.flexibleHeight = 0f;
 
             var cardImg = cardGO.GetComponent<Image>();
@@ -557,8 +565,10 @@ namespace RetroTech
             var labelRT = label.rectTransform;
             labelRT.anchorMin = Vector2.zero;
             labelRT.anchorMax = Vector2.one;
-            labelRT.offsetMin = new Vector2(20, 12);
-            labelRT.offsetMax = new Vector2(-20, -12);
+            float horizontalPadding = ResponsiveLayout.CalculateCardPadding(20f);
+            float verticalPadding = ResponsiveLayout.CalculateSpacing(12f);
+            labelRT.offsetMin = new Vector2(horizontalPadding, verticalPadding);
+            labelRT.offsetMax = new Vector2(-horizontalPadding, -verticalPadding);
 
             return btnCard.gameObject;
         }
@@ -571,8 +581,9 @@ namespace RetroTech
             var spacerGO = new GameObject("Spacer", typeof(RectTransform), typeof(LayoutElement));
             spacerGO.transform.SetParent(parent, false);
             var le = spacerGO.GetComponent<LayoutElement>();
-            le.minHeight = height;
-            le.preferredHeight = height;
+            float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(height);
+            le.minHeight = responsiveHeight;
+            le.preferredHeight = responsiveHeight;
             le.flexibleHeight = 0f;
         }
 

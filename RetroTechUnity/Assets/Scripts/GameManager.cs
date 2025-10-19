@@ -462,11 +462,12 @@ namespace RetroTech
             scroll.content = crt;
 
             var vlg = content.GetComponent<VerticalLayoutGroup>();
-            int horizontalPadding = 32;
-            int topPadding = 40;
-            int bottomPadding = Mathf.CeilToInt(40f + _navBarReservedHeight);
+            int horizontalPadding = ResponsiveLayout.CalculateHorizontalPadding(32);
+            int topPadding = ResponsiveLayout.CalculateVerticalPadding(40);
+            float responsiveBottomBase = ResponsiveLayout.CalculateSpacing(40f);
+            int bottomPadding = Mathf.CeilToInt(responsiveBottomBase + _navBarReservedHeight);
             vlg.padding = new RectOffset(horizontalPadding, horizontalPadding, topPadding, bottomPadding);
-            vlg.spacing = 24f;
+            vlg.spacing = ResponsiveLayout.CalculateSpacing(24f);
             vlg.childAlignment = TextAnchor.UpperLeft;
             vlg.childControlWidth = true;
             vlg.childForceExpandWidth = true;
@@ -871,9 +872,11 @@ namespace RetroTech
             cardRT.offsetMin = Vector2.zero;
             cardRT.offsetMax = Vector2.zero;
 
+            var responsiveHeight = ResponsiveTypography.ResponsiveSpacing(height);
+
             var cardLE = cardGO.AddComponent<LayoutElement>();
-            cardLE.preferredHeight = height;
-            cardLE.minHeight = height;
+            cardLE.preferredHeight = responsiveHeight;
+            cardLE.minHeight = responsiveHeight;
 
             var cardImg = cardGO.GetComponent<Image>();
             cardImg.color = new Color(1f, 1f, 1f, 0.1f); // Glass effect
@@ -912,8 +915,10 @@ namespace RetroTech
             var lrt = label.rectTransform;
             lrt.anchorMin = Vector2.zero;
             lrt.anchorMax = Vector2.one;
-            lrt.offsetMin = new Vector2(16, 8);
-            lrt.offsetMax = new Vector2(-16, -8);
+            float horizontalPadding = ResponsiveLayout.CalculateCardPadding(16f);
+            float verticalPadding = ResponsiveLayout.CalculateSpacing(8f);
+            lrt.offsetMin = new Vector2(horizontalPadding, verticalPadding);
+            lrt.offsetMax = new Vector2(-horizontalPadding, -verticalPadding);
 
             return btnCard.gameObject;
         }
@@ -940,8 +945,10 @@ namespace RetroTech
             var lrt = label.rectTransform;
             lrt.anchorMin = Vector2.zero;
             lrt.anchorMax = Vector2.one;
-            lrt.offsetMin = new Vector2(16, 12);
-            lrt.offsetMax = new Vector2(-16, -12);
+            float horizontalPadding = ResponsiveLayout.CalculateCardPadding(16f);
+            float verticalPadding = ResponsiveLayout.CalculateSpacing(12f);
+            lrt.offsetMin = new Vector2(horizontalPadding, verticalPadding);
+            lrt.offsetMax = new Vector2(-horizontalPadding, -verticalPadding);
 
             return btnCard.gameObject;
         }
@@ -1278,8 +1285,11 @@ namespace RetroTech
             var sRT = scrollGO.GetComponent<RectTransform>();
             sRT.anchorMin = Vector2.zero;
             sRT.anchorMax = Vector2.one;
-            sRT.offsetMin = offsetMin;
-            sRT.offsetMax = offsetMax;
+            int horizontal = ResponsiveLayout.CalculateHorizontalPadding(Mathf.RoundToInt(offsetMin.x));
+            float topOffset = ResponsiveLayout.CalculateSpacing(offsetMin.y);
+            float bottomOffset = ResponsiveLayout.CalculateSpacing(-offsetMax.y);
+            sRT.offsetMin = new Vector2(horizontal, topOffset);
+            sRT.offsetMax = new Vector2(-horizontal, -bottomOffset);
 
             var scrollRect = scrollGO.GetComponent<ScrollRect>();
             scrollRect.vertical = true;
@@ -1307,8 +1317,10 @@ namespace RetroTech
             scrollRect.content = cRT;
 
             var vlg = content.GetComponent<VerticalLayoutGroup>();
-            vlg.padding = new RectOffset(8, 8, 8, 8);
-            vlg.spacing = 8;
+            int modalSidePadding = ResponsiveLayout.CalculateHorizontalPadding(12);
+            int modalVerticalPadding = ResponsiveLayout.CalculateVerticalPadding(12);
+            vlg.padding = new RectOffset(modalSidePadding, modalSidePadding, modalVerticalPadding, modalVerticalPadding);
+            vlg.spacing = ResponsiveLayout.CalculateSpacing(12f);
             vlg.childControlWidth = true;
             vlg.childForceExpandWidth = true;
             vlg.childControlHeight = true;
@@ -1359,12 +1371,15 @@ namespace RetroTech
             headerRT.anchorMin = new Vector2(0, 1);
             headerRT.anchorMax = new Vector2(1, 1);
             headerRT.pivot = new Vector2(0.5f, 1);
-            headerRT.offsetMin = new Vector2(16, -80);
-            headerRT.offsetMax = new Vector2(-16, -16);
+            int headerHorizontal = ResponsiveLayout.CalculateHorizontalPadding(16);
+            float headerBottom = ResponsiveLayout.CalculateSpacing(80f);
+            float headerTop = ResponsiveLayout.CalculateSpacing(16f);
+            headerRT.offsetMin = new Vector2(headerHorizontal, -headerBottom);
+            headerRT.offsetMax = new Vector2(-headerHorizontal, -headerTop);
 
             var headerHLG = headerGO.GetComponent<HorizontalLayoutGroup>();
             headerHLG.childAlignment = TextAnchor.MiddleLeft;
-            headerHLG.spacing = 12;
+            headerHLG.spacing = ResponsiveLayout.CalculateSpacing(12f);
 
             // Back button
             var backBtn = new GameObject("BackBtn", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -1456,7 +1471,8 @@ namespace RetroTech
         {
             UiKit.TMP(parent, label, 18, new Color32(255, 255, 255, 150), TextAlignmentOptions.Left);
             var valueTMP = UiKit.TMP(parent, value, 20, Color.white, TextAlignmentOptions.Left, bold: true);
-            valueTMP.margin = new Vector4(0, 0, 0, 16);
+            float valueMargin = ResponsiveLayout.CalculateSpacing(16f);
+            valueTMP.margin = new Vector4(0, 0, 0, valueMargin);
         }
 
         private void AddDetailSection(Transform parent, string title, string content)
@@ -1464,7 +1480,8 @@ namespace RetroTech
             UiKit.TMP(parent, title, 24, Color.white, TextAlignmentOptions.Left, bold: true);
             var contentTMP = UiKit.TMP(parent, content, 18, new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
             contentTMP.enableWordWrapping = true;
-            contentTMP.margin = new Vector4(0, 0, 0, 20);
+            float sectionMargin = ResponsiveLayout.CalculateSpacing(20f);
+            contentTMP.margin = new Vector4(0, 0, 0, sectionMargin);
         }
 
         // ========= Search Feature =========
@@ -1649,8 +1666,10 @@ namespace RetroTech
             var spacerGO = new GameObject("Spacer", typeof(RectTransform), typeof(LayoutElement));
             spacerGO.transform.SetParent(parent, false);
             var le = spacerGO.GetComponent<LayoutElement>();
-            le.minHeight = height;
-            le.preferredHeight = height;
+            float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(height);
+            le.minHeight = responsiveHeight;
+            le.preferredHeight = responsiveHeight;
+            le.flexibleHeight = 0f;
         }
     }
 }
