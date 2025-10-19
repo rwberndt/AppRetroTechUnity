@@ -22,10 +22,10 @@ namespace RetroTech
         [SerializeField] private float titleMarginBottom = 24f;
         [SerializeField] private float timelineCardHeight = 200f;
         [SerializeField] private int pageTitleFontSize = 36;
-        [SerializeField] private int yearFontSize = 16;
+        [SerializeField] private int yearFontSize = 30;
         [SerializeField] private int nameCardFontSize = 22;
-        [SerializeField] private int descriptionFontSize = 16;
-        [SerializeField] private int buttonFontSize = 16;
+        [SerializeField] private int descriptionFontSize = 24;
+        [SerializeField] private int buttonFontSize = 28;
         [SerializeField] private float buttonHeight = 40f;
         [SerializeField] private float thumbnailHeight = 200f;
 
