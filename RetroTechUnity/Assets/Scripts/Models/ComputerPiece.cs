@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace RetroTech
@@ -20,6 +21,8 @@ namespace RetroTech
         public string Manufacturer;
         public string Description;
         public string ImageUrl;
+        public byte[] ImageData;
+        public string ImageContentType;
         public string Curiosities;
         public List<string> Specifications;
         public string Subcategory;
@@ -34,7 +37,9 @@ namespace RetroTech
             string imageUrl,
             string curiosities,
             List<string> specifications,
-            string subcategory = null)
+            string subcategory = null,
+            byte[] imageData = null,
+            string imageContentType = null)
         {
             Id = id;
             Name = name;
@@ -46,6 +51,10 @@ namespace RetroTech
             Curiosities = curiosities;
             Specifications = specifications;
             Subcategory = subcategory ?? string.Empty;
+            ImageData = imageData ?? Array.Empty<byte>();
+            ImageContentType = imageContentType ?? string.Empty;
         }
+
+        public bool HasImageData => ImageData != null && ImageData.Length > 0;
     }
 }

@@ -296,10 +296,36 @@ namespace RetroTech.Services
                 dto.yearManufactured,
                 dto.manufacturer,
                 dto.description,
-                dto.imageUrl ?? dto.imageData ?? string.Empty,
+                dto.imageUrl ?? string.Empty,
                 dto.curiosities,
                 dto.specifications != null ? new List<string>(dto.specifications) : new List<string>(),
-                dto.subcategory);
+                dto.subcategory,
+                DecodeImageData(dto.imageData),
+                dto.imageContentType);
+        }
+
+        private static byte[] DecodeImageData(string encodedData)
+        {
+            if (string.IsNullOrWhiteSpace(encodedData))
+            {
+                return Array.Empty<byte>();
+            }
+
+            string payload = encodedData;
+            int commaIndex = encodedData.IndexOf(',');
+            if (commaIndex >= 0 && commaIndex < encodedData.Length - 1)
+            {
+                payload = encodedData.Substring(commaIndex + 1);
+            }
+
+            try
+            {
+                return Convert.FromBase64String(payload);
+            }
+            catch (FormatException)
+            {
+                return Array.Empty<byte>();
+            }
         }
 
         private static List<QuizQuestion> MapQuizQuestions(IReadOnlyList<QuizQuestionDto> source)

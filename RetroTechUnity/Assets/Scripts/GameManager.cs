@@ -1376,9 +1376,35 @@ namespace RetroTech
 
         private void AddDetailSection(Transform parent, ComputerPiece piece)
         {
-            // Hero image placeholder
-            var heroCard = CreateGlassCard(parent, 200f);
-            heroCard.color = new Color(1f, 1f, 1f, 0.15f);
+            // Hero image
+            var heroCard = CreateGlassCard(parent, 240f);
+            var heroLayout = heroCard.GetComponent<LayoutElement>();
+            if (heroLayout != null)
+            {
+                heroLayout.preferredHeight = 240f;
+                heroLayout.minHeight = 240f;
+            }
+
+            var heroSprite = PieceImageFactory.GetSprite(piece);
+            if (heroSprite != null)
+            {
+                heroCard.sprite = heroSprite;
+                heroCard.color = Color.white;
+                heroCard.type = Image.Type.Simple;
+                heroCard.preserveAspect = true;
+
+                var aspect = heroCard.gameObject.GetComponent<AspectRatioFitter>() ??
+                             heroCard.gameObject.AddComponent<AspectRatioFitter>();
+                aspect.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+                if (heroSprite.rect.height > 0f)
+                {
+                    aspect.aspectRatio = heroSprite.rect.width / heroSprite.rect.height;
+                }
+            }
+            else
+            {
+                heroCard.color = new Color(1f, 1f, 1f, 0.15f);
+            }
 
             // Title
             UiKit.TMP(parent, piece.Name, 32, Color.white, TextAlignmentOptions.Left, bold: true);

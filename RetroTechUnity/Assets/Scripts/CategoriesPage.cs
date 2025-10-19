@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using RetroTech.Services;
 using static RetroTech.UiKit;
 
 namespace RetroTech
@@ -600,6 +601,8 @@ namespace RetroTech
                 cardFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
                 cardFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
+                CreatePieceThumbnail(pieceCard.transform, piece);
+
                 var titleTMP = UiKit.TMP(pieceCard.transform, piece.Name, 26, ModalTextColor,
                     TextAlignmentOptions.Left, bold: true);
                 titleTMP.enableWordWrapping = true;
@@ -643,6 +646,49 @@ namespace RetroTech
                 CreatePieceDetailsButton(pieceCard.transform, piece);
 
                 pieceCard.gameObject.name = $"PieceCard_{piece.Name}";
+            }
+        }
+
+        private void CreatePieceThumbnail(Transform parent, ComputerPiece piece)
+        {
+            var thumbnailGO = new GameObject("PieceThumbnail", typeof(RectTransform), typeof(Image));
+            thumbnailGO.transform.SetParent(parent, false);
+            thumbnailGO.transform.SetAsFirstSibling();
+
+            var thumbnailImage = thumbnailGO.GetComponent<Image>();
+            thumbnailImage.raycastTarget = false;
+            thumbnailImage.type = Image.Type.Simple;
+
+            var layout = thumbnailGO.AddComponent<LayoutElement>();
+            layout.preferredHeight = 220f;
+            layout.minHeight = 220f;
+            layout.flexibleHeight = 0f;
+
+            var rectTransform = thumbnailImage.rectTransform;
+            rectTransform.anchorMin = new Vector2(0f, 1f);
+            rectTransform.anchorMax = new Vector2(1f, 1f);
+            rectTransform.pivot = new Vector2(0.5f, 1f);
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+
+            var sprite = PieceImageFactory.GetSprite(piece);
+            if (sprite != null)
+            {
+                thumbnailImage.sprite = sprite;
+                thumbnailImage.color = Color.white;
+                thumbnailImage.preserveAspect = true;
+
+                var fitter = thumbnailGO.GetComponent<AspectRatioFitter>() ??
+                             thumbnailGO.AddComponent<AspectRatioFitter>();
+                fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+                if (sprite.rect.height > 0f)
+                {
+                    fitter.aspectRatio = sprite.rect.width / sprite.rect.height;
+                }
+            }
+            else
+            {
+                thumbnailImage.color = new Color(1f, 1f, 1f, 0.08f);
             }
         }
 

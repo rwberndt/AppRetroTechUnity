@@ -3,6 +3,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using RetroTech.Services;
 using static RetroTech.UiKit;
 
 namespace RetroTech
@@ -241,6 +242,9 @@ namespace RetroTech
             cardVLG.childControlHeight = true;
             cardVLG.childForceExpandHeight = false;
 
+            // Piece image
+            CreatePieceThumbnail(timelineCard.transform, piece);
+
             // Year badge
             CreateYearBadge(timelineCard.transform, piece);
 
@@ -256,6 +260,37 @@ namespace RetroTech
             timelineCard.gameObject.name = $"TimelineCard_{piece.Name}_{piece.YearManufactured}";
 
             return timelineCard.gameObject;
+        }
+
+        private void CreatePieceThumbnail(Transform parent, ComputerPiece piece)
+        {
+            var sprite = PieceImageFactory.GetSprite(piece);
+            if (sprite == null)
+            {
+                return;
+            }
+
+            var thumbnail = new GameObject("PieceThumbnail", typeof(RectTransform), typeof(Image));
+            thumbnail.transform.SetParent(parent, false);
+            thumbnail.transform.SetAsFirstSibling();
+
+            var image = thumbnail.GetComponent<Image>();
+            image.sprite = sprite;
+            image.color = Color.white;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+
+            var layout = thumbnail.AddComponent<LayoutElement>();
+            layout.preferredHeight = 220f;
+            layout.minHeight = 220f;
+            layout.flexibleHeight = 0f;
+
+            var fitter = thumbnail.GetComponent<AspectRatioFitter>() ?? thumbnail.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            if (sprite.rect.height > 0f)
+            {
+                fitter.aspectRatio = sprite.rect.width / sprite.rect.height;
+            }
         }
 
         /// <summary>
