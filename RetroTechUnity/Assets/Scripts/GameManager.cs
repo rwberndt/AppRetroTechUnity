@@ -1433,7 +1433,7 @@ namespace RetroTech
             }
 
             // Title
-            UiKit.TMP(parent, piece.Name, 32, Color.white, TextAlignmentOptions.Left, bold: true);
+            UiKit.TMP(parent, piece.Name, 50, Color.white, TextAlignmentOptions.Left, bold: true);
 
             // Year
             AddDetailField(parent, "Ano de fabricação", piece.YearManufactured > 0 ? piece.YearManufactured.ToString() : "-");
@@ -1454,15 +1454,15 @@ namespace RetroTech
 
         private void AddDetailField(Transform parent, string label, string value)
         {
-            UiKit.TMP(parent, label, 18, new Color32(255, 255, 255, 150), TextAlignmentOptions.Left);
-            var valueTMP = UiKit.TMP(parent, value, 20, Color.white, TextAlignmentOptions.Left, bold: true);
+            UiKit.TMP(parent, label, 46, new Color32(255, 255, 255, 150), TextAlignmentOptions.Left,bold:true);
+            var valueTMP = UiKit.TMP(parent, value, 36, Color.white, TextAlignmentOptions.Left, bold: true);
             valueTMP.margin = new Vector4(0, 0, 0, 16);
         }
 
         private void AddDetailSection(Transform parent, string title, string content)
         {
-            UiKit.TMP(parent, title, 24, Color.white, TextAlignmentOptions.Left, bold: true);
-            var contentTMP = UiKit.TMP(parent, content, 18, new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
+            UiKit.TMP(parent, title, 46, Color.white, TextAlignmentOptions.Left, bold: true);
+            var contentTMP = UiKit.TMP(parent, content, 36, new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
             contentTMP.enableWordWrapping = true;
             contentTMP.margin = new Vector4(0, 0, 0, 20);
         }
