@@ -24,13 +24,13 @@ namespace RetroTech
 
         [Header("Visual Configuration")]
         [SerializeField] private float previewCardHeight = 480f;
-        [SerializeField] private float tipsCardHeight = 220f;
+        [SerializeField] private float tipsCardHeight = 360f;
         [SerializeField] private float qrFrameSize = 260f;
-        [SerializeField] private int titleFontSize = 48;
-        [SerializeField] private int scanTitleFontSize = 34;
-        [SerializeField] private int scanDescFontSize = 24;
-        [SerializeField] private int tipsTitleFontSize = 26;
-        [SerializeField] private int tipsFontSize = 22;
+        [SerializeField] private int titleFontSize = 50;
+        [SerializeField] private int scanTitleFontSize = 36;
+        [SerializeField] private int scanDescFontSize = 45;
+        [SerializeField] private int tipsTitleFontSize = 36;
+        [SerializeField] private int tipsFontSize = 50;
 
         // Events
         public System.Action<ComputerPiece> OnPieceScanned;
