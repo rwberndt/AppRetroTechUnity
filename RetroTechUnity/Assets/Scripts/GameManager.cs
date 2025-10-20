@@ -38,8 +38,10 @@ namespace RetroTech
         // Beautiful gradient colors from prototype
         private readonly Color GradientTop = new Color32(147, 112, 219, 255);    // Light purple
         private readonly Color GradientBottom = new Color32(255, 182, 193, 255); // Light pink
-        private readonly Color NavGradientLeft = new Color32(255, 120, 170, 255);   // Vivid pink
-        private readonly Color NavGradientRight = new Color32(150, 108, 228, 255);  // Vivid purple
+        // Slightly desaturated tones so the nav bar blends with the screen background
+        private readonly Color NavGradientLeft = new Color32(76, 56, 124, 255);   // Deep lilac
+        private readonly Color NavGradientRight = new Color32(44, 36, 86, 255);   // Midnight violet
+        private readonly Color NavIndicatorColor = new Color32(212, 178, 255, 255);
         private Sprite _fallbackGradient;
         private Sprite _navBarGradient;
 
@@ -373,7 +375,7 @@ namespace RetroTech
             var bgImg = bgGO.AddComponent<Image>();
             bgImg.sprite = _fallbackGradient;
             bgImg.type = Image.Type.Simple;
-            bgImg.color = Color.white;
+            bgImg.color = new Color(1f, 1f, 1f, 0.94f);
 
             bgGO.transform.SetAsFirstSibling();
         }
@@ -506,7 +508,7 @@ namespace RetroTech
         }
 
         // ========= Navigation =========
-        private const float NavBarHeight = 92f;
+        private const float NavBarHeight = 104f;
 
         private void CreateNavigationBar()
         {
@@ -536,7 +538,7 @@ namespace RetroTech
             var bgImg = bgGO.GetComponent<Image>();
             bgImg.sprite = _navBarGradient != null ? _navBarGradient : _fallbackGradient;
             bgImg.type = Image.Type.Simple;
-            bgImg.color = Color.white;
+            bgImg.color = new Color(1f, 1f, 1f, 0.9f);
 
             var topLine = new GameObject("TopBorder", typeof(RectTransform), typeof(Image));
             topLine.transform.SetParent(bgGO.transform, false);
@@ -554,12 +556,12 @@ namespace RetroTech
             var rowRT = row.GetComponent<RectTransform>();
             rowRT.anchorMin = Vector2.zero;
             rowRT.anchorMax = Vector2.one;
-            rowRT.offsetMin = new Vector2(28f, 16f + bottomInset);
-            rowRT.offsetMax = new Vector2(-28f, -14f);
+            rowRT.offsetMin = new Vector2(32f, 20f + bottomInset);
+            rowRT.offsetMax = new Vector2(-32f, -16f);
 
             var hlg = row.GetComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.spacing = 12f;
+            hlg.spacing = 16f;
             hlg.padding = new RectOffset(0, 0, 0, 0);
             hlg.childControlWidth = true;
             hlg.childForceExpandWidth = true;
@@ -584,7 +586,7 @@ namespace RetroTech
 
             var le = tab.GetComponent<LayoutElement>();
             le.flexibleWidth = 1f;
-            le.preferredHeight = 70f;
+            le.preferredHeight = 84f;
 
             var bg = tab.GetComponent<Image>();
             bg.sprite = null;
@@ -607,8 +609,8 @@ namespace RetroTech
             // Layout for icon + text
             var vlg = tab.AddComponent<VerticalLayoutGroup>();
             vlg.childAlignment = TextAnchor.MiddleCenter;
-            vlg.spacing = 4f;
-            vlg.padding = new RectOffset(12, 12, 12, 10);
+            vlg.spacing = 6f;
+            vlg.padding = new RectOffset(16, 16, 14, 12);
             vlg.childControlHeight = false;
             vlg.childForceExpandHeight = false;
             vlg.childControlWidth = true;
@@ -634,24 +636,24 @@ namespace RetroTech
             }
 
             var iconRT = iconGO.GetComponent<RectTransform>();
-            iconRT.sizeDelta = new Vector2(28f, 28f);
+            iconRT.sizeDelta = new Vector2(36f, 36f);
             var iconLE = iconGO.AddComponent<LayoutElement>();
-            iconLE.preferredWidth = 28f;
-            iconLE.preferredHeight = 28f;
+            iconLE.preferredWidth = 36f;
+            iconLE.preferredHeight = 36f;
 
             // Label using TMP
             var labelGO = new GameObject("Label", typeof(RectTransform));
             labelGO.transform.SetParent(tab.transform, false);
-            var labelTMP = UiKit.TMP(labelGO.transform, label, 11, new Color32(230, 230, 245, 220), TextAlignmentOptions.Center);
+            var labelTMP = UiKit.TMP(labelGO.transform, label, 12, new Color32(230, 230, 245, 220), TextAlignmentOptions.Center);
             labelTMP.enableWordWrapping = false;
             labelTMP.overflowMode = TMPro.TextOverflowModes.Ellipsis;
             labelTMP.fontStyle = FontStyles.Normal;
             labelTMP.characterSpacing = 0f;
 
             var labelRT = labelTMP.GetComponent<RectTransform>();
-            labelRT.sizeDelta = new Vector2(0, 18);
+            labelRT.sizeDelta = new Vector2(0, 20);
             var labelLE = labelGO.AddComponent<LayoutElement>();
-            labelLE.preferredHeight = 18;
+            labelLE.preferredHeight = 20;
 
             var indicatorGO = new GameObject("Indicator", typeof(RectTransform), typeof(Image));
             indicatorGO.transform.SetParent(tab.transform, false);
@@ -660,7 +662,7 @@ namespace RetroTech
             indicatorRT.anchorMax = new Vector2(0.5f, 0f);
             indicatorRT.pivot = new Vector2(0.5f, 0f);
             indicatorRT.anchoredPosition = new Vector2(0f, 2f);
-            indicatorRT.sizeDelta = new Vector2(32f, 3f);
+            indicatorRT.sizeDelta = new Vector2(40f, 3f);
 
             var indicatorImage = indicatorGO.GetComponent<Image>();
             indicatorImage.color = new Color(1f, 1f, 1f, 0f);
@@ -687,17 +689,17 @@ namespace RetroTech
 
                 // Icon color and subtle scale pop
                 var icon = tab.Find("Icon").GetComponent<Image>();
-                icon.color = active ? Color.white : new Color32(235, 235, 245, 180);
+                icon.color = active ? Color.white : new Color32(210, 210, 230, 200);
                 var iconRT = icon.rectTransform;
-                iconRT.localScale = active ? new Vector3(1.1f, 1.1f, 1f) : Vector3.one;
+                iconRT.localScale = active ? new Vector3(1.15f, 1.15f, 1f) : Vector3.one;
 
                 // Label color
                 var label = tab.Find("Label").GetComponentInChildren<TextMeshProUGUI>();
                 if (label != null)
                 {
-                    label.color = active ? Color.white : new Color32(230, 230, 245, 170);
-                    label.alpha = active ? 1f : 0.9f;
-                    label.fontSize = active ? 12f : 11f;
+                    label.color = active ? Color.white : new Color32(210, 210, 230, 200);
+                    label.alpha = active ? 1f : 0.95f;
+                    label.fontSize = active ? 13f : 12f;
                     label.fontStyle = active ? FontStyles.SemiBold : FontStyles.Normal;
                 }
 
@@ -705,7 +707,7 @@ namespace RetroTech
                 if (indicator != null)
                 {
                     var indicatorImage = indicator.GetComponent<Image>();
-                    indicatorImage.color = active ? new Color(1f, 1f, 1f, 0.9f) : new Color(1f, 1f, 1f, 0f);
+                    indicatorImage.color = active ? NavIndicatorColor : new Color(1f, 1f, 1f, 0f);
                 }
             }
         }
