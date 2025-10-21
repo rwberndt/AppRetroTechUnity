@@ -700,7 +700,7 @@ namespace RetroTech
                     label.color = active ? Color.white : new Color32(210, 210, 230, 200);
                     label.alpha = active ? 1f : 0.95f;
                     label.fontSize = active ? 13f : 12f;
-                    label.fontStyle = active ? FontStyles.SemiBold : FontStyles.Normal;
+                    label.fontStyle = active ? FontStyles.Normal : FontStyles.Normal;
                 }
 
                 var indicator = tab.Find("Indicator");
