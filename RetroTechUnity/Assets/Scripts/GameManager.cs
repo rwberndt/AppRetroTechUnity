@@ -38,14 +38,19 @@ namespace RetroTech
         // Beautiful gradient colors from prototype
         private readonly Color GradientTop = new Color32(147, 112, 219, 255);    // Light purple
         private readonly Color GradientBottom = new Color32(255, 182, 193, 255); // Light pink
-        // Slightly desaturated tones so the nav bar blends with the screen background
-        private readonly Color NavGradientLeft = new Color32(153, 114, 221, 255);  // Lavender from page gradient
-        private readonly Color NavGradientRight = new Color32(255, 168, 210, 255); // Pink hue to mirror content screens
-        private readonly Color IconFrameActiveTint = new Color(1f, 1f, 1f, 1f);
-        private readonly Color IconFrameInactiveTint = new Color(1f, 1f, 1f, 0.75f);
+        // Navigation bar reuses the same family of colors as the page gradient so it blends seamlessly
+        private readonly Color NavGradientTop = new Color32(96, 60, 168, 255);    // Deep violet lifted from the hero background
+        private readonly Color NavGradientBottom = new Color32(210, 102, 191, 255); // Vibrant pink matching the page wash
+        private readonly Color IconGlowActiveTint = new Color(1f, 1f, 1f, 1f);
+        private readonly Color IconGlowInactiveTint = new Color(1f, 1f, 1f, 0.55f);
+        private readonly Color IconActiveColor = new Color(1f, 1f, 1f, 1f);
+        private readonly Color IconInactiveColor = new Color(1f, 1f, 1f, 0.82f);
+        private readonly Color IconOutlineActiveColor = new Color(1f, 1f, 1f, 0.58f);
+        private readonly Color IconOutlineInactiveColor = new Color(1f, 1f, 1f, 0.32f);
         private readonly Color NavIndicatorColor = new Color32(242, 210, 255, 255);
         private Sprite _fallbackGradient;
         private Sprite _navBarGradient;
+        private Sprite _navIconGlow;
 
         // Icons (Resources/Icons/*.png)
         private Sprite _iconHome, _iconCategories, _iconTimeline, _iconScanner, _iconQuiz;
@@ -79,7 +84,8 @@ namespace RetroTech
         private void Awake()
         {
             _fallbackGradient = CreateFallbackGradient(GradientTop, GradientBottom);
-            _navBarGradient = CreateHorizontalGradient(NavGradientLeft, NavGradientRight);
+            _navBarGradient = CreateVerticalGradient(NavGradientTop, NavGradientBottom);
+            _navIconGlow = CreateRadialGlowSprite(NavGradientTop, NavGradientBottom);
             LoadIcons();
             CreateCanvas();
             SetupBackground();
@@ -408,21 +414,52 @@ namespace RetroTech
             return Sprite.Create(tex, new Rect(0, 0, 1, 64), new Vector2(0.5f, 0.5f));
         }
 
-        private Sprite CreateHorizontalGradient(Color left, Color right)
+        private Sprite CreateVerticalGradient(Color top, Color bottom)
         {
-            Texture2D tex = new Texture2D(128, 1);
+            Texture2D tex = new Texture2D(1, 128);
             tex.wrapMode = TextureWrapMode.Clamp;
 
             Color[] colors = new Color[128];
             for (int i = 0; i < 128; i++)
             {
                 float t = i / 127f;
-                colors[i] = Color.Lerp(left, right, t);
+                colors[i] = Color.Lerp(bottom, top, t);
             }
 
             tex.SetPixels(colors);
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, 128, 1), new Vector2(0.5f, 0.5f));
+            return Sprite.Create(tex, new Rect(0, 0, 1, 128), new Vector2(0.5f, 0.5f));
+        }
+
+        private Sprite CreateRadialGlowSprite(Color topColor, Color bottomColor, int size = 128)
+        {
+            var inner = Color.Lerp(topColor, bottomColor, 0.35f);
+            inner.a = 0.9f;
+            var outer = Color.Lerp(topColor, bottomColor, 0.75f);
+            outer.a = 0f;
+
+            Texture2D tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
+            tex.wrapMode = TextureWrapMode.Clamp;
+
+            var colors = new Color[size * size];
+            var center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+            float maxRadius = center.x;
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float distance = Vector2.Distance(new Vector2(x, y), center);
+                    float t = Mathf.Clamp01(distance / maxRadius);
+                    float smoothT = Mathf.SmoothStep(0f, 1f, t);
+                    colors[y * size + x] = Color.Lerp(inner, outer, smoothT);
+                }
+            }
+
+            tex.SetPixels(colors);
+            tex.Apply();
+
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
         }
 
         // ========= Page factory =========
@@ -588,7 +625,7 @@ namespace RetroTech
 
             var le = tab.GetComponent<LayoutElement>();
             le.flexibleWidth = 1f;
-            le.preferredHeight = 96f;
+            le.preferredHeight = 104f;
 
             var bg = tab.GetComponent<Image>();
             bg.sprite = null;
@@ -611,29 +648,30 @@ namespace RetroTech
             // Layout for icon + text
             var vlg = tab.AddComponent<VerticalLayoutGroup>();
             vlg.childAlignment = TextAnchor.MiddleCenter;
-            vlg.spacing = 4f;
-            vlg.padding = new RectOffset(20, 20, 12, 12);
+            vlg.spacing = 6f;
+            vlg.padding = new RectOffset(18, 18, 10, 10);
             vlg.childControlHeight = false;
             vlg.childForceExpandHeight = false;
             vlg.childControlWidth = true;
             vlg.childForceExpandWidth = true;
 
-            // Icon gradient background so the glyph floats over the nav palette
+            // Icon glow background so the glyph floats over the nav palette
             var iconFrameGO = new GameObject("IconFrame", typeof(RectTransform), typeof(Image));
             iconFrameGO.transform.SetParent(tab.transform, false);
             var iconFrameRT = iconFrameGO.GetComponent<RectTransform>();
-            iconFrameRT.sizeDelta = new Vector2(68f, 68f);
+            iconFrameRT.sizeDelta = new Vector2(84f, 84f);
             var iconFrameImg = iconFrameGO.GetComponent<Image>();
-            iconFrameImg.sprite = _navBarGradient != null ? _navBarGradient : _fallbackGradient;
+            iconFrameImg.sprite = _navIconGlow != null ? _navIconGlow : _fallbackGradient;
             iconFrameImg.type = Image.Type.Simple;
             iconFrameImg.raycastTarget = false;
-            iconFrameImg.color = IconFrameInactiveTint;
+            iconFrameImg.preserveAspect = true;
+            iconFrameImg.color = IconGlowInactiveTint;
 
             var iconFrameLE = iconFrameGO.AddComponent<LayoutElement>();
-            iconFrameLE.preferredWidth = 68f;
-            iconFrameLE.preferredHeight = 68f;
-            iconFrameLE.minWidth = 68f;
-            iconFrameLE.minHeight = 68f;
+            iconFrameLE.preferredWidth = 84f;
+            iconFrameLE.preferredHeight = 84f;
+            iconFrameLE.minWidth = 84f;
+            iconFrameLE.minHeight = 84f;
 
             // Icon glyph
             var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
@@ -641,7 +679,7 @@ namespace RetroTech
             var iconImg = iconGO.GetComponent<Image>();
             iconImg.raycastTarget = false;
             iconImg.preserveAspect = true;
-            iconImg.color = Color.white;
+            iconImg.color = IconInactiveColor;
 
             if (icon != null)
                 iconImg.sprite = icon;
@@ -659,7 +697,12 @@ namespace RetroTech
             iconRT.anchorMax = new Vector2(0.5f, 0.5f);
             iconRT.pivot = new Vector2(0.5f, 0.5f);
             iconRT.anchoredPosition = Vector2.zero;
-            iconRT.sizeDelta = new Vector2(44f, 44f);
+            iconRT.sizeDelta = new Vector2(56f, 56f);
+
+            var iconOutline = iconGO.AddComponent<Outline>();
+            iconOutline.effectColor = IconOutlineInactiveColor;
+            iconOutline.effectDistance = new Vector2(3f, 3f);
+            iconOutline.useGraphicAlpha = true;
 
             // Label using TMP
             var labelGO = new GameObject("Label", typeof(RectTransform));
@@ -680,8 +723,8 @@ namespace RetroTech
             indicatorRT.anchorMin = new Vector2(0.5f, 0f);
             indicatorRT.anchorMax = new Vector2(0.5f, 0f);
             indicatorRT.pivot = new Vector2(0.5f, 0f);
-            indicatorRT.anchoredPosition = new Vector2(0f, 2f);
-            indicatorRT.sizeDelta = new Vector2(56f, 4f);
+            indicatorRT.anchoredPosition = new Vector2(0f, 4f);
+            indicatorRT.sizeDelta = new Vector2(68f, 4f);
 
             var indicatorImage = indicatorGO.GetComponent<Image>();
             indicatorImage.color = new Color(1f, 1f, 1f, 0f);
@@ -713,15 +756,22 @@ namespace RetroTech
                     var iconFrameImage = iconFrameTransform.GetComponent<Image>();
                     if (iconFrameImage != null)
                     {
-                        iconFrameImage.color = active ? IconFrameActiveTint : IconFrameInactiveTint;
+                        iconFrameImage.color = active ? IconGlowActiveTint : IconGlowInactiveTint;
                     }
 
                     var icon = iconFrameTransform.Find("Icon")?.GetComponent<Image>();
                     if (icon != null)
                     {
-                        icon.color = active ? Color.white : new Color32(225, 212, 255, 190);
+                        icon.color = active ? IconActiveColor : IconInactiveColor;
                         var iconRT = icon.rectTransform;
                         iconRT.localScale = active ? new Vector3(1.15f, 1.15f, 1f) : Vector3.one;
+
+                        var outline = icon.GetComponent<Outline>();
+                        if (outline != null)
+                        {
+                            outline.effectColor = active ? IconOutlineActiveColor : IconOutlineInactiveColor;
+                            outline.effectDistance = active ? new Vector2(3.5f, 3.5f) : new Vector2(2.5f, 2.5f);
+                        }
                     }
                 }
 
