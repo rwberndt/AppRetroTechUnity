@@ -39,8 +39,10 @@ namespace RetroTech
         private readonly Color GradientTop = new Color32(147, 112, 219, 255);    // Light purple
         private readonly Color GradientBottom = new Color32(255, 182, 193, 255); // Light pink
         // Slightly desaturated tones so the nav bar blends with the screen background
-        private readonly Color NavGradientLeft = new Color32(156, 107, 215, 255);  // Lively lilac
-        private readonly Color NavGradientRight = new Color32(91, 58, 174, 255);   // Deep violet
+        private readonly Color NavGradientLeft = new Color32(153, 114, 221, 255);  // Lavender from page gradient
+        private readonly Color NavGradientRight = new Color32(255, 168, 210, 255); // Pink hue to mirror content screens
+        private readonly Color IconFrameActiveTint = new Color(1f, 1f, 1f, 1f);
+        private readonly Color IconFrameInactiveTint = new Color(1f, 1f, 1f, 0.75f);
         private readonly Color NavIndicatorColor = new Color32(242, 210, 255, 255);
         private Sprite _fallbackGradient;
         private Sprite _navBarGradient;
@@ -586,7 +588,7 @@ namespace RetroTech
 
             var le = tab.GetComponent<LayoutElement>();
             le.flexibleWidth = 1f;
-            le.preferredHeight = 84f;
+            le.preferredHeight = 96f;
 
             var bg = tab.GetComponent<Image>();
             bg.sprite = null;
@@ -610,15 +612,32 @@ namespace RetroTech
             var vlg = tab.AddComponent<VerticalLayoutGroup>();
             vlg.childAlignment = TextAnchor.MiddleCenter;
             vlg.spacing = 4f;
-            vlg.padding = new RectOffset(20, 20, 18, 18);
+            vlg.padding = new RectOffset(20, 20, 12, 12);
             vlg.childControlHeight = false;
             vlg.childForceExpandHeight = false;
             vlg.childControlWidth = true;
             vlg.childForceExpandWidth = true;
 
-            // Icon
+            // Icon gradient background so the glyph floats over the nav palette
+            var iconFrameGO = new GameObject("IconFrame", typeof(RectTransform), typeof(Image));
+            iconFrameGO.transform.SetParent(tab.transform, false);
+            var iconFrameRT = iconFrameGO.GetComponent<RectTransform>();
+            iconFrameRT.sizeDelta = new Vector2(68f, 68f);
+            var iconFrameImg = iconFrameGO.GetComponent<Image>();
+            iconFrameImg.sprite = _navBarGradient != null ? _navBarGradient : _fallbackGradient;
+            iconFrameImg.type = Image.Type.Simple;
+            iconFrameImg.raycastTarget = false;
+            iconFrameImg.color = IconFrameInactiveTint;
+
+            var iconFrameLE = iconFrameGO.AddComponent<LayoutElement>();
+            iconFrameLE.preferredWidth = 68f;
+            iconFrameLE.preferredHeight = 68f;
+            iconFrameLE.minWidth = 68f;
+            iconFrameLE.minHeight = 68f;
+
+            // Icon glyph
             var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-            iconGO.transform.SetParent(tab.transform, false);
+            iconGO.transform.SetParent(iconFrameGO.transform, false);
             var iconImg = iconGO.GetComponent<Image>();
             iconImg.raycastTarget = false;
             iconImg.preserveAspect = true;
@@ -636,10 +655,11 @@ namespace RetroTech
             }
 
             var iconRT = iconGO.GetComponent<RectTransform>();
-            iconRT.sizeDelta = new Vector2(52f, 52f);
-            var iconLE = iconGO.AddComponent<LayoutElement>();
-            iconLE.preferredWidth = 52f;
-            iconLE.preferredHeight = 52f;
+            iconRT.anchorMin = new Vector2(0.5f, 0.5f);
+            iconRT.anchorMax = new Vector2(0.5f, 0.5f);
+            iconRT.pivot = new Vector2(0.5f, 0.5f);
+            iconRT.anchoredPosition = Vector2.zero;
+            iconRT.sizeDelta = new Vector2(44f, 44f);
 
             // Label using TMP
             var labelGO = new GameObject("Label", typeof(RectTransform));
@@ -687,10 +707,23 @@ namespace RetroTech
                 bool active = (i == _activeTab);
 
                 // Icon color and subtle scale pop
-                var icon = tab.Find("Icon").GetComponent<Image>();
-                icon.color = active ? Color.white : new Color32(225, 212, 255, 190);
-                var iconRT = icon.rectTransform;
-                iconRT.localScale = active ? new Vector3(1.2f, 1.2f, 1f) : Vector3.one;
+                var iconFrameTransform = tab.Find("IconFrame");
+                if (iconFrameTransform != null)
+                {
+                    var iconFrameImage = iconFrameTransform.GetComponent<Image>();
+                    if (iconFrameImage != null)
+                    {
+                        iconFrameImage.color = active ? IconFrameActiveTint : IconFrameInactiveTint;
+                    }
+
+                    var icon = iconFrameTransform.Find("Icon")?.GetComponent<Image>();
+                    if (icon != null)
+                    {
+                        icon.color = active ? Color.white : new Color32(225, 212, 255, 190);
+                        var iconRT = icon.rectTransform;
+                        iconRT.localScale = active ? new Vector3(1.15f, 1.15f, 1f) : Vector3.one;
+                    }
+                }
 
                 // Label color
                 var labelTransform = tab.Find("Label");
