@@ -39,9 +39,9 @@ namespace RetroTech
         private readonly Color GradientTop = new Color32(147, 112, 219, 255);    // Light purple
         private readonly Color GradientBottom = new Color32(255, 182, 193, 255); // Light pink
         // Slightly desaturated tones so the nav bar blends with the screen background
-        private readonly Color NavGradientLeft = new Color32(76, 56, 124, 255);   // Deep lilac
-        private readonly Color NavGradientRight = new Color32(44, 36, 86, 255);   // Midnight violet
-        private readonly Color NavIndicatorColor = new Color32(212, 178, 255, 255);
+        private readonly Color NavGradientLeft = new Color32(156, 107, 215, 255);  // Lively lilac
+        private readonly Color NavGradientRight = new Color32(91, 58, 174, 255);   // Deep violet
+        private readonly Color NavIndicatorColor = new Color32(242, 210, 255, 255);
         private Sprite _fallbackGradient;
         private Sprite _navBarGradient;
 
@@ -538,7 +538,7 @@ namespace RetroTech
             var bgImg = bgGO.GetComponent<Image>();
             bgImg.sprite = _navBarGradient != null ? _navBarGradient : _fallbackGradient;
             bgImg.type = Image.Type.Simple;
-            bgImg.color = new Color(1f, 1f, 1f, 0.9f);
+            bgImg.color = Color.white;
 
             var topLine = new GameObject("TopBorder", typeof(RectTransform), typeof(Image));
             topLine.transform.SetParent(bgGO.transform, false);
@@ -556,12 +556,12 @@ namespace RetroTech
             var rowRT = row.GetComponent<RectTransform>();
             rowRT.anchorMin = Vector2.zero;
             rowRT.anchorMax = Vector2.one;
-            rowRT.offsetMin = new Vector2(32f, 20f + bottomInset);
-            rowRT.offsetMax = new Vector2(-32f, -16f);
+            rowRT.offsetMin = new Vector2(32f, 24f + bottomInset);
+            rowRT.offsetMax = new Vector2(-32f, -12f);
 
             var hlg = row.GetComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.spacing = 16f;
+            hlg.spacing = 24f;
             hlg.padding = new RectOffset(0, 0, 0, 0);
             hlg.childControlWidth = true;
             hlg.childForceExpandWidth = true;
@@ -609,8 +609,8 @@ namespace RetroTech
             // Layout for icon + text
             var vlg = tab.AddComponent<VerticalLayoutGroup>();
             vlg.childAlignment = TextAnchor.MiddleCenter;
-            vlg.spacing = 6f;
-            vlg.padding = new RectOffset(16, 16, 14, 12);
+            vlg.spacing = 4f;
+            vlg.padding = new RectOffset(20, 20, 18, 18);
             vlg.childControlHeight = false;
             vlg.childForceExpandHeight = false;
             vlg.childControlWidth = true;
@@ -636,24 +636,23 @@ namespace RetroTech
             }
 
             var iconRT = iconGO.GetComponent<RectTransform>();
-            iconRT.sizeDelta = new Vector2(36f, 36f);
+            iconRT.sizeDelta = new Vector2(52f, 52f);
             var iconLE = iconGO.AddComponent<LayoutElement>();
-            iconLE.preferredWidth = 36f;
-            iconLE.preferredHeight = 36f;
+            iconLE.preferredWidth = 52f;
+            iconLE.preferredHeight = 52f;
 
             // Label using TMP
             var labelGO = new GameObject("Label", typeof(RectTransform));
             labelGO.transform.SetParent(tab.transform, false);
             var labelTMP = UiKit.TMP(labelGO.transform, label, 12, new Color32(230, 230, 245, 220), TextAlignmentOptions.Center);
-            labelTMP.enableWordWrapping = false;
-            labelTMP.overflowMode = TMPro.TextOverflowModes.Ellipsis;
-            labelTMP.fontStyle = FontStyles.Normal;
-            labelTMP.characterSpacing = 0f;
+            labelTMP.text = string.Empty;
+            labelGO.SetActive(false);
 
             var labelRT = labelTMP.GetComponent<RectTransform>();
-            labelRT.sizeDelta = new Vector2(0, 20);
+            labelRT.sizeDelta = new Vector2(0, 0);
             var labelLE = labelGO.AddComponent<LayoutElement>();
-            labelLE.preferredHeight = 20;
+            labelLE.preferredHeight = 0;
+            labelLE.ignoreLayout = true;
 
             var indicatorGO = new GameObject("Indicator", typeof(RectTransform), typeof(Image));
             indicatorGO.transform.SetParent(tab.transform, false);
@@ -662,7 +661,7 @@ namespace RetroTech
             indicatorRT.anchorMax = new Vector2(0.5f, 0f);
             indicatorRT.pivot = new Vector2(0.5f, 0f);
             indicatorRT.anchoredPosition = new Vector2(0f, 2f);
-            indicatorRT.sizeDelta = new Vector2(40f, 3f);
+            indicatorRT.sizeDelta = new Vector2(56f, 4f);
 
             var indicatorImage = indicatorGO.GetComponent<Image>();
             indicatorImage.color = new Color(1f, 1f, 1f, 0f);
@@ -689,18 +688,22 @@ namespace RetroTech
 
                 // Icon color and subtle scale pop
                 var icon = tab.Find("Icon").GetComponent<Image>();
-                icon.color = active ? Color.white : new Color32(210, 210, 230, 200);
+                icon.color = active ? Color.white : new Color32(225, 212, 255, 190);
                 var iconRT = icon.rectTransform;
-                iconRT.localScale = active ? new Vector3(1.15f, 1.15f, 1f) : Vector3.one;
+                iconRT.localScale = active ? new Vector3(1.2f, 1.2f, 1f) : Vector3.one;
 
                 // Label color
-                var label = tab.Find("Label").GetComponentInChildren<TextMeshProUGUI>();
-                if (label != null)
+                var labelTransform = tab.Find("Label");
+                if (labelTransform != null)
                 {
-                    label.color = active ? Color.white : new Color32(210, 210, 230, 200);
-                    label.alpha = active ? 1f : 0.95f;
-                    label.fontSize = active ? 13f : 12f;
-                    label.fontStyle = active ? FontStyles.Normal : FontStyles.Normal;
+                    var label = labelTransform.GetComponentInChildren<TextMeshProUGUI>();
+                    if (label != null)
+                    {
+                        label.color = active ? Color.white : new Color32(210, 210, 230, 200);
+                        label.alpha = active ? 1f : 0.95f;
+                        label.fontSize = active ? 13f : 12f;
+                        label.fontStyle = active ? FontStyles.Normal : FontStyles.Normal;
+                    }
                 }
 
                 var indicator = tab.Find("Indicator");
