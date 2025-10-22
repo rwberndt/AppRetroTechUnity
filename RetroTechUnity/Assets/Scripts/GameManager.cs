@@ -39,12 +39,12 @@ namespace RetroTech
         private readonly Color GradientTop = new Color32(147, 112, 219, 255);    // Light purple
         private readonly Color GradientBottom = new Color32(255, 182, 193, 255); // Light pink
         // Navigation bar reuses the same family of colors as the page gradient so it blends seamlessly
-        private readonly Color NavGradientTop = new Color32(96, 60, 168, 255);    // Deep violet lifted from the hero background
-        private readonly Color NavGradientBottom = new Color32(210, 102, 191, 255); // Vibrant pink matching the page wash
-        private readonly Color IconGlowActiveTint = new Color(1f, 1f, 1f, 1f);
-        private readonly Color IconGlowInactiveTint = new Color(1f, 1f, 1f, 0.55f);
+        private readonly Color NavGradientTop = new Color32(82, 34, 138, 255);    // Darker violet for stronger contrast
+        private readonly Color NavGradientBottom = new Color32(213, 94, 187, 255); // Rich magenta echoing the page gradient
+        private readonly Color IconGlowActiveTint = new Color(1f, 1f, 1f, 0.95f);
+        private readonly Color IconGlowInactiveTint = new Color(1f, 1f, 1f, 0.6f);
         private readonly Color IconActiveColor = new Color(1f, 1f, 1f, 1f);
-        private readonly Color IconInactiveColor = new Color(1f, 1f, 1f, 0.82f);
+        private readonly Color IconInactiveColor = new Color(1f, 1f, 1f, 0.88f);
         private readonly Color IconOutlineActiveColor = new Color(1f, 1f, 1f, 0.58f);
         private readonly Color IconOutlineInactiveColor = new Color(1f, 1f, 1f, 0.32f);
         private readonly Color NavIndicatorColor = new Color32(242, 210, 255, 255);
@@ -395,6 +395,25 @@ namespace RetroTech
             _iconTimeline = Resources.Load<Sprite>("Icons/icon_timeline");
             _iconScanner = Resources.Load<Sprite>("Icons/icon_scanner");
             _iconQuiz = Resources.Load<Sprite>("Icons/icon_quiz");
+
+            List<string> missingIcons = null;
+            if (_iconHome == null) missingIcons = AppendMissing(missingIcons, "icon_home");
+            if (_iconCategories == null) missingIcons = AppendMissing(missingIcons, "icon_categories");
+            if (_iconTimeline == null) missingIcons = AppendMissing(missingIcons, "icon_timeline");
+            if (_iconScanner == null) missingIcons = AppendMissing(missingIcons, "icon_scanner");
+            if (_iconQuiz == null) missingIcons = AppendMissing(missingIcons, "icon_quiz");
+
+            if (missingIcons != null)
+            {
+                Debug.LogWarning($"Navigation icons not found in Resources/Icons: {string.Join(", ", missingIcons)}");
+            }
+        }
+
+        private static List<string> AppendMissing(List<string> list, string value)
+        {
+            list ??= new List<string>();
+            list.Add(value);
+            return list;
         }
 
         private Sprite CreateFallbackGradient(Color top, Color bottom)
