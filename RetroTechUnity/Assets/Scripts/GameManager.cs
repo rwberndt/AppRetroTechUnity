@@ -39,14 +39,12 @@ namespace RetroTech
         private readonly Color GradientTop = new Color32(147, 112, 219, 255);    // Light purple
         private readonly Color GradientBottom = new Color32(255, 182, 193, 255); // Light pink
         // Navigation bar reuses the same family of colors as the page gradient so it blends seamlessly
-        private readonly Color NavGradientTop = new Color32(82, 34, 138, 255);    // Darker violet for stronger contrast
-        private readonly Color NavGradientBottom = new Color32(213, 94, 187, 255); // Rich magenta echoing the page gradient
-        private readonly Color IconGlowActiveTint = new Color(1f, 1f, 1f, 0.95f);
-        private readonly Color IconGlowInactiveTint = new Color(1f, 1f, 1f, 0.6f);
+        private readonly Color NavGradientTop = new Color32(249, 197, 228, 255);   // Soft pink pulled from the page background
+        private readonly Color NavGradientBottom = new Color32(142, 70, 199, 255); // Deep violet matching the footer of the page gradient
+        private readonly Color IconBackgroundActiveColor = new Color(1f, 1f, 1f, 1f);
+        private readonly Color IconBackgroundInactiveColor = new Color(1f, 1f, 1f, 0.82f);
         private readonly Color IconActiveColor = new Color(1f, 1f, 1f, 1f);
-        private readonly Color IconInactiveColor = new Color(1f, 1f, 1f, 0.88f);
-        private readonly Color IconOutlineActiveColor = new Color(1f, 1f, 1f, 0.58f);
-        private readonly Color IconOutlineInactiveColor = new Color(1f, 1f, 1f, 0.32f);
+        private readonly Color IconInactiveColor = new Color(1f, 1f, 1f, 0.85f);
         private readonly Color NavIndicatorColor = new Color32(242, 210, 255, 255);
         private Sprite _fallbackGradient;
         private Sprite _navBarGradient;
@@ -452,11 +450,6 @@ namespace RetroTech
 
         private Sprite CreateRadialGlowSprite(Color topColor, Color bottomColor, int size = 128)
         {
-            var inner = Color.Lerp(topColor, bottomColor, 0.35f);
-            inner.a = 0.9f;
-            var outer = Color.Lerp(topColor, bottomColor, 0.75f);
-            outer.a = 0f;
-
             Texture2D tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
             tex.wrapMode = TextureWrapMode.Clamp;
 
@@ -464,14 +457,22 @@ namespace RetroTech
             var center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
             float maxRadius = center.x;
 
+            float solidRadius = Mathf.Max(0f, maxRadius - 3f);
+            float fadeRadius = maxRadius;
+
             for (int y = 0; y < size; y++)
             {
                 for (int x = 0; x < size; x++)
                 {
                     float distance = Vector2.Distance(new Vector2(x, y), center);
                     float t = Mathf.Clamp01(distance / maxRadius);
-                    float smoothT = Mathf.SmoothStep(0f, 1f, t);
-                    colors[y * size + x] = Color.Lerp(inner, outer, smoothT);
+                    float eased = Mathf.SmoothStep(0f, 1f, t);
+                    var color = Color.Lerp(topColor, bottomColor, eased);
+
+                    float alphaFalloff = Mathf.InverseLerp(solidRadius, fadeRadius, distance);
+                    color.a = 1f - Mathf.Clamp01(alphaFalloff);
+
+                    colors[y * size + x] = color;
                 }
             }
 
@@ -684,7 +685,7 @@ namespace RetroTech
             iconFrameImg.type = Image.Type.Simple;
             iconFrameImg.raycastTarget = false;
             iconFrameImg.preserveAspect = true;
-            iconFrameImg.color = IconGlowInactiveTint;
+            iconFrameImg.color = IconBackgroundInactiveColor;
 
             var iconFrameLE = iconFrameGO.AddComponent<LayoutElement>();
             iconFrameLE.preferredWidth = 84f;
@@ -716,12 +717,7 @@ namespace RetroTech
             iconRT.anchorMax = new Vector2(0.5f, 0.5f);
             iconRT.pivot = new Vector2(0.5f, 0.5f);
             iconRT.anchoredPosition = Vector2.zero;
-            iconRT.sizeDelta = new Vector2(56f, 56f);
-
-            var iconOutline = iconGO.AddComponent<Outline>();
-            iconOutline.effectColor = IconOutlineInactiveColor;
-            iconOutline.effectDistance = new Vector2(3f, 3f);
-            iconOutline.useGraphicAlpha = true;
+            iconRT.sizeDelta = new Vector2(60f, 60f);
 
             // Label using TMP
             var labelGO = new GameObject("Label", typeof(RectTransform));
@@ -775,7 +771,8 @@ namespace RetroTech
                     var iconFrameImage = iconFrameTransform.GetComponent<Image>();
                     if (iconFrameImage != null)
                     {
-                        iconFrameImage.color = active ? IconGlowActiveTint : IconGlowInactiveTint;
+                        iconFrameImage.color = active ? IconBackgroundActiveColor : IconBackgroundInactiveColor;
+                        iconFrameImage.rectTransform.localScale = active ? new Vector3(1.08f, 1.08f, 1f) : Vector3.one;
                     }
 
                     var icon = iconFrameTransform.Find("Icon")?.GetComponent<Image>();
@@ -783,14 +780,7 @@ namespace RetroTech
                     {
                         icon.color = active ? IconActiveColor : IconInactiveColor;
                         var iconRT = icon.rectTransform;
-                        iconRT.localScale = active ? new Vector3(1.15f, 1.15f, 1f) : Vector3.one;
-
-                        var outline = icon.GetComponent<Outline>();
-                        if (outline != null)
-                        {
-                            outline.effectColor = active ? IconOutlineActiveColor : IconOutlineInactiveColor;
-                            outline.effectDistance = active ? new Vector2(3.5f, 3.5f) : new Vector2(2.5f, 2.5f);
-                        }
+                        iconRT.localScale = active ? new Vector3(1.12f, 1.12f, 1f) : Vector3.one;
                     }
                 }
 
