@@ -638,9 +638,9 @@ namespace RetroTech
             RefreshTabsVisual();
         }
 
-        private void CreatePrototypeNavTab(Transform parent, string label, int pageIndex, Sprite icon)
+        private void CreatePrototypeNavTab(Transform parent, string tabName, int pageIndex, Sprite icon)
         {
-            var tab = new GameObject($"Tab_{label}", typeof(RectTransform), typeof(LayoutElement), typeof(Image), typeof(Button));
+            var tab = new GameObject($"Tab_{tabName}", typeof(RectTransform), typeof(LayoutElement), typeof(Image), typeof(Button));
             tab.transform.SetParent(parent, false);
 
             var le = tab.GetComponent<LayoutElement>();
@@ -665,11 +665,11 @@ namespace RetroTech
                 RefreshTabsVisual();
             });
 
-            // Layout for icon + text
+            // Layout for centered icon content
             var vlg = tab.AddComponent<VerticalLayoutGroup>();
             vlg.childAlignment = TextAnchor.MiddleCenter;
-            vlg.spacing = 6f;
-            vlg.padding = new RectOffset(18, 18, 10, 10);
+            vlg.spacing = 0f;
+            vlg.padding = new RectOffset(18, 18, 18, 18);
             vlg.childControlHeight = false;
             vlg.childForceExpandHeight = false;
             vlg.childControlWidth = true;
@@ -718,19 +718,6 @@ namespace RetroTech
             iconRT.pivot = new Vector2(0.5f, 0.5f);
             iconRT.anchoredPosition = Vector2.zero;
             iconRT.sizeDelta = new Vector2(60f, 60f);
-
-            // Label using TMP
-            var labelGO = new GameObject("Label", typeof(RectTransform));
-            labelGO.transform.SetParent(tab.transform, false);
-            var labelTMP = UiKit.TMP(labelGO.transform, label, 12, new Color32(230, 230, 245, 220), TextAlignmentOptions.Center);
-            labelTMP.text = string.Empty;
-            labelGO.SetActive(false);
-
-            var labelRT = labelTMP.GetComponent<RectTransform>();
-            labelRT.sizeDelta = new Vector2(0, 0);
-            var labelLE = labelGO.AddComponent<LayoutElement>();
-            labelLE.preferredHeight = 0;
-            labelLE.ignoreLayout = true;
 
             var indicatorGO = new GameObject("Indicator", typeof(RectTransform), typeof(Image));
             indicatorGO.transform.SetParent(tab.transform, false);
@@ -781,20 +768,6 @@ namespace RetroTech
                         icon.color = active ? IconActiveColor : IconInactiveColor;
                         var iconRT = icon.rectTransform;
                         iconRT.localScale = active ? new Vector3(1.12f, 1.12f, 1f) : Vector3.one;
-                    }
-                }
-
-                // Label color
-                var labelTransform = tab.Find("Label");
-                if (labelTransform != null)
-                {
-                    var label = labelTransform.GetComponentInChildren<TextMeshProUGUI>();
-                    if (label != null)
-                    {
-                        label.color = active ? Color.white : new Color32(210, 210, 230, 200);
-                        label.alpha = active ? 1f : 0.95f;
-                        label.fontSize = active ? 13f : 12f;
-                        label.fontStyle = active ? FontStyles.Normal : FontStyles.Normal;
                     }
                 }
 
