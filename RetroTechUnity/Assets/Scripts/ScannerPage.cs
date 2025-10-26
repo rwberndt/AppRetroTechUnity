@@ -1,15 +1,11 @@
-﻿#define ZXING_PRESENT
-
+﻿using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 using System.Globalization;
-#if ZXING_PRESENT
-using ZXing;
-using ZXing.Common;
-#endif
+using System.Reflection;
 using static RetroTech.UiKit;
 
 namespace RetroTech
@@ -34,10 +30,8 @@ namespace RetroTech
         [SerializeField] private int tipsTitleFontSize = 36;
         [SerializeField] private int tipsFontSize = 50;
 
-#if ZXING_PRESENT
         [Header("Scanner Configuration")]
         [SerializeField] private bool enableRealScanner = true;
-#endif
 
         // Events
         public System.Action<ComputerPiece> OnPieceScanned;
@@ -48,16 +42,17 @@ namespace RetroTech
         private Canvas _parentCanvas;
         private Button _scanButton;
         private bool _isScanning = false;
-
-#if ZXING_PRESENT
         private WebCamTexture _webcam;
-        private BarcodeReader _qrReader;
         private Coroutine _scanCoroutine;
         private RawImage _cameraPreviewImage;
         private AspectRatioFitter _cameraAspectFitter;
         private GameObject _qrPlaceholderIcon;
         private Color32[] _webcamPixelBuffer;
-#endif
+        private bool _zxingAvailable;
+        private object _qrReaderInstance;
+        private MethodInfo _decodeMethod;
+        private PropertyInfo _resultTextProperty;
+        private bool _hasDecodeErrorLogged;
 
         /// <summary>
         /// Cria e configura a página do scanner
@@ -80,13 +75,12 @@ namespace RetroTech
         /// </summary>
         private void InitializeQRReader()
         {
-#if ZXING_PRESENT
-            _qrReader = new BarcodeReader 
-            { 
-                AutoRotate = true, 
-                Options = new DecodingOptions { TryHarder = true } 
-            };
-#endif
+            _zxingAvailable = TryInitializeZXingReader();
+
+            if (!_zxingAvailable && enableRealScanner)
+            {
+                Debug.LogWarning("Biblioteca ZXing não encontrada. O scanner real ficará indisponível e o modo de simulação será utilizado.");
+            }
         }
 
         /// <summary>
@@ -181,7 +175,6 @@ namespace RetroTech
             frameLE.minWidth = qrFrameSize;
             frameLE.minHeight = qrFrameSize;
 
-#if ZXING_PRESENT
             var previewGO = new GameObject("CameraPreview", typeof(RectTransform), typeof(RawImage));
             previewGO.transform.SetParent(frameGO.transform, false);
 
@@ -199,14 +192,9 @@ namespace RetroTech
 
             _cameraAspectFitter = previewGO.AddComponent<AspectRatioFitter>();
             _cameraAspectFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
-#endif
 
             // Ícone QR Code interno
-#if ZXING_PRESENT
             _qrPlaceholderIcon = CreateQRIcon(frameGO.transform);
-#else
-            CreateQRIcon(frameGO.transform);
-#endif
 
             return frameGO;
         }
@@ -315,20 +303,27 @@ namespace RetroTech
             // Solicitar permissão de câmera no Android
             RequestCameraPermission();
 
-#if ZXING_PRESENT
-            if (enableRealScanner)
+            _hasDecodeErrorLogged = false;
+
+            if (enableRealScanner && !_zxingAvailable)
+            {
+                _zxingAvailable = TryInitializeZXingReader();
+            }
+
+            if (enableRealScanner && _zxingAvailable)
             {
                 SetCameraPreviewTexture(null);
                 _scanCoroutine = StartCoroutine(ScanQRCode());
             }
             else
             {
+                if (enableRealScanner && !_zxingAvailable)
+                {
+                    Debug.LogWarning("ZXing não está disponível. Executando o fluxo de simulação.");
+                }
+
                 StartCoroutine(SimulateScan());
             }
-#else
-            // Simulação quando ZXing não está disponível
-            StartCoroutine(SimulateScan());
-#endif
         }
 
         /// <summary>
@@ -341,7 +336,6 @@ namespace RetroTech
             _isScanning = false;
             UpdateScanButtonText("⚡ Iniciar Scanner");
 
-#if ZXING_PRESENT
             if (_scanCoroutine != null)
             {
                 StopCoroutine(_scanCoroutine);
@@ -349,7 +343,6 @@ namespace RetroTech
             }
 
             ClearCameraResources();
-#endif
         }
 
         /// <summary>
@@ -392,7 +385,6 @@ namespace RetroTech
             }
         }
 
-#if ZXING_PRESENT
         /// <summary>
         /// Corrotina para escanear QR Code usando câmera real
         /// </summary>
@@ -442,13 +434,13 @@ namespace RetroTech
                         }
 
                         _webcam.GetPixels32(_webcamPixelBuffer);
-                        var result = _qrReader.Decode(_webcamPixelBuffer, _webcam.width, _webcam.height);
-                        if (result != null)
+                        var decodedText = DecodeQRCode(_webcamPixelBuffer, _webcam.width, _webcam.height);
+                        if (!string.IsNullOrEmpty(decodedText))
                         {
-                            foundPiece = FindPieceFromQRData(result.Text);
+                            foundPiece = FindPieceFromQRData(decodedText);
                             if (foundPiece != null)
                             {
-                                Debug.Log($"QR Code encontrado: {result.Text}");
+                                Debug.Log($"QR Code encontrado: {decodedText}");
                                 break;
                             }
                         }
@@ -477,6 +469,167 @@ namespace RetroTech
                 Debug.Log("Nenhum QR válido encontrado. Simulando resultado...");
                 yield return StartCoroutine(SimulateScan());
             }
+        }
+
+        private string DecodeQRCode(Color32[] pixels, int width, int height)
+        {
+            if (!_zxingAvailable || _qrReaderInstance == null || _decodeMethod == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var result = _decodeMethod.Invoke(_qrReaderInstance, new object[] { pixels, width, height });
+                if (result == null)
+                {
+                    return null;
+                }
+
+                if (_resultTextProperty == null)
+                {
+                    _resultTextProperty = result.GetType().GetProperty("Text");
+                }
+
+                if (_resultTextProperty == null)
+                {
+                    return null;
+                }
+
+                return _resultTextProperty.GetValue(result) as string;
+            }
+            catch (Exception ex)
+            {
+                if (!_hasDecodeErrorLogged)
+                {
+                    Debug.LogWarning($"Erro ao decodificar QR Code com ZXing: {ex.Message}");
+                    _hasDecodeErrorLogged = true;
+                }
+
+                return null;
+            }
+        }
+
+        private bool TryInitializeZXingReader()
+        {
+            _qrReaderInstance = null;
+            _decodeMethod = null;
+            _resultTextProperty = null;
+            _hasDecodeErrorLogged = false;
+
+            try
+            {
+                var readerType = FindTypeInAssemblies("ZXing.BarcodeReader", "BarcodeReader");
+                if (readerType == null)
+                {
+                    return false;
+                }
+
+                _qrReaderInstance = Activator.CreateInstance(readerType);
+
+                var autoRotateProp = readerType.GetProperty("AutoRotate");
+                autoRotateProp?.SetValue(_qrReaderInstance, true);
+
+                var optionsProp = readerType.GetProperty("Options");
+                if (optionsProp != null)
+                {
+                    var optionsType = FindTypeInAssemblies("ZXing.Common.DecodingOptions", "DecodingOptions");
+                    if (optionsType != null)
+                    {
+                        var optionsInstance = Activator.CreateInstance(optionsType);
+                        var tryHarderProp = optionsType.GetProperty("TryHarder");
+                        tryHarderProp?.SetValue(optionsInstance, true);
+                        optionsProp.SetValue(_qrReaderInstance, optionsInstance);
+                    }
+                }
+
+                _decodeMethod = readerType.GetMethod("Decode", new[] { typeof(Color32[]), typeof(int), typeof(int) });
+                if (_decodeMethod == null)
+                {
+                    Debug.LogWarning("ZXing.BarcodeReader encontrado, mas não expõe o método Decode(Color32[], int, int).");
+                    _qrReaderInstance = null;
+                    return false;
+                }
+
+                _resultTextProperty = FindTypeInAssemblies("ZXing.Result", "Result")?.GetProperty("Text");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"Falha ao inicializar ZXing: {ex.Message}");
+                _qrReaderInstance = null;
+                _decodeMethod = null;
+                _resultTextProperty = null;
+                return false;
+            }
+        }
+
+        private static Type FindTypeInAssemblies(params string[] typeFullNames)
+        {
+            if (typeFullNames == null || typeFullNames.Length == 0)
+            {
+                return null;
+            }
+
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            foreach (var assembly in assemblies)
+            {
+                foreach (var fullName in typeFullNames)
+                {
+                    if (string.IsNullOrEmpty(fullName))
+                    {
+                        continue;
+                    }
+
+                    var type = assembly.GetType(fullName);
+                    if (type != null)
+                    {
+                        return type;
+                    }
+                }
+            }
+
+            foreach (var assembly in assemblies)
+            {
+                Type[] types;
+                try
+                {
+                    types = assembly.GetTypes();
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    types = ex.Types;
+                }
+
+                if (types == null)
+                {
+                    continue;
+                }
+
+                foreach (var type in types)
+                {
+                    if (type == null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var fullName in typeFullNames)
+                    {
+                        if (string.IsNullOrEmpty(fullName))
+                        {
+                            continue;
+                        }
+
+                        if (string.Equals(type.FullName, fullName, StringComparison.Ordinal) ||
+                            string.Equals(type.Name, fullName, StringComparison.Ordinal))
+                        {
+                            return type;
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
 
         private bool TryGetCameraDevice(out WebCamDevice device)
@@ -551,16 +704,13 @@ namespace RetroTech
             _webcamPixelBuffer = null;
             SetCameraPreviewTexture(null);
         }
-#endif
 
         /// <summary>
         /// Simula um escaneamento para demonstração
         /// </summary>
         private IEnumerator SimulateScan()
         {
-#if ZXING_PRESENT
             SetCameraPreviewTexture(null);
-#endif
             // Simular tempo de escaneamento
             yield return new WaitForSeconds(2f);
 
@@ -766,11 +916,11 @@ namespace RetroTech
         {
             StopScan();
             OnPieceScanned = null;
-
-#if ZXING_PRESENT
             ClearCameraResources();
-            _qrReader = null;
-#endif
+            _qrReaderInstance = null;
+            _decodeMethod = null;
+            _resultTextProperty = null;
+            _hasDecodeErrorLogged = false;
         }
 
         #region Editor Methods
