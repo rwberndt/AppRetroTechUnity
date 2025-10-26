@@ -31,7 +31,7 @@ namespace RetroTech
 
         // Colors
         private readonly Color PageTitleColor = Color.white;
-        private readonly Color TimelineCardColor = new Color(0f, 0f, 0f, 0.3f); // Dark card
+        private readonly Color TimelineCardColor = new Color(1f, 1f, 1f, 0.1f); // Match glass card tone
         private readonly Color YearBadgeColor = new Color32(147, 112, 219, 255); // Purple
         private readonly Color PieceNameColor = Color.white;
         private readonly Color DescriptionColor = new Color32(255, 255, 255, 180);
@@ -58,6 +58,7 @@ namespace RetroTech
         private GameObject _timelineContainer;
         private System.Func<Transform, float, Image> _createGlassCardFunc;
         private System.Func<Transform, string, UnityEngine.Events.UnityAction, GameObject> _createCTAButtonFunc;
+        private ScrollRect _scrollRect;
 
         /// <summary>
         /// Cria e configura a página da linha do tempo
@@ -77,7 +78,11 @@ namespace RetroTech
             _pageObject = surface.gameObject;
             _contentContainer = content;
 
+            ConfigureSurfaceForTimeline(surface, content);
+
             CreateTimelineContent(createGlassCardFunc, createCTAButtonFunc);
+
+            RefreshScrollMetrics();
 
             return _pageObject;
         }
@@ -107,9 +112,31 @@ namespace RetroTech
         /// </summary>
         private void CreatePageTitle()
         {
-            var titleTMP = UiKit.TMP(_contentContainer, "Linha do Tempo", pageTitleFontSize,
+            var titleContainer = new GameObject("PageTitle", typeof(RectTransform), typeof(LayoutElement));
+            titleContainer.transform.SetParent(_contentContainer, false);
+
+            var titleRT = titleContainer.GetComponent<RectTransform>();
+            titleRT.anchorMin = new Vector2(0f, 1f);
+            titleRT.anchorMax = new Vector2(1f, 1f);
+            titleRT.pivot = new Vector2(0.5f, 1f);
+            titleRT.offsetMin = Vector2.zero;
+            titleRT.offsetMax = Vector2.zero;
+
+            var titleLayout = titleContainer.GetComponent<LayoutElement>();
+            float titleHeight = ResponsiveTypography.ResponsiveSpacing(pageTitleFontSize + 32f);
+            titleLayout.minHeight = titleHeight;
+            titleLayout.preferredHeight = titleHeight;
+            titleLayout.flexibleHeight = 0f;
+
+            var titleTMP = UiKit.TMP(titleContainer.transform, "Linha do Tempo", pageTitleFontSize,
                 PageTitleColor, TextAlignmentOptions.Left, bold: true);
-            titleTMP.margin = new Vector4(0, 0, 0, titleMarginBottom);
+            var tmpRT = titleTMP.rectTransform;
+            tmpRT.anchorMin = Vector2.zero;
+            tmpRT.anchorMax = Vector2.one;
+            tmpRT.offsetMin = Vector2.zero;
+            tmpRT.offsetMax = Vector2.zero;
+
+            AddSpacer(_contentContainer.transform, 0f, titleMarginBottom);
         }
 
         /// <summary>
@@ -167,8 +194,9 @@ namespace RetroTech
             contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             var timelineLE = _timelineContainer.AddComponent<LayoutElement>();
-            timelineLE.flexibleHeight = 1f;
+            timelineLE.flexibleHeight = 0f;
         }
+        
 
         /// <summary>
         /// Gera a linha do tempo com as peças
@@ -428,6 +456,8 @@ namespace RetroTech
             }
 
             OnTimelineGenerated?.Invoke(_sortedPieces);
+
+            RefreshScrollMetrics();
         }
 
         /// <summary>
@@ -564,8 +594,101 @@ namespace RetroTech
             var spacerGO = new GameObject("Spacer", typeof(RectTransform), typeof(LayoutElement));
             spacerGO.transform.SetParent(parent, false);
             var le = spacerGO.GetComponent<LayoutElement>();
-            if (width > 0) le.preferredWidth = width;
-            if (height > 0) le.preferredHeight = height;
+            if (width > 0)
+            {
+                float responsiveWidth = ResponsiveTypography.ResponsiveSpacing(width);
+                le.preferredWidth = responsiveWidth;
+                le.minWidth = responsiveWidth;
+            }
+
+            if (height > 0)
+            {
+                float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(height);
+                le.preferredHeight = responsiveHeight;
+                le.minHeight = responsiveHeight;
+            }
+        }
+
+        /// <summary>
+        /// Configura a superfície padrão para comportar o layout específico da timeline.
+        /// Remove espaçadores flexíveis automáticos e garante que o ScrollRect aponte
+        /// para o conteúdo correto.
+        /// </summary>
+        private void ConfigureSurfaceForTimeline(GameObject surface, RectTransform content)
+        {
+            if (content == null)
+            {
+                return;
+            }
+
+            var prototypeFitter = content.GetComponent<PrototypeSurfaceContentFitter>();
+            if (prototypeFitter != null)
+            {
+                Destroy(prototypeFitter);
+            }
+
+            for (int i = content.childCount - 1; i >= 0; i--)
+            {
+                var child = content.GetChild(i);
+                if (child != null && (child.name == "TopFlexibleSpace" || child.name == "BottomFlexibleSpace"))
+                {
+                    Destroy(child.gameObject);
+                }
+            }
+
+            var contentLayout = content.GetComponent<LayoutElement>();
+            if (contentLayout != null)
+            {
+                contentLayout.flexibleHeight = 0f;
+                contentLayout.preferredHeight = -1f;
+                contentLayout.minHeight = 0f;
+            }
+
+            _scrollRect = surface != null ? surface.GetComponentInChildren<ScrollRect>() : null;
+            if (_scrollRect == null)
+            {
+                Debug.LogWarning("TimelinePage: ScrollRect not found on surface. Timeline content might not scroll as expected.");
+                return;
+            }
+
+            _scrollRect.vertical = true;
+            _scrollRect.horizontal = false;
+            _scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            _scrollRect.inertia = true;
+
+            if (_scrollRect.viewport == null)
+            {
+                var viewport = _scrollRect.transform.Find("Viewport") as RectTransform;
+                if (viewport != null)
+                {
+                    _scrollRect.viewport = viewport;
+                }
+            }
+
+            if (_scrollRect.content == null || _scrollRect.content != content)
+            {
+                _scrollRect.content = content;
+            }
+        }
+
+        /// <summary>
+        /// Atualiza métricas do ScrollRect forçando o recálculo dos layouts
+        /// depois que os elementos são adicionados dinamicamente.
+        /// </summary>
+        private void RefreshScrollMetrics()
+        {
+            if (_contentContainer == null)
+            {
+                return;
+            }
+
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_contentContainer);
+
+            if (_scrollRect != null)
+            {
+                _scrollRect.verticalNormalizedPosition = 1f;
+            }
         }
 
         /// <summary>
