@@ -31,7 +31,7 @@ namespace RetroTech
 
         // Colors
         private readonly Color PageTitleColor = Color.white;
-        private readonly Color TimelineCardColor = new Color(0f, 0f, 0f, 0.3f); // Dark card
+        private readonly Color TimelineCardColor = new Color(1f, 1f, 1f, 0.1f); // Match glass card tone
         private readonly Color YearBadgeColor = new Color32(147, 112, 219, 255); // Purple
         private readonly Color PieceNameColor = Color.white;
         private readonly Color DescriptionColor = new Color32(255, 255, 255, 180);
@@ -58,6 +58,7 @@ namespace RetroTech
         private GameObject _timelineContainer;
         private System.Func<Transform, float, Image> _createGlassCardFunc;
         private System.Func<Transform, string, UnityEngine.Events.UnityAction, GameObject> _createCTAButtonFunc;
+        private ScrollRect _scrollRect;
 
         /// <summary>
         /// Cria e configura a página da linha do tempo
@@ -76,6 +77,8 @@ namespace RetroTech
             var (surface, content) = buildSurfaceFunc(pageTitle);
             _pageObject = surface.gameObject;
             _contentContainer = content;
+
+            EnsureScrollBehaviour(surface.transform);
 
             CreateTimelineContent(createGlassCardFunc, createCTAButtonFunc);
 
@@ -167,7 +170,39 @@ namespace RetroTech
             contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             var timelineLE = _timelineContainer.AddComponent<LayoutElement>();
-            timelineLE.flexibleHeight = 1f;
+            timelineLE.flexibleHeight = 0f;
+        }
+
+        /// <summary>
+        /// Garantir que exista ScrollRect configurado corretamente na superfície.
+        /// </summary>
+        private void EnsureScrollBehaviour(Transform surfaceRoot)
+        {
+            _scrollRect = surfaceRoot.GetComponentInChildren<ScrollRect>();
+            if (_scrollRect == null)
+            {
+                Debug.LogWarning("TimelinePage: ScrollRect not found on surface. Timeline content might not scroll as expected.");
+                return;
+            }
+
+            _scrollRect.vertical = true;
+            _scrollRect.horizontal = false;
+            _scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            _scrollRect.inertia = true;
+
+            if (_scrollRect.viewport == null)
+            {
+                var viewport = _scrollRect.transform.Find("Viewport") as RectTransform;
+                if (viewport != null)
+                {
+                    _scrollRect.viewport = viewport;
+                }
+            }
+
+            if (_scrollRect.content == null)
+            {
+                _scrollRect.content = _contentContainer;
+            }
         }
 
         /// <summary>
