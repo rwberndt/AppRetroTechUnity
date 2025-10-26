@@ -46,6 +46,10 @@ namespace RetroTech
         private WebCamTexture _webcam;
         private BarcodeReader _qrReader;
         private Coroutine _scanCoroutine;
+        private RawImage _cameraPreviewImage;
+        private AspectRatioFitter _cameraAspectFitter;
+        private GameObject _qrPlaceholderIcon;
+        private Color32[] _webcamPixelBuffer;
 #endif
 
         /// <summary>
@@ -162,14 +166,40 @@ namespace RetroTech
                 frameImg.type = Image.Type.Sliced;
             }
 
+            frameGO.AddComponent<RectMask2D>();
+
             var frameLE = frameGO.AddComponent<LayoutElement>();
             frameLE.preferredWidth = qrFrameSize;
             frameLE.preferredHeight = qrFrameSize;
             frameLE.minWidth = qrFrameSize;
             frameLE.minHeight = qrFrameSize;
 
+#if ZXING_PRESENT
+            var previewGO = new GameObject("CameraPreview", typeof(RectTransform), typeof(RawImage));
+            previewGO.transform.SetParent(frameGO.transform, false);
+
+            var previewRT = previewGO.GetComponent<RectTransform>();
+            previewRT.anchorMin = Vector2.zero;
+            previewRT.anchorMax = Vector2.one;
+            previewRT.offsetMin = Vector2.zero;
+            previewRT.offsetMax = Vector2.zero;
+
+            _cameraPreviewImage = previewGO.GetComponent<RawImage>();
+            _cameraPreviewImage.raycastTarget = false;
+            _cameraPreviewImage.enabled = false;
+            _cameraPreviewImage.texture = null;
+            _cameraPreviewImage.color = new Color(1f, 1f, 1f, 0f);
+
+            _cameraAspectFitter = previewGO.AddComponent<AspectRatioFitter>();
+            _cameraAspectFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+#endif
+
             // Ícone QR Code interno
+#if ZXING_PRESENT
+            _qrPlaceholderIcon = CreateQRIcon(frameGO.transform);
+#else
             CreateQRIcon(frameGO.transform);
+#endif
 
             return frameGO;
         }
@@ -177,7 +207,7 @@ namespace RetroTech
         /// <summary>
         /// Cria o ícone interno do QR Code
         /// </summary>
-        private void CreateQRIcon(Transform parent)
+        private GameObject CreateQRIcon(Transform parent)
         {
             var qrIconGO = new GameObject("QRIcon", typeof(RectTransform), typeof(Image));
             qrIconGO.transform.SetParent(parent, false);
@@ -218,6 +248,8 @@ namespace RetroTech
                 qrTextRT.offsetMin = Vector2.zero;
                 qrTextRT.offsetMax = Vector2.zero;
             }
+
+            return qrIconGO;
         }
 
         /// <summary>
@@ -277,6 +309,7 @@ namespace RetroTech
             RequestCameraPermission();
 
 #if ZXING_PRESENT
+            SetCameraPreviewTexture(null);
             _scanCoroutine = StartCoroutine(ScanQRCode());
 #else
             // Simulação quando ZXing não está disponível
@@ -301,11 +334,7 @@ namespace RetroTech
                 _scanCoroutine = null;
             }
 
-            if (_webcam != null && _webcam.isPlaying)
-            {
-                _webcam.Stop();
-                _webcam = null;
-            }
+            ClearCameraResources();
 #endif
         }
 
@@ -325,6 +354,11 @@ namespace RetroTech
             catch (System.Exception ex)
             {
                 Debug.LogWarning($"Erro ao solicitar permissão de câmera: {ex.Message}");
+            }
+#elif UNITY_IOS
+            if (!Application.HasUserAuthorization(UserAuthorization.WebCam))
+            {
+                Application.RequestUserAuthorization(UserAuthorization.WebCam);
             }
 #endif
         }
@@ -350,41 +384,51 @@ namespace RetroTech
         /// </summary>
         private IEnumerator ScanQRCode()
         {
-            // Verificar se há câmeras disponíveis
-            if (WebCamTexture.devices.Length == 0)
+            if (!TryGetCameraDevice(out var device))
             {
                 Debug.LogWarning("Nenhuma câmera encontrada. Simulando scan...");
                 yield return StartCoroutine(SimulateScan());
                 yield break;
             }
 
-            // Inicializar câmera
-            var device = WebCamTexture.devices[0];
-            _webcam = new WebCamTexture(device.name);
+            _webcam = new WebCamTexture(device.name, 1280, 720);
             _webcam.Play();
 
-            // Aguardar câmera inicializar
-            yield return new WaitForSeconds(0.5f);
+            float initTimeout = 5f;
+            float initStart = Time.time;
+            while (_webcam != null && _webcam.isPlaying && _webcam.width <= 16 && _webcam.height <= 16 && (Time.time - initStart) < initTimeout)
+            {
+                yield return null;
+            }
 
-            if (!_webcam.isPlaying)
+            if (_webcam == null || !_webcam.isPlaying || _webcam.width <= 16 || _webcam.height <= 16)
             {
                 Debug.LogWarning("Câmera não pôde ser inicializada. Simulando scan...");
+                ClearCameraResources();
                 yield return StartCoroutine(SimulateScan());
                 yield break;
             }
+
+            SetCameraPreviewTexture(_webcam);
+            UpdateCameraPreviewTransform();
 
             ComputerPiece foundPiece = null;
             float scanTimeout = 30f;
             float scanStartTime = Time.time;
 
-            // Loop de escaneamento
             while (_isScanning && foundPiece == null && (Time.time - scanStartTime) < scanTimeout)
             {
                 try
                 {
                     if (_webcam.width > 16 && _webcam.height > 16)
                     {
-                        var result = _qrReader.Decode(_webcam.GetPixels32(), _webcam.width, _webcam.height);
+                        if (_webcamPixelBuffer == null || _webcamPixelBuffer.Length != _webcam.width * _webcam.height)
+                        {
+                            _webcamPixelBuffer = new Color32[_webcam.width * _webcam.height];
+                        }
+
+                        _webcam.GetPixels32(_webcamPixelBuffer);
+                        var result = _qrReader.Decode(_webcamPixelBuffer, _webcam.width, _webcam.height);
                         if (result != null)
                         {
                             foundPiece = FindPieceFromQRData(result.Text);
@@ -401,20 +445,15 @@ namespace RetroTech
                     Debug.LogWarning($"Erro durante escaneamento: {ex.Message}");
                 }
 
+                UpdateCameraPreviewTransform();
                 yield return new WaitForSeconds(0.1f);
             }
 
-            // Parar câmera
-            if (_webcam != null && _webcam.isPlaying)
-            {
-                _webcam.Stop();
-                _webcam = null;
-            }
+            ClearCameraResources();
 
             _isScanning = false;
             UpdateScanButtonText("⚡ Iniciar Scanner");
 
-            // Processar resultado
             if (foundPiece != null)
             {
                 OnPieceScanned?.Invoke(foundPiece);
@@ -425,6 +464,79 @@ namespace RetroTech
                 yield return StartCoroutine(SimulateScan());
             }
         }
+
+        private bool TryGetCameraDevice(out WebCamDevice device)
+        {
+            var devices = WebCamTexture.devices;
+            if (devices == null || devices.Length == 0)
+            {
+                device = default;
+                return false;
+            }
+
+            foreach (var cam in devices)
+            {
+                if (!cam.isFrontFacing)
+                {
+                    device = cam;
+                    return true;
+                }
+            }
+
+            device = devices[0];
+            return true;
+        }
+
+        private void SetCameraPreviewTexture(Texture texture)
+        {
+            if (_cameraPreviewImage == null)
+            {
+                return;
+            }
+
+            _cameraPreviewImage.texture = texture;
+            bool hasTexture = texture != null;
+            _cameraPreviewImage.enabled = hasTexture;
+            _cameraPreviewImage.color = hasTexture ? Color.white : new Color(1f, 1f, 1f, 0f);
+
+            if (_qrPlaceholderIcon != null)
+            {
+                _qrPlaceholderIcon.SetActive(!hasTexture);
+            }
+        }
+
+        private void UpdateCameraPreviewTransform()
+        {
+            if (_cameraPreviewImage == null || _webcam == null)
+            {
+                return;
+            }
+
+            var rect = _cameraPreviewImage.rectTransform;
+            rect.localEulerAngles = new Vector3(0f, 0f, -_webcam.videoRotationAngle);
+            rect.localScale = new Vector3(_webcam.videoVerticallyMirrored ? -1f : 1f, 1f, 1f);
+
+            if (_cameraAspectFitter != null && _webcam.height > 0)
+            {
+                _cameraAspectFitter.aspectRatio = (float)_webcam.width / _webcam.height;
+            }
+        }
+
+        private void ClearCameraResources()
+        {
+            if (_webcam != null)
+            {
+                if (_webcam.isPlaying)
+                {
+                    _webcam.Stop();
+                }
+
+                _webcam = null;
+            }
+
+            _webcamPixelBuffer = null;
+            SetCameraPreviewTexture(null);
+        }
 #endif
 
         /// <summary>
@@ -432,6 +544,9 @@ namespace RetroTech
         /// </summary>
         private IEnumerator SimulateScan()
         {
+#if ZXING_PRESENT
+            SetCameraPreviewTexture(null);
+#endif
             // Simular tempo de escaneamento
             yield return new WaitForSeconds(2f);
 
@@ -639,6 +754,7 @@ namespace RetroTech
             OnPieceScanned = null;
 
 #if ZXING_PRESENT
+            ClearCameraResources();
             _qrReader = null;
 #endif
         }
