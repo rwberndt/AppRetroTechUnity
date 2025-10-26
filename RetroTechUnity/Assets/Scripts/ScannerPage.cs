@@ -2,7 +2,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System.Collections.Generic;
 using System.Globalization;
 #if ZXING_PRESENT
 using ZXing;
@@ -312,8 +311,9 @@ namespace RetroTech
             SetCameraPreviewTexture(null);
             _scanCoroutine = StartCoroutine(ScanQRCode());
 #else
-            // Simulação quando ZXing não está disponível
-            StartCoroutine(SimulateScan());
+            Debug.LogError("ZXing não está disponível. Ative o suporte ao ZXing para usar o scanner de QR codes.");
+            _isScanning = false;
+            UpdateScanButtonText("⚡ Iniciar Scanner");
 #endif
         }
 
@@ -386,8 +386,10 @@ namespace RetroTech
         {
             if (!TryGetCameraDevice(out var device))
             {
-                Debug.LogWarning("Nenhuma câmera encontrada. Simulando scan...");
-                yield return StartCoroutine(SimulateScan());
+                Debug.LogWarning("Nenhuma câmera encontrada para o scanner de QR code.");
+                _isScanning = false;
+                UpdateScanButtonText("⚡ Iniciar Scanner");
+                SetCameraPreviewTexture(null);
                 yield break;
             }
 
@@ -403,9 +405,11 @@ namespace RetroTech
 
             if (_webcam == null || !_webcam.isPlaying || _webcam.width <= 16 || _webcam.height <= 16)
             {
-                Debug.LogWarning("Câmera não pôde ser inicializada. Simulando scan...");
+                Debug.LogWarning("Câmera não pôde ser inicializada para o scanner de QR code.");
                 ClearCameraResources();
-                yield return StartCoroutine(SimulateScan());
+                _isScanning = false;
+                UpdateScanButtonText("⚡ Iniciar Scanner");
+                SetCameraPreviewTexture(null);
                 yield break;
             }
 
@@ -460,8 +464,7 @@ namespace RetroTech
             }
             else
             {
-                Debug.Log("Nenhum QR válido encontrado. Simulando resultado...");
-                yield return StartCoroutine(SimulateScan());
+                Debug.Log("Nenhum QR válido foi encontrado durante o escaneamento.");
             }
         }
 
@@ -538,35 +541,6 @@ namespace RetroTech
             SetCameraPreviewTexture(null);
         }
 #endif
-
-        /// <summary>
-        /// Simula um escaneamento para demonstração
-        /// </summary>
-        private IEnumerator SimulateScan()
-        {
-#if ZXING_PRESENT
-            SetCameraPreviewTexture(null);
-#endif
-            // Simular tempo de escaneamento
-            yield return new WaitForSeconds(2f);
-
-            _isScanning = false;
-            UpdateScanButtonText("⚡ Iniciar Scanner");
-
-            // Selecionar peça aleatória para demonstração
-            if (SampleData.Pieces.Count > 0)
-            {
-                int randomIndex = Random.Range(0, SampleData.Pieces.Count);
-                var randomPiece = SampleData.Pieces[randomIndex];
-
-                Debug.Log($"Simulando scan da peça: {randomPiece.Name}");
-                OnPieceScanned?.Invoke(randomPiece);
-            }
-            else
-            {
-                Debug.LogWarning("Nenhuma peça disponível para simulação");
-            }
-        }
 
         /// <summary>
         /// Encontra uma peça baseada nos dados do QR Code
