@@ -49,6 +49,12 @@ namespace RetroTech
         private Sprite _fallbackGradient;
         private Sprite _navBarGradient;
         private Sprite _navIconGlow;
+        private const float NavSidePadding = 14f;
+        private const float NavTopPadding = 8f;
+        private const float IconFrameSizeInactive = 68f;
+        private const float IconFrameSizeActive = 80f;
+        private const float IconGlyphSizeInactive = 30f;
+        private const float IconGlyphSizeActive = 34f;
 
         // Icons (Resources/Icons/*.png)
         private Sprite _iconHome, _iconCategories, _iconTimeline, _iconScanner, _iconQuiz;
@@ -640,23 +646,20 @@ namespace RetroTech
 
         private void CreatePrototypeNavTab(Transform parent, string tabName, int pageIndex, Sprite icon)
         {
+            // Root tab
             var tab = new GameObject($"Tab_{tabName}", typeof(RectTransform), typeof(LayoutElement), typeof(Image), typeof(Button));
             tab.transform.SetParent(parent, false);
 
             var le = tab.GetComponent<LayoutElement>();
             le.flexibleWidth = 1f;
-            le.preferredHeight = 104f;
+            le.preferredHeight = NavBarHeight;
 
             var bg = tab.GetComponent<Image>();
-            bg.sprite = null;
-            bg.type = Image.Type.Simple;
             bg.color = new Color(1f, 1f, 1f, 0f);
-            bg.material = null;
 
             var btn = tab.GetComponent<Button>();
             btn.targetGraphic = bg;
             btn.transition = Selectable.Transition.None;
-
             btn.onClick.RemoveAllListeners();
             btn.onClick.AddListener(() =>
             {
@@ -665,84 +668,113 @@ namespace RetroTech
                 RefreshTabsVisual();
             });
 
-            // Layout for centered icon content
-            var vlg = tab.AddComponent<VerticalLayoutGroup>();
-            vlg.childAlignment = TextAnchor.MiddleCenter;
-            vlg.spacing = 0f;
-            vlg.padding = new RectOffset(18, 18, 18, 18);
-            vlg.childControlHeight = false;
-            vlg.childForceExpandHeight = false;
-            vlg.childControlWidth = true;
-            vlg.childForceExpandWidth = true;
+            // --- Content wrapper (layout-controlled) ---
+            var content = new GameObject("Content", typeof(RectTransform), typeof(LayoutElement));
+            content.transform.SetParent(tab.transform, false);
+            var contentRT = content.GetComponent<RectTransform>();
+            contentRT.anchorMin = new Vector2(0.5f, 0.5f);
+            contentRT.anchorMax = new Vector2(0.5f, 0.5f);
+            contentRT.pivot = new Vector2(0.5f, 0.5f);
+            contentRT.anchoredPosition = new Vector2(0f, 6f);              // lift a bit
+            contentRT.sizeDelta = new Vector2(100f, 80f);                  // space for pill + icon
 
-            // Icon glow background so the glyph floats over the nav palette
+            var contentLE = content.GetComponent<LayoutElement>();
+            contentLE.preferredHeight = 80f;
+
+            // --- Overlapped icon group (pill behind icon) ---
+            var iconGroup = new GameObject("IconGroup", typeof(RectTransform));
+            iconGroup.transform.SetParent(content.transform, false);
+            var igRT = iconGroup.GetComponent<RectTransform>();
+            igRT.anchorMin = new Vector2(0.5f, 0.5f);
+            igRT.anchorMax = new Vector2(0.5f, 0.5f);
+            igRT.pivot = new Vector2(0.5f, 0.5f);
+            igRT.anchoredPosition = Vector2.zero;
+            igRT.sizeDelta = new Vector2(IconFrameSizeActive + 14f, IconFrameSizeActive + 14f);
+
+            // Active pill (overlapped background)
+            var activePill = new GameObject("ActivePill", typeof(RectTransform), typeof(Image));
+            activePill.transform.SetParent(iconGroup.transform, false);
+            var pillRT = activePill.GetComponent<RectTransform>();
+            pillRT.anchorMin = new Vector2(0.5f, 0.5f);
+            pillRT.anchorMax = new Vector2(0.5f, 0.5f);
+            pillRT.pivot = new Vector2(0.5f, 0.5f);
+            pillRT.anchoredPosition = Vector2.zero;
+            pillRT.sizeDelta = new Vector2(IconFrameSizeActive + 14f, IconFrameSizeActive + 14f);
+
+            var pillImg = activePill.GetComponent<Image>();
+            var rounded = Resources.Load<Sprite>("Sprites/RoundedPanel");
+            if (rounded != null) { pillImg.sprite = rounded; pillImg.type = Image.Type.Sliced; }
+            pillImg.color = new Color(1f, 1f, 1f, 0f);  // hidden while inactive
+
+            // Icon frame (glow)
             var iconFrameGO = new GameObject("IconFrame", typeof(RectTransform), typeof(Image));
-            iconFrameGO.transform.SetParent(tab.transform, false);
+            iconFrameGO.transform.SetParent(iconGroup.transform, false);
             var iconFrameRT = iconFrameGO.GetComponent<RectTransform>();
-            iconFrameRT.sizeDelta = new Vector2(84f, 84f);
+            iconFrameRT.anchorMin = new Vector2(0.5f, 0.5f);
+            iconFrameRT.anchorMax = new Vector2(0.5f, 0.5f);
+            iconFrameRT.pivot = new Vector2(0.5f, 0.5f);
+            iconFrameRT.anchoredPosition = Vector2.zero;
+            iconFrameRT.sizeDelta = new Vector2(IconFrameSizeInactive, IconFrameSizeInactive);
+
             var iconFrameImg = iconFrameGO.GetComponent<Image>();
             iconFrameImg.sprite = _navIconGlow != null ? _navIconGlow : _fallbackGradient;
             iconFrameImg.type = Image.Type.Simple;
-            iconFrameImg.raycastTarget = false;
             iconFrameImg.preserveAspect = true;
+            iconFrameImg.raycastTarget = false;
             iconFrameImg.color = IconBackgroundInactiveColor;
 
-            var iconFrameLE = iconFrameGO.AddComponent<LayoutElement>();
-            iconFrameLE.preferredWidth = 84f;
-            iconFrameLE.preferredHeight = 84f;
-            iconFrameLE.minWidth = 84f;
-            iconFrameLE.minHeight = 84f;
-
             // Icon glyph
-            var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+            var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image), typeof(Outline));
             iconGO.transform.SetParent(iconFrameGO.transform, false);
-            var iconImg = iconGO.GetComponent<Image>();
-            iconImg.raycastTarget = false;
-            iconImg.preserveAspect = true;
-            iconImg.color = IconInactiveColor;
-
-            if (icon != null)
-                iconImg.sprite = icon;
-            else
-            {
-                // Fallback icon
-                var tex = new Texture2D(2, 2);
-                tex.SetPixels(new[] { Color.white, Color.white, Color.white, Color.white });
-                tex.Apply();
-                iconImg.sprite = Sprite.Create(tex, new Rect(0, 0, 2, 2), new Vector2(0.5f, 0.5f), 100);
-            }
-
             var iconRT = iconGO.GetComponent<RectTransform>();
             iconRT.anchorMin = new Vector2(0.5f, 0.5f);
             iconRT.anchorMax = new Vector2(0.5f, 0.5f);
             iconRT.pivot = new Vector2(0.5f, 0.5f);
             iconRT.anchoredPosition = Vector2.zero;
-            iconRT.sizeDelta = new Vector2(60f, 60f);
+            iconRT.sizeDelta = new Vector2(IconGlyphSizeInactive, IconGlyphSizeInactive);
 
+            var iconImg = iconGO.GetComponent<Image>();
+            iconImg.sprite = icon != null ? icon : Sprite.Create(new Texture2D(2, 2), new Rect(0, 0, 2, 2), new Vector2(0.5f, 0.5f), 100);
+            iconImg.color = IconInactiveColor;
+            iconImg.preserveAspect = true;
+            iconImg.raycastTarget = false;
+
+            var outline = iconGO.GetComponent<Outline>();
+            outline.effectColor = new Color(0f, 0f, 0f, 0.25f);
+            outline.effectDistance = new Vector2(1.2f, -1.2f);
+            outline.useGraphicAlpha = true;
+
+            // Indicator (thin) — positioned under content, not in layout
             var indicatorGO = new GameObject("Indicator", typeof(RectTransform), typeof(Image));
             indicatorGO.transform.SetParent(tab.transform, false);
             var indicatorRT = indicatorGO.GetComponent<RectTransform>();
             indicatorRT.anchorMin = new Vector2(0.5f, 0f);
             indicatorRT.anchorMax = new Vector2(0.5f, 0f);
             indicatorRT.pivot = new Vector2(0.5f, 0f);
-            indicatorRT.anchoredPosition = new Vector2(0f, 4f);
-            indicatorRT.sizeDelta = new Vector2(68f, 4f);
-
+            indicatorRT.anchoredPosition = new Vector2(0f, 2f);
+            indicatorRT.sizeDelta = new Vector2(56f, 3f);
             var indicatorImage = indicatorGO.GetComponent<Image>();
             indicatorImage.color = new Color(1f, 1f, 1f, 0f);
-            indicatorImage.raycastTarget = false;
 
-            var indicatorLE = indicatorGO.AddComponent<LayoutElement>();
-            indicatorLE.ignoreLayout = true;
+            // Label (fades in when active)
+            var label = UiKit.TMP(tab.transform, tabName, 14, Color.white, TextAlignmentOptions.Midline, bold: false);
+            label.enableWordWrapping = false;
+            label.raycastTarget = false;
+
+            var labelCG = label.gameObject.AddComponent<CanvasGroup>();
+            labelCG.alpha = 0f;
+
+            var lrt = label.rectTransform;
+            lrt.anchorMin = new Vector2(0.5f, 0f);
+            lrt.anchorMax = new Vector2(0.5f, 0f);
+            lrt.pivot = new Vector2(0.5f, 0f);
+            lrt.anchoredPosition = new Vector2(0f, 6f);
+            lrt.sizeDelta = new Vector2(100f, 18f);
         }
 
         private void RefreshTabsVisual()
         {
-            if (_navBar == null)
-            {
-                return;
-            }
-
+            if (_navBar == null) return;
             var row = _navBar.transform.Find("Background/IconsRow");
             if (!row) return;
 
@@ -751,35 +783,41 @@ namespace RetroTech
                 var tab = row.GetChild(i);
                 bool active = (i == _activeTab);
 
-                // Icon color and subtle scale pop
-                var iconFrameTransform = tab.Find("IconFrame");
-                if (iconFrameTransform != null)
-                {
-                    var iconFrameImage = iconFrameTransform.GetComponent<Image>();
-                    if (iconFrameImage != null)
-                    {
-                        iconFrameImage.color = active ? IconBackgroundActiveColor : IconBackgroundInactiveColor;
-                        iconFrameImage.rectTransform.localScale = active ? new Vector3(1.08f, 1.08f, 1f) : Vector3.one;
-                    }
+                var pill = tab.Find("Content/IconGroup/ActivePill")?.GetComponent<Image>();
+                var iconFrame = tab.Find("Content/IconGroup/IconFrame")?.GetComponent<Image>();
+                var icon = tab.Find("Content/IconGroup/IconFrame/Icon")?.GetComponent<Image>();
+                var indicator = tab.Find("Indicator")?.GetComponent<Image>();
+                var label = tab.GetComponentsInChildren<TextMeshProUGUI>(true).LastOrDefault();
+                var labelCG = label ? label.GetComponent<CanvasGroup>() : null;
 
-                    var icon = iconFrameTransform.Find("Icon")?.GetComponent<Image>();
-                    if (icon != null)
-                    {
-                        icon.color = active ? IconActiveColor : IconInactiveColor;
-                        var iconRT = icon.rectTransform;
-                        iconRT.localScale = active ? new Vector3(1.12f, 1.12f, 1f) : Vector3.one;
-                    }
+                if (pill != null)
+                    pill.color = active ? new Color(1f, 1f, 1f, 0.12f) : new Color(1f, 1f, 1f, 0f);
+
+                if (iconFrame != null)
+                {
+                    iconFrame.color = active ? IconBackgroundActiveColor : IconBackgroundInactiveColor;
+                    iconFrame.rectTransform.sizeDelta = active
+                        ? new Vector2(IconFrameSizeActive, IconFrameSizeActive)
+                        : new Vector2(IconFrameSizeInactive, IconFrameSizeInactive);
+                    iconFrame.rectTransform.localScale = active ? new Vector3(1.06f, 1.06f, 1f) : Vector3.one;
                 }
 
-                var indicator = tab.Find("Indicator");
+                if (icon != null)
+                {
+                    icon.color = active ? IconActiveColor : IconInactiveColor;
+                    icon.rectTransform.sizeDelta = active
+                        ? new Vector2(IconGlyphSizeActive, IconGlyphSizeActive)
+                        : new Vector2(IconGlyphSizeInactive, IconGlyphSizeInactive);
+                    icon.rectTransform.localScale = active ? new Vector3(1.12f, 1.12f, 1f) : Vector3.one;
+                }
+
                 if (indicator != null)
-                {
-                    var indicatorImage = indicator.GetComponent<Image>();
-                    indicatorImage.color = active ? NavIndicatorColor : new Color(1f, 1f, 1f, 0f);
-                }
+                    indicator.color = active ? NavIndicatorColor : new Color(1f, 1f, 1f, 0f);
+
+                if (labelCG != null) labelCG.alpha = active ? 0.95f : 0f;
             }
         }
-        
+
         // ========= Pages =========
 
         private GameObject CreateHomePage()
