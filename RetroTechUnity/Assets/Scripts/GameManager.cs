@@ -6,10 +6,6 @@ using UnityEngine.InputSystem.UI;
 using TMPro;
 using System.Linq;
 using System.Threading.Tasks;
-#if ZXING_PRESENT
-using ZXing;
-using ZXing.Common;
-#endif
 
 using static RetroTech.UiKit;
 using RetroTech.Services;
