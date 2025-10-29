@@ -2,12 +2,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System.Collections.Generic;
 using System.Globalization;
-#if ZXING_PRESENT
 using ZXing;
 using ZXing.Common;
-#endif
 using static RetroTech.UiKit;
 
 namespace RetroTech
@@ -42,11 +39,13 @@ namespace RetroTech
         private Button _scanButton;
         private bool _isScanning = false;
 
-#if ZXING_PRESENT
         private WebCamTexture _webcam;
         private BarcodeReader _qrReader;
         private Coroutine _scanCoroutine;
-#endif
+        private RawImage _cameraPreviewImage;
+        private AspectRatioFitter _cameraAspectFitter;
+        private GameObject _qrPlaceholderIcon;
+        private Color32[] _webcamPixelBuffer;
 
         /// <summary>
         /// Cria e configura a página do scanner
@@ -69,13 +68,11 @@ namespace RetroTech
         /// </summary>
         private void InitializeQRReader()
         {
-#if ZXING_PRESENT
             _qrReader = new BarcodeReader 
             { 
                 AutoRotate = true, 
                 Options = new DecodingOptions { TryHarder = true } 
             };
-#endif
         }
 
         /// <summary>
@@ -162,14 +159,34 @@ namespace RetroTech
                 frameImg.type = Image.Type.Sliced;
             }
 
+            frameGO.AddComponent<RectMask2D>();
+
             var frameLE = frameGO.AddComponent<LayoutElement>();
             frameLE.preferredWidth = qrFrameSize;
             frameLE.preferredHeight = qrFrameSize;
             frameLE.minWidth = qrFrameSize;
             frameLE.minHeight = qrFrameSize;
 
+            var previewGO = new GameObject("CameraPreview", typeof(RectTransform), typeof(RawImage));
+            previewGO.transform.SetParent(frameGO.transform, false);
+
+            var previewRT = previewGO.GetComponent<RectTransform>();
+            previewRT.anchorMin = Vector2.zero;
+            previewRT.anchorMax = Vector2.one;
+            previewRT.offsetMin = Vector2.zero;
+            previewRT.offsetMax = Vector2.zero;
+
+            _cameraPreviewImage = previewGO.GetComponent<RawImage>();
+            _cameraPreviewImage.raycastTarget = false;
+            _cameraPreviewImage.enabled = false;
+            _cameraPreviewImage.texture = null;
+            _cameraPreviewImage.color = new Color(1f, 1f, 1f, 0f);
+
+            _cameraAspectFitter = previewGO.AddComponent<AspectRatioFitter>();
+            _cameraAspectFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+
             // Ícone QR Code interno
-            CreateQRIcon(frameGO.transform);
+            _qrPlaceholderIcon = CreateQRIcon(frameGO.transform);
 
             return frameGO;
         }
@@ -177,7 +194,7 @@ namespace RetroTech
         /// <summary>
         /// Cria o ícone interno do QR Code
         /// </summary>
-        private void CreateQRIcon(Transform parent)
+        private GameObject CreateQRIcon(Transform parent)
         {
             var qrIconGO = new GameObject("QRIcon", typeof(RectTransform), typeof(Image));
             qrIconGO.transform.SetParent(parent, false);
@@ -218,6 +235,8 @@ namespace RetroTech
                 qrTextRT.offsetMin = Vector2.zero;
                 qrTextRT.offsetMax = Vector2.zero;
             }
+
+            return qrIconGO;
         }
 
         /// <summary>
@@ -276,12 +295,8 @@ namespace RetroTech
             // Solicitar permissão de câmera no Android
             RequestCameraPermission();
 
-#if ZXING_PRESENT
+            SetCameraPreviewTexture(null);
             _scanCoroutine = StartCoroutine(ScanQRCode());
-#else
-            // Simulação quando ZXing não está disponível
-            StartCoroutine(SimulateScan());
-#endif
         }
 
         /// <summary>
@@ -294,19 +309,13 @@ namespace RetroTech
             _isScanning = false;
             UpdateScanButtonText("⚡ Iniciar Scanner");
 
-#if ZXING_PRESENT
             if (_scanCoroutine != null)
             {
                 StopCoroutine(_scanCoroutine);
                 _scanCoroutine = null;
             }
 
-            if (_webcam != null && _webcam.isPlaying)
-            {
-                _webcam.Stop();
-                _webcam = null;
-            }
-#endif
+            ClearCameraResources();
         }
 
         /// <summary>
@@ -326,6 +335,11 @@ namespace RetroTech
             {
                 Debug.LogWarning($"Erro ao solicitar permissão de câmera: {ex.Message}");
             }
+#elif UNITY_IOS
+            if (!Application.HasUserAuthorization(UserAuthorization.WebCam))
+            {
+                Application.RequestUserAuthorization(UserAuthorization.WebCam);
+            }
 #endif
         }
 
@@ -344,47 +358,60 @@ namespace RetroTech
             }
         }
 
-#if ZXING_PRESENT
         /// <summary>
         /// Corrotina para escanear QR Code usando câmera real
         /// </summary>
         private IEnumerator ScanQRCode()
         {
-            // Verificar se há câmeras disponíveis
-            if (WebCamTexture.devices.Length == 0)
+            if (!TryGetCameraDevice(out var device))
             {
-                Debug.LogWarning("Nenhuma câmera encontrada. Simulando scan...");
-                yield return StartCoroutine(SimulateScan());
+                Debug.LogWarning("Nenhuma câmera encontrada para o scanner de QR code.");
+                _isScanning = false;
+                UpdateScanButtonText("⚡ Iniciar Scanner");
+                SetCameraPreviewTexture(null);
                 yield break;
             }
 
-            // Inicializar câmera
-            var device = WebCamTexture.devices[0];
-            _webcam = new WebCamTexture(device.name);
+            _webcam = new WebCamTexture(device.name, 1280, 720);
             _webcam.Play();
 
-            // Aguardar câmera inicializar
-            yield return new WaitForSeconds(0.5f);
-
-            if (!_webcam.isPlaying)
+            float initTimeout = 5f;
+            float initStart = Time.time;
+            while (_webcam != null && _webcam.isPlaying && _webcam.width <= 16 && _webcam.height <= 16 && (Time.time - initStart) < initTimeout)
             {
-                Debug.LogWarning("Câmera não pôde ser inicializada. Simulando scan...");
-                yield return StartCoroutine(SimulateScan());
+                yield return null;
+            }
+
+            if (_webcam == null || !_webcam.isPlaying || _webcam.width <= 16 || _webcam.height <= 16)
+            {
+                Debug.LogWarning("Câmera não pôde ser inicializada para o scanner de QR code.");
+                ClearCameraResources();
+                _isScanning = false;
+                UpdateScanButtonText("⚡ Iniciar Scanner");
+                SetCameraPreviewTexture(null);
                 yield break;
             }
+
+            SetCameraPreviewTexture(_webcam);
+            UpdateCameraPreviewTransform();
 
             ComputerPiece foundPiece = null;
             float scanTimeout = 30f;
             float scanStartTime = Time.time;
 
-            // Loop de escaneamento
             while (_isScanning && foundPiece == null && (Time.time - scanStartTime) < scanTimeout)
             {
                 try
                 {
                     if (_webcam.width > 16 && _webcam.height > 16)
                     {
-                        var result = _qrReader.Decode(_webcam.GetPixels32(), _webcam.width, _webcam.height);
+                        if (_webcamPixelBuffer == null || _webcamPixelBuffer.Length != _webcam.width * _webcam.height)
+                        {
+                            _webcamPixelBuffer = new Color32[_webcam.width * _webcam.height];
+                        }
+
+                        _webcam.GetPixels32(_webcamPixelBuffer);
+                        var result = _qrReader.Decode(_webcamPixelBuffer, _webcam.width, _webcam.height);
                         if (result != null)
                         {
                             foundPiece = FindPieceFromQRData(result.Text);
@@ -401,56 +428,96 @@ namespace RetroTech
                     Debug.LogWarning($"Erro durante escaneamento: {ex.Message}");
                 }
 
+                UpdateCameraPreviewTransform();
                 yield return new WaitForSeconds(0.1f);
             }
 
-            // Parar câmera
-            if (_webcam != null && _webcam.isPlaying)
-            {
-                _webcam.Stop();
-                _webcam = null;
-            }
+            ClearCameraResources();
 
             _isScanning = false;
             UpdateScanButtonText("⚡ Iniciar Scanner");
 
-            // Processar resultado
             if (foundPiece != null)
             {
                 OnPieceScanned?.Invoke(foundPiece);
             }
             else
             {
-                Debug.Log("Nenhum QR válido encontrado. Simulando resultado...");
-                yield return StartCoroutine(SimulateScan());
+                Debug.Log("Nenhum QR válido foi encontrado durante o escaneamento.");
             }
         }
-#endif
 
-        /// <summary>
-        /// Simula um escaneamento para demonstração
-        /// </summary>
-        private IEnumerator SimulateScan()
+        private bool TryGetCameraDevice(out WebCamDevice device)
         {
-            // Simular tempo de escaneamento
-            yield return new WaitForSeconds(2f);
-
-            _isScanning = false;
-            UpdateScanButtonText("⚡ Iniciar Scanner");
-
-            // Selecionar peça aleatória para demonstração
-            if (SampleData.Pieces.Count > 0)
+            var devices = WebCamTexture.devices;
+            if (devices == null || devices.Length == 0)
             {
-                int randomIndex = Random.Range(0, SampleData.Pieces.Count);
-                var randomPiece = SampleData.Pieces[randomIndex];
+                device = default;
+                return false;
+            }
 
-                Debug.Log($"Simulando scan da peça: {randomPiece.Name}");
-                OnPieceScanned?.Invoke(randomPiece);
-            }
-            else
+            foreach (var cam in devices)
             {
-                Debug.LogWarning("Nenhuma peça disponível para simulação");
+                if (!cam.isFrontFacing)
+                {
+                    device = cam;
+                    return true;
+                }
             }
+
+            device = devices[0];
+            return true;
+        }
+
+        private void SetCameraPreviewTexture(Texture texture)
+        {
+            if (_cameraPreviewImage == null)
+            {
+                return;
+            }
+
+            _cameraPreviewImage.texture = texture;
+            bool hasTexture = texture != null;
+            _cameraPreviewImage.enabled = hasTexture;
+            _cameraPreviewImage.color = hasTexture ? Color.white : new Color(1f, 1f, 1f, 0f);
+
+            if (_qrPlaceholderIcon != null)
+            {
+                _qrPlaceholderIcon.SetActive(!hasTexture);
+            }
+        }
+
+        private void UpdateCameraPreviewTransform()
+        {
+            if (_cameraPreviewImage == null || _webcam == null)
+            {
+                return;
+            }
+
+            var rect = _cameraPreviewImage.rectTransform;
+            rect.localEulerAngles = new Vector3(0f, 0f, -_webcam.videoRotationAngle);
+            rect.localScale = new Vector3(_webcam.videoVerticallyMirrored ? -1f : 1f, 1f, 1f);
+
+            if (_cameraAspectFitter != null && _webcam.height > 0)
+            {
+                _cameraAspectFitter.aspectRatio = (float)_webcam.width / _webcam.height;
+            }
+        }
+
+        private void ClearCameraResources()
+        {
+            if (_webcam != null)
+            {
+                if (_webcam.isPlaying)
+                {
+                    _webcam.Stop();
+                }
+
+                _webcam = null;
+            }
+
+            _webcamPixelBuffer = null;
+            SetCameraPreviewTexture(null);
         }
 
         /// <summary>
@@ -638,9 +705,8 @@ namespace RetroTech
             StopScan();
             OnPieceScanned = null;
 
-#if ZXING_PRESENT
+            ClearCameraResources();
             _qrReader = null;
-#endif
         }
 
         #region Editor Methods
