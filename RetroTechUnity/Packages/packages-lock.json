@@ -26,6 +26,12 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
+    "unity-zxing": {
+      "version": "file:../Assets/node_modules/unity-zxing",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,
