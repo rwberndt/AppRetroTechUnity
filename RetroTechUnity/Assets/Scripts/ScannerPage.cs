@@ -21,7 +21,7 @@ namespace RetroTech
 
         [Header("Visual Configuration")]
         [SerializeField] private float previewCardHeight = 480f;
-        [SerializeField] private float tipsCardHeight = 360f;
+        [SerializeField] private float tipsCardHeight = 420f;
         [SerializeField] private float qrFrameSize = 260f;
         [SerializeField] private int titleFontSize = 50;
         [SerializeField] private int scanTitleFontSize = 36;
@@ -255,11 +255,6 @@ namespace RetroTech
         private void CreateTipsCard()
         {
             var tipsCard = CreateGlassCard(_contentContainer, tipsCardHeight);
-            var tipsLayout = tipsCard.GetComponent<LayoutElement>();
-            if (tipsLayout != null)
-            {
-                tipsLayout.flexibleHeight = 0.5f;
-            }
 
             var tipsVLG = tipsCard.gameObject.AddComponent<VerticalLayoutGroup>();
             tipsVLG.childAlignment = TextAnchor.UpperLeft;
@@ -267,19 +262,51 @@ namespace RetroTech
             tipsVLG.padding = new RectOffset(28, 28, 24, 24);
             tipsVLG.childControlWidth = true;
             tipsVLG.childForceExpandWidth = true;
-            tipsVLG.childControlHeight = false;
+            tipsVLG.childControlHeight = false;  // Don't let VLG control height
             tipsVLG.childForceExpandHeight = false;
 
-            var tipsTitleTMP = UiKit.TMP(tipsCard.transform, "Dicas para escanear:",
+            // Title with explicit height control
+            var tipsTitleGO = new GameObject("TipsTitle", typeof(RectTransform), typeof(LayoutElement));
+            tipsTitleGO.transform.SetParent(tipsCard.transform, false);
+
+            var titleLE = tipsTitleGO.GetComponent<LayoutElement>();
+            titleLE.preferredHeight = tipsTitleFontSize + 8; // Font size + small padding
+            titleLE.minHeight = tipsTitleFontSize + 8;
+
+            var tipsTitleTMP = UiKit.TMP(tipsTitleGO.transform, "Dicas para escanear:",
                 tipsTitleFontSize, Color.white, bold: true);
             tipsTitleTMP.enableWordWrapping = false;
+            tipsTitleTMP.overflowMode = TMPro.TextOverflowModes.Truncate;
 
-            var tipsTMP = UiKit.TMP(tipsCard.transform,
+            // Anchor the TMP text properly within its container
+            var titleRT = tipsTitleTMP.rectTransform;
+            titleRT.anchorMin = Vector2.zero;
+            titleRT.anchorMax = Vector2.one;
+            titleRT.offsetMin = Vector2.zero;
+            titleRT.offsetMax = Vector2.zero;
+
+            // Tips text with explicit height control
+            var tipsTextGO = new GameObject("TipsText", typeof(RectTransform), typeof(LayoutElement));
+            tipsTextGO.transform.SetParent(tipsCard.transform, false);
+
+            var textLE = tipsTextGO.GetComponent<LayoutElement>();
+            textLE.flexibleHeight = 1f; // Take remaining space
+            textLE.minHeight = 90f; // Minimum height for 3 lines of text
+
+            var tipsTMP = UiKit.TMP(tipsTextGO.transform,
                 "• Mantenha o QR code bem iluminado\n" +
                 "• Mantenha a câmera estável\n" +
                 "• Certifique-se que o código esteja completo na tela",
-                tipsFontSize, new Color32(255, 255, 255, 180), TextAlignmentOptions.Left);
+                tipsFontSize, new Color32(255, 255, 255, 180), TextAlignmentOptions.TopLeft);
             tipsTMP.enableWordWrapping = true;
+            tipsTMP.overflowMode = TMPro.TextOverflowModes.Truncate;
+
+            // Anchor the TMP text properly within its container
+            var textRT = tipsTMP.rectTransform;
+            textRT.anchorMin = Vector2.zero;
+            textRT.anchorMax = Vector2.one;
+            textRT.offsetMin = Vector2.zero;
+            textRT.offsetMax = Vector2.zero;
         }
 
         /// <summary>
