@@ -73,6 +73,10 @@ namespace RetroTech
         private Image _explanationCardBackground;
         private List<GameObject> _optionButtons = new List<GameObject>();
 
+        // Layout caching
+        private readonly List<GameObject> _quizLayoutElements = new List<GameObject>();
+        private GameObject _resultLayoutRoot;
+
         // Animation helpers
         private Coroutine _currentAnimation;
 
@@ -102,6 +106,19 @@ namespace RetroTech
             System.Func<Transform, float, Image> createGlassCardFunc,
             System.Func<Transform, string, UnityEngine.Events.UnityAction, GameObject> createCTAButtonFunc)
         {
+            if (_resultLayoutRoot != null)
+            {
+                Destroy(_resultLayoutRoot);
+                _resultLayoutRoot = null;
+            }
+
+            foreach (var element in _quizLayoutElements)
+            {
+                if (element != null)
+                    Destroy(element);
+            }
+            _quizLayoutElements.Clear();
+
             // Page title
             CreatePageTitle();
 
@@ -136,6 +153,21 @@ namespace RetroTech
             CreateNextButton(createCTAButtonFunc);
 
             AddSpacer(_contentContainer, 40f);
+
+            CacheQuizLayoutElements();
+        }
+
+        /// <summary>
+        /// Guarda os elementos originais do layout para reutilização ao reiniciar
+        /// </summary>
+        private void CacheQuizLayoutElements()
+        {
+            _quizLayoutElements.Clear();
+
+            foreach (Transform child in _contentContainer)
+            {
+                _quizLayoutElements.Add(child.gameObject);
+            }
         }
 
         /// <summary>
@@ -866,9 +898,21 @@ namespace RetroTech
                 yield return null;
             }
 
-            // Clear all content
-            foreach (Transform child in _contentContainer)
-                Destroy(child.gameObject);
+            // Cache layout if necessário e ocultar conteúdo do quiz
+            if (_quizLayoutElements.Count == 0)
+                CacheQuizLayoutElements();
+
+            foreach (var element in _quizLayoutElements)
+            {
+                if (element != null)
+                    element.SetActive(false);
+            }
+
+            if (_resultLayoutRoot != null)
+            {
+                Destroy(_resultLayoutRoot);
+                _resultLayoutRoot = null;
+            }
 
             // Create result screen
             CreateResultScreen();
@@ -890,20 +934,32 @@ namespace RetroTech
         /// </summary>
         private void CreateResultScreen()
         {
-            AddSpacer(_contentContainer, 40f);
+            _resultLayoutRoot = new GameObject("QuizResultRoot", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            _resultLayoutRoot.transform.SetParent(_contentContainer, false);
+
+            var layout = _resultLayoutRoot.GetComponent<VerticalLayoutGroup>();
+            layout.spacing = 0f;
+            layout.padding = new RectOffset(0, 0, 0, 0);
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = true;
+            layout.childForceExpandWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandHeight = false;
+
+            AddSpacer(_resultLayoutRoot.transform, 40f);
 
             // Trophy icon
-            var trophyTMP = UiKit.TMP(_contentContainer, "🏆", 80,
+            var trophyTMP = UiKit.TMP(_resultLayoutRoot.transform, "🏆", 80,
                 new Color32(255, 215, 0, 255), TextAlignmentOptions.Center);
             trophyTMP.margin = new Vector4(0, 0, 0, 20);
 
             // Title
-            var titleTMP = UiKit.TMP(_contentContainer, "Quiz Concluído!", 40,
+            var titleTMP = UiKit.TMP(_resultLayoutRoot.transform, "Quiz Concluído!", 40,
                 Color.white, TextAlignmentOptions.Center, bold: true);
             titleTMP.margin = new Vector4(0, 0, 0, 32);
 
             // Result card
-            var resultCard = UiKit.CreateCard(_contentContainer, new Vector2(0, 260f),
+            var resultCard = UiKit.CreateCard(_resultLayoutRoot.transform, new Vector2(0, 260f),
                 new Color(0f, 0f, 0f, 0.4f), 24f, glass: true); // Darker background
 
             var resultVLG = resultCard.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -946,10 +1002,10 @@ namespace RetroTech
                     new Color32(255, 215, 0, 255), TextAlignmentOptions.Center, bold: true);
             }
 
-            AddSpacer(_contentContainer, 32f);
+            AddSpacer(_resultLayoutRoot.transform, 32f);
 
             // Restart button
-            var restartCard = UiKit.CreateCard(_contentContainer, new Vector2(0, 64f),
+            var restartCard = UiKit.CreateCard(_resultLayoutRoot.transform, new Vector2(0, 64f),
                 Color.white, 20f, glass: false);
 
             var restartBtn = restartCard.gameObject.AddComponent<Button>();
@@ -972,7 +1028,7 @@ namespace RetroTech
             restartRT.offsetMin = new Vector2(20, 12);
             restartRT.offsetMax = new Vector2(-20, -12);
 
-            AddSpacer(_contentContainer, 60f);
+            AddSpacer(_resultLayoutRoot.transform, 60f);
 
             OnQuizCompleted?.Invoke(_quizScore);
         }
@@ -1014,16 +1070,30 @@ namespace RetroTech
         /// </summary>
         public void RestartQuiz()
         {
-            _currentQuizIndex = 0;
-            _quizScore = 0;
-            _answerSelected = false;
+            if (_currentAnimation != null)
+            {
+                StopCoroutine(_currentAnimation);
+                _currentAnimation = null;
+            }
 
-            // Clear result content
-            foreach (Transform child in _contentContainer)
-                Destroy(child.gameObject);
+            StopAllCoroutines();
 
-            // Recreate quiz - need to store creation functions
-            // For now, just reinitialize
+            if (_resultLayoutRoot != null)
+            {
+                Destroy(_resultLayoutRoot);
+                _resultLayoutRoot = null;
+            }
+
+            foreach (var element in _quizLayoutElements)
+            {
+                if (element != null)
+                    element.SetActive(true);
+            }
+
+            var contentCanvasGroup = _contentContainer.GetComponent<CanvasGroup>();
+            if (contentCanvasGroup != null)
+                contentCanvasGroup.alpha = 1f;
+
             InitializeQuiz();
         }
 
