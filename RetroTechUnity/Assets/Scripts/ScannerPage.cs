@@ -681,61 +681,16 @@ namespace RetroTech
             colors.pressedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
             btn.colors = colors;
 
-            var contentGO = new GameObject("Content", typeof(RectTransform));
-            contentGO.transform.SetParent(btnCard.transform, false);
-
-            var contentRT = contentGO.GetComponent<RectTransform>();
-            contentRT.anchorMin = Vector2.zero;
-            contentRT.anchorMax = Vector2.one;
-            contentRT.offsetMin = new Vector2(20, 12);
-            contentRT.offsetMax = new Vector2(-20, -12);
-
-            var hLayout = contentGO.AddComponent<HorizontalLayoutGroup>();
-            hLayout.childAlignment = TextAnchor.MiddleCenter;
-            hLayout.spacing = 16f;
-            hLayout.childControlWidth = false;
-            hLayout.childControlHeight = false;
-            hLayout.childForceExpandWidth = false;
-            hLayout.childForceExpandHeight = false;
-
-            if (leadingIcon != null)
-            {
-                var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-                iconGO.transform.SetParent(contentGO.transform, false);
-
-                var iconImg = iconGO.GetComponent<Image>();
-                iconImg.sprite = leadingIcon;
-                iconImg.preserveAspect = true;
-                iconImg.color = new Color32(103, 80, 164, 255);
-                iconImg.raycastTarget = false;
-
-                var iconRT = iconGO.GetComponent<RectTransform>();
-                iconRT.anchorMin = new Vector2(0.5f, 0.5f);
-                iconRT.anchorMax = new Vector2(0.5f, 0.5f);
-                iconRT.pivot = new Vector2(0.5f, 0.5f);
-                iconRT.sizeDelta = new Vector2(32, 32);
-
-                var iconLE = iconGO.AddComponent<LayoutElement>();
-                iconLE.preferredWidth = 32f;
-                iconLE.preferredHeight = 32f;
-                iconLE.minWidth = 32f;
-                iconLE.minHeight = 32f;
-            }
-
-            var label = UiKit.TMP(contentGO.transform, text, 24,
-                new Color32(103, 80, 164, 255), TextAlignmentOptions.Left, bold: true);
+            var label = UiKit.TMP(btnCard.transform, text, 24,
+                new Color32(103, 80, 164, 255), TextAlignmentOptions.Center, bold: true);
             label.enableWordWrapping = false;
             label.raycastTarget = false;
 
             var labelRT = label.rectTransform;
-            labelRT.anchorMin = new Vector2(0f, 0.5f);
-            labelRT.anchorMax = new Vector2(1f, 0.5f);
-            labelRT.pivot = new Vector2(0.5f, 0.5f);
-            labelRT.sizeDelta = Vector2.zero;
-
-            var labelLE = label.gameObject.AddComponent<LayoutElement>();
-            labelLE.flexibleWidth = 1f;
-            labelLE.minHeight = 0f;
+            labelRT.anchorMin = Vector2.zero;
+            labelRT.anchorMax = Vector2.one;
+            labelRT.offsetMin = new Vector2(20, 12);
+            labelRT.offsetMax = new Vector2(-20, -12);
 
             return btnCard.gameObject;
         }
