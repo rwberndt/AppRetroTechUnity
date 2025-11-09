@@ -49,6 +49,15 @@ namespace RetroTech
         private Sprite _qrCodeIcon;
 
         /// <summary>
+        /// Permite que o GameManager forneça o ícone oficial de QR code já carregado.
+        /// </summary>
+        /// <param name="icon">Sprite do ícone de QR code.</param>
+        public void SetQrCodeIcon(Sprite icon)
+        {
+            _qrCodeIcon = icon;
+        }
+
+        /// <summary>
         /// Cria e configura a página do scanner
         /// </summary>
         public GameObject CreatePage(Transform parent, Canvas canvas, System.Func<string, (GameObject surface, RectTransform content)> buildSurfaceFunc)

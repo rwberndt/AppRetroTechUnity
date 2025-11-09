@@ -936,6 +936,7 @@ namespace RetroTech
 
             // Adicionar o componente ScannerPage
             _scannerPage = scannerPageContainer.AddComponent<ScannerPage>();
+            _scannerPage.SetQrCodeIcon(_iconScanner);
 
             // Configurar o evento de peça escaneada
             _scannerPage.OnPieceScanned += (piece) =>
