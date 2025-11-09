@@ -936,6 +936,7 @@ namespace RetroTech
 
             // Adicionar o componente ScannerPage
             _scannerPage = scannerPageContainer.AddComponent<ScannerPage>();
+            _scannerPage.SetQrCodeIcon(_iconScanner);
 
             // Configurar o evento de peça escaneada
             _scannerPage.OnPieceScanned += (piece) =>
@@ -1540,10 +1541,24 @@ namespace RetroTech
             backBtn.transform.SetParent(headerGO.transform, false);
             var backRT = backBtn.GetComponent<RectTransform>();
             backRT.sizeDelta = new Vector2(40, 40);
-            backBtn.GetComponent<Image>().color = new Color(1, 1, 1, 0.2f);
+
+            var backImage = backBtn.GetComponent<Image>();
+            backImage.color = new Color(1, 1, 1, 0.2f);
             backBtn.GetComponent<Button>().onClick.AddListener(CloseModal);
 
-            UiKit.TMP(backBtn.transform, "←", 24, Color.white, TextAlignmentOptions.Center);
+            var backIconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+            backIconGO.transform.SetParent(backBtn.transform, false);
+            var backIconRT = backIconGO.GetComponent<RectTransform>();
+            backIconRT.anchorMin = new Vector2(0.2f, 0.2f);
+            backIconRT.anchorMax = new Vector2(0.8f, 0.8f);
+            backIconRT.offsetMin = Vector2.zero;
+            backIconRT.offsetMax = Vector2.zero;
+
+            var backIconImage = backIconGO.GetComponent<Image>();
+            backIconImage.sprite = IconFactory.GetBackIcon();
+            backIconImage.color = Color.white;
+            backIconImage.preserveAspect = true;
+            backIconImage.raycastTarget = false;
 
             // App title
             UiKit.TMP(headerGO.transform, "RetroTech", 28, Color.white, TextAlignmentOptions.Left, bold: true);
