@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 using TMPro;
 using static RetroTech.UiKit;
 
@@ -50,6 +51,8 @@ namespace RetroTech
         public System.Action<int, int> OnScoreUpdated;
         public System.Action<int> OnQuizCompleted;
         public System.Action<QuizQuestion, bool> OnQuestionAnswered;
+        public System.Action OnReviewRequested;
+        public System.Action OnExploreMuseumRequested;
 
         // State
         private int _currentQuizIndex;
@@ -938,33 +941,46 @@ namespace RetroTech
             _resultLayoutRoot.transform.SetParent(_contentContainer, false);
 
             var layout = _resultLayoutRoot.GetComponent<VerticalLayoutGroup>();
-            layout.spacing = 0f;
-            layout.padding = new RectOffset(0, 0, 0, 0);
+            layout.spacing = 32f;
+            layout.padding = new RectOffset(48, 48, 40, 56);
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
             layout.childControlHeight = false;
             layout.childForceExpandHeight = false;
 
-            AddSpacer(_resultLayoutRoot.transform, 40f);
+            AddSpacer(_resultLayoutRoot.transform, 16f);
 
             // Trophy icon
-            var trophyTMP = UiKit.TMP(_resultLayoutRoot.transform, "🏆", 80,
+            var trophyTMP = UiKit.TMP(_resultLayoutRoot.transform, "🏆", 108,
                 new Color32(255, 215, 0, 255), TextAlignmentOptions.Center);
-            trophyTMP.margin = new Vector4(0, 0, 0, 20);
+            trophyTMP.margin = new Vector4(0, 0, 0, 12f);
 
             // Title
-            var titleTMP = UiKit.TMP(_resultLayoutRoot.transform, "Quiz Concluído!", 40,
+            var titleTMP = UiKit.TMP(_resultLayoutRoot.transform, "Quiz Concluído!", 52,
                 Color.white, TextAlignmentOptions.Center, bold: true);
-            titleTMP.margin = new Vector4(0, 0, 0, 32);
+            titleTMP.margin = new Vector4(0, 0, 0, 12f);
+
+            var subtitleTMP = UiKit.TMP(_resultLayoutRoot.transform,
+                "Veja como você foi e escolha o próximo passo!",
+                28, new Color32(214, 205, 245, 255), TextAlignmentOptions.Center);
+            subtitleTMP.margin = new Vector4(0, 0, 0, 12f);
 
             // Result card
-            var resultCard = UiKit.CreateCard(_resultLayoutRoot.transform, new Vector2(0, 260f),
-                new Color(0f, 0f, 0f, 0.4f), 24f, glass: true); // Darker background
+            var resultCard = UiKit.CreateCard(_resultLayoutRoot.transform, new Vector2(0, 380f),
+                new Color(0f, 0f, 0f, 0.55f), 32f, glass: true); // Darker background
+
+            var resultCardLayout = resultCard.GetComponent<LayoutElement>();
+            if (resultCardLayout != null)
+            {
+                float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(420f);
+                resultCardLayout.minHeight = responsiveHeight;
+                resultCardLayout.preferredHeight = responsiveHeight;
+            }
 
             var resultVLG = resultCard.gameObject.AddComponent<VerticalLayoutGroup>();
-            resultVLG.padding = new RectOffset(32, 32, 32, 32);
-            resultVLG.spacing = 20;
+            resultVLG.padding = new RectOffset(44, 44, 52, 48);
+            resultVLG.spacing = 24;
             resultVLG.childAlignment = TextAnchor.MiddleCenter;
             resultVLG.childControlWidth = true;
             resultVLG.childForceExpandWidth = true;
@@ -974,21 +990,31 @@ namespace RetroTech
             // Score display
             var scoreTMP = UiKit.TMP(resultCard.transform,
                 $"{_quizScore}",
-                72, new Color32(147, 112, 219, 255), TextAlignmentOptions.Center, bold: true);
+                88, new Color32(169, 143, 255, 255), TextAlignmentOptions.Center, bold: true);
             scoreTMP.fontStyle = FontStyles.Bold;
+            scoreTMP.margin = new Vector4(0, 0, 0, 0);
 
             var outOfTMP = UiKit.TMP(resultCard.transform,
                 $"de {SampleData.QuizQuestions.Count} perguntas",
-                26, Color.white, TextAlignmentOptions.Center); // Larger and full white
+                30, Color.white, TextAlignmentOptions.Center); // Larger and full white
+
+            float accuracy = SampleData.QuizQuestions.Count > 0
+                ? (float)_quizScore / SampleData.QuizQuestions.Count
+                : 0f;
+
+            var accuracyTMP = UiKit.TMP(resultCard.transform,
+                $"{Mathf.RoundToInt(accuracy * 100f)}% de aproveitamento",
+                32, new Color32(214, 205, 245, 255), TextAlignmentOptions.Center, bold: true);
+            accuracyTMP.margin = new Vector4(0, 8f, 0, 0);
 
             AddSpacer(resultCard.transform, 12f);
 
             // Performance message
             string message = GetResultMessage();
-            var msgTMP = UiKit.TMP(resultCard.transform, message, 22, // Larger font
+            var msgTMP = UiKit.TMP(resultCard.transform, message, 26, // Larger font
                 Color.white, TextAlignmentOptions.Center); // Full white
             msgTMP.enableWordWrapping = true;
-            msgTMP.lineSpacing = 8; // More line spacing
+            msgTMP.lineSpacing = 10; // More line spacing
 
             // Save high score
             SaveHighScore();
@@ -998,39 +1024,82 @@ namespace RetroTech
             if (_quizScore >= highScore && _quizScore > 0)
             {
                 AddSpacer(resultCard.transform, 8f);
-                var highScoreTMP = UiKit.TMP(resultCard.transform, "🎉 Novo Recorde!", 18,
+                var highScoreTMP = UiKit.TMP(resultCard.transform, "🎉 Novo Recorde!", 22,
                     new Color32(255, 215, 0, 255), TextAlignmentOptions.Center, bold: true);
             }
 
+            AddSpacer(_resultLayoutRoot.transform, 12f);
+
+            // Action buttons row
+            var actionsRow = new GameObject("ResultActions", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            actionsRow.transform.SetParent(_resultLayoutRoot.transform, false);
+
+            var actionsLayout = actionsRow.GetComponent<HorizontalLayoutGroup>();
+            actionsLayout.spacing = 28f;
+            actionsLayout.padding = new RectOffset(0, 0, 0, 0);
+            actionsLayout.childAlignment = TextAnchor.MiddleCenter;
+            actionsLayout.childControlWidth = true;
+            actionsLayout.childForceExpandWidth = true;
+            actionsLayout.childControlHeight = true;
+            actionsLayout.childForceExpandHeight = false;
+
+            var actionsLayoutElement = actionsRow.AddComponent<LayoutElement>();
+            float actionsHeight = ResponsiveTypography.ResponsiveSpacing(96f);
+            actionsLayoutElement.minHeight = actionsHeight;
+            actionsLayoutElement.preferredHeight = actionsHeight;
+
+            CreateResultActionButton(actionsRow.transform, "🔄 Jogar novamente", new Color32(255, 255, 255, 255),
+                new Color32(93, 64, 153, 255), RestartQuiz);
+
+            CreateResultActionButton(actionsRow.transform, "📚 Revisar conteúdo",
+                new Color32(147, 112, 219, 60), new Color32(230, 225, 255, 255),
+                () => OnReviewRequested?.Invoke());
+
+            CreateResultActionButton(actionsRow.transform, "🏛️ Explorar o museu",
+                new Color32(69, 90, 100, 200), new Color32(236, 245, 255, 255),
+                () => OnExploreMuseumRequested?.Invoke());
+
             AddSpacer(_resultLayoutRoot.transform, 32f);
 
-            // Restart button
-            var restartCard = UiKit.CreateCard(_resultLayoutRoot.transform, new Vector2(0, 64f),
-                Color.white, 20f, glass: false);
-
-            var restartBtn = restartCard.gameObject.AddComponent<Button>();
-            restartBtn.targetGraphic = restartCard;
-            restartBtn.onClick.AddListener(RestartQuiz);
-
-            var colors = restartBtn.colors;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = new Color(0.95f, 0.95f, 1f, 1f);
-            colors.pressedColor = new Color32(147, 112, 219, 100);
-            restartBtn.colors = colors;
-
-            var restartTMP = UiKit.TMP(restartCard.transform, "🔄 Jogar Novamente", 24,
-                new Color32(103, 80, 164, 255), TextAlignmentOptions.Center, bold: true);
-            restartTMP.raycastTarget = false;
-
-            var restartRT = restartTMP.rectTransform;
-            restartRT.anchorMin = Vector2.zero;
-            restartRT.anchorMax = Vector2.one;
-            restartRT.offsetMin = new Vector2(20, 12);
-            restartRT.offsetMax = new Vector2(-20, -12);
-
-            AddSpacer(_resultLayoutRoot.transform, 60f);
-
             OnQuizCompleted?.Invoke(_quizScore);
+        }
+
+        private void CreateResultActionButton(Transform parent, string label, Color32 backgroundColor,
+            Color32 textColor, UnityAction onClick)
+        {
+            var buttonImage = UiKit.CreateCard(parent, new Vector2(0, 90f), backgroundColor, 26f, glass: false);
+
+            var layoutElement = buttonImage.GetComponent<LayoutElement>();
+            if (layoutElement != null)
+            {
+                float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(90f);
+                layoutElement.minHeight = responsiveHeight;
+                layoutElement.preferredHeight = responsiveHeight;
+                layoutElement.flexibleWidth = 1f;
+            }
+
+            var button = buttonImage.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.ColorTint;
+            button.targetGraphic = buttonImage;
+            button.onClick.AddListener(onClick);
+
+            var colors = button.colors;
+            var background = (Color)backgroundColor;
+            colors.normalColor = background;
+            colors.highlightedColor = Color.Lerp(background, Color.white, 0.12f);
+            colors.pressedColor = Color.Lerp(background, new Color(0.38f, 0.27f, 0.75f, 1f), 0.35f);
+            colors.colorMultiplier = 1f;
+            button.colors = colors;
+
+            var labelTMP = UiKit.TMP(buttonImage.transform, label, 28, textColor,
+                TextAlignmentOptions.Center, bold: true);
+            labelTMP.raycastTarget = false;
+
+            var rect = labelTMP.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(28f, 16f);
+            rect.offsetMax = new Vector2(-28f, -16f);
         }
 
         /// <summary>
