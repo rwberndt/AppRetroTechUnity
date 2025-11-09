@@ -487,8 +487,19 @@ namespace RetroTech
             btnColors.pressedColor = new Color32(66, 44, 120, 255);
             btn.colors = btnColors;
 
-            var closeTMP = UiKit.TMP(closeBtn.transform, "✕", 26, ModalTextColor, TextAlignmentOptions.Center, bold: true);
-            closeTMP.raycastTarget = false;
+            var closeIconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+            closeIconGO.transform.SetParent(closeBtn.transform, false);
+            var closeIconRT = closeIconGO.GetComponent<RectTransform>();
+            closeIconRT.anchorMin = new Vector2(0.2f, 0.2f);
+            closeIconRT.anchorMax = new Vector2(0.8f, 0.8f);
+            closeIconRT.offsetMin = Vector2.zero;
+            closeIconRT.offsetMax = Vector2.zero;
+
+            var closeIconImage = closeIconGO.GetComponent<Image>();
+            closeIconImage.sprite = IconFactory.GetCloseIcon();
+            closeIconImage.color = ModalTextColor;
+            closeIconImage.preserveAspect = true;
+            closeIconImage.raycastTarget = false;
 
             string pieceCountText = pieceCount == 1
                 ? "1 peça disponível"

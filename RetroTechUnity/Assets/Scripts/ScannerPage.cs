@@ -46,6 +46,16 @@ namespace RetroTech
         private AspectRatioFitter _cameraAspectFitter;
         private GameObject _qrPlaceholderIcon;
         private Color32[] _webcamPixelBuffer;
+        private Sprite _qrCodeIcon;
+
+        /// <summary>
+        /// Permite que o GameManager forneça o ícone oficial de QR code já carregado.
+        /// </summary>
+        /// <param name="icon">Sprite do ícone de QR code.</param>
+        public void SetQrCodeIcon(Sprite icon)
+        {
+            _qrCodeIcon = icon;
+        }
 
         /// <summary>
         /// Cria e configura a página do scanner
@@ -208,12 +218,13 @@ namespace RetroTech
             var qrIconImg = qrIconGO.GetComponent<Image>();
             qrIconImg.raycastTarget = false;
 
-            // Tentar carregar sprite do QR, fallback para símbolo Unicode
-            var qrSprite = Resources.Load<Sprite>("Sprites/qr_glyph");
-            if (qrSprite != null)
+            // Tentar carregar sprite oficial do QR Code, fallback para símbolo Unicode
+            EnsureQrCodeIconLoaded();
+            if (_qrCodeIcon != null)
             {
-                qrIconImg.sprite = qrSprite;
+                qrIconImg.sprite = _qrCodeIcon;
                 qrIconImg.color = Color.white;
+                qrIconImg.preserveAspect = true;
             }
             else
             {
@@ -244,8 +255,13 @@ namespace RetroTech
         /// </summary>
         private void CreateScanButton()
         {
-            var scanButtonGO = CreatePrototypeCTAButton(_contentContainer.transform,
-                "⚡ Iniciar Scanner", StartScan);
+            EnsureQrCodeIconLoaded();
+
+            var scanButtonGO = CreatePrototypeCTAButton(
+                _contentContainer.transform,
+                "Iniciar Scanner",
+                StartScan,
+                _qrCodeIcon);
             _scanButton = scanButtonGO.GetComponent<Button>();
         }
 
@@ -314,10 +330,13 @@ namespace RetroTech
         /// </summary>
         private void StartScan()
         {
-            if (_isScanning) return;
+            if (_isScanning)
+            {
+                StopScan();
+                return;
+            }
 
-            _isScanning = true;
-            UpdateScanButtonText("Escaneando...");
+            SetScanButtonState(true);
 
             // Solicitar permissão de câmera no Android
             RequestCameraPermission();
@@ -333,8 +352,7 @@ namespace RetroTech
         {
             if (!_isScanning) return;
 
-            _isScanning = false;
-            UpdateScanButtonText("⚡ Iniciar Scanner");
+            SetScanButtonState(false);
 
             if (_scanCoroutine != null)
             {
@@ -385,6 +403,26 @@ namespace RetroTech
             }
         }
 
+        private void SetScanButtonState(bool scanning)
+        {
+            _isScanning = scanning;
+            UpdateScanButtonText(scanning ? "Parar Scanner" : "Iniciar Scanner");
+        }
+
+        private void EnsureQrCodeIconLoaded()
+        {
+            if (_qrCodeIcon != null)
+            {
+                return;
+            }
+
+            _qrCodeIcon = Resources.Load<Sprite>("Icons/icon_scanner");
+            if (_qrCodeIcon == null)
+            {
+                Debug.LogWarning("QR code icon not found at Resources/Icons/icon_scanner.");
+            }
+        }
+
         /// <summary>
         /// Corrotina para escanear QR Code usando câmera real
         /// </summary>
@@ -393,9 +431,9 @@ namespace RetroTech
             if (!TryGetCameraDevice(out var device))
             {
                 Debug.LogWarning("Nenhuma câmera encontrada para o scanner de QR code.");
-                _isScanning = false;
-                UpdateScanButtonText("⚡ Iniciar Scanner");
+                SetScanButtonState(false);
                 SetCameraPreviewTexture(null);
+                _scanCoroutine = null;
                 yield break;
             }
 
@@ -413,9 +451,9 @@ namespace RetroTech
             {
                 Debug.LogWarning("Câmera não pôde ser inicializada para o scanner de QR code.");
                 ClearCameraResources();
-                _isScanning = false;
-                UpdateScanButtonText("⚡ Iniciar Scanner");
+                SetScanButtonState(false);
                 SetCameraPreviewTexture(null);
+                _scanCoroutine = null;
                 yield break;
             }
 
@@ -461,8 +499,8 @@ namespace RetroTech
 
             ClearCameraResources();
 
-            _isScanning = false;
-            UpdateScanButtonText("⚡ Iniciar Scanner");
+            SetScanButtonState(false);
+            _scanCoroutine = null;
 
             if (foundPiece != null)
             {
@@ -627,7 +665,7 @@ namespace RetroTech
         /// <summary>
         /// Cria um botão CTA (Call To Action) - versão corrigida
         /// </summary>
-        private GameObject CreatePrototypeCTAButton(Transform parent, string text, UnityEngine.Events.UnityAction onClick)
+        private GameObject CreatePrototypeCTAButton(Transform parent, string text, UnityEngine.Events.UnityAction onClick, Sprite leadingIcon = null)
         {
             var btnCard = CreateGlassCard(parent, 72f);
             btnCard.color = Color.white; // Botão branco como no protótipo
