@@ -23,12 +23,12 @@ namespace RetroTech
         [SerializeField] private float optionHeight = 72f;
         [SerializeField] private float explanationHeight = 280f; // Much larger
         [SerializeField] private int pageTitleFontSize = 44;
-        [SerializeField] private int questionNumberFontSize = 24;
-        [SerializeField] private int scoreFontSize = 28;
-        [SerializeField] private int questionFontSize = 28;
-        [SerializeField] private int optionFontSize = 24;
-        [SerializeField] private int explanationTitleFontSize = 34; // Much larger (was 24)
-        [SerializeField] private int explanationTextFontSize = 30; // Much larger (was 22)
+        [SerializeField] private int questionNumberFontSize = 34;
+        [SerializeField] private int scoreFontSize = 38;
+        [SerializeField] private int questionFontSize = 38;
+        [SerializeField] private int optionFontSize = 34;
+        [SerializeField] private int explanationTitleFontSize = 44; // Much larger (was 24)
+        [SerializeField] private int explanationTextFontSize = 40; // Much larger (was 22)
 
         // Enhanced Colors with better contrast for readability
         private readonly Color HeaderGradientTop = new Color32(147, 112, 219, 255);
