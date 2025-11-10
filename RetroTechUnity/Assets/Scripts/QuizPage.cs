@@ -416,7 +416,7 @@ namespace RetroTech
             var btnText = _nextButton.GetComponentInChildren<TextMeshProUGUI>();
             if (btnText != null)
             {
-                btnText.fontSize = 22;
+                ResponsiveTypography.ApplyToTMP(btnText, 34, allowShrink: false);
                 btnText.fontStyle = FontStyles.Bold;
             }
 

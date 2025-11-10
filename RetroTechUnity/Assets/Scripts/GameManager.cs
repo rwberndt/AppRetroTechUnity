@@ -51,6 +51,7 @@ namespace RetroTech
         private const float IconFrameSizeActive = 80f;
         private const float IconGlyphSizeInactive = 30f;
         private const float IconGlyphSizeActive = 34f;
+        private const int NavLabelFontSize = 22;
 
         // Icons (Resources/Icons/*.png)
         private Sprite _iconHome, _iconCategories, _iconTimeline, _iconScanner, _iconQuiz;
@@ -753,7 +754,8 @@ namespace RetroTech
             indicatorImage.color = new Color(1f, 1f, 1f, 0f);
 
             // Label (fades in when active)
-            var label = UiKit.TMP(tab.transform, tabName, 14, Color.white, TextAlignmentOptions.Midline, bold: false);
+            var label = UiKit.TMP(tab.transform, tabName, NavLabelFontSize, Color.white,
+                TextAlignmentOptions.Midline, bold: false, allowAutoShrink: false);
             label.enableWordWrapping = false;
             label.raycastTarget = false;
 
@@ -764,8 +766,8 @@ namespace RetroTech
             lrt.anchorMin = new Vector2(0.5f, 0f);
             lrt.anchorMax = new Vector2(0.5f, 0f);
             lrt.pivot = new Vector2(0.5f, 0f);
-            lrt.anchoredPosition = new Vector2(0f, 6f);
-            lrt.sizeDelta = new Vector2(100f, 18f);
+            lrt.anchoredPosition = new Vector2(0f, ResponsiveTypography.ResponsiveSpacing(12f));
+            lrt.sizeDelta = new Vector2(140f, ResponsiveTypography.ResponsiveSpacing(NavLabelFontSize + 18f));
         }
 
         private void RefreshTabsVisual()
@@ -1075,15 +1077,17 @@ namespace RetroTech
             colors.pressedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
             btn.colors = colors;
 
-            var label = UiKit.TMP(btnCard.transform, text, 18, new Color32(103, 80, 164, 255), TextAlignmentOptions.Center, bold: true);
+            var label = UiKit.TMP(btnCard.transform, text, 26, new Color32(103, 80, 164, 255),
+                TextAlignmentOptions.Center, bold: true, allowAutoShrink: false);
             label.enableWordWrapping = false;
             label.raycastTarget = false;
 
             var lrt = label.rectTransform;
             lrt.anchorMin = Vector2.zero;
             lrt.anchorMax = Vector2.one;
-            lrt.offsetMin = new Vector2(16, 8);
-            lrt.offsetMax = new Vector2(-16, -8);
+            float verticalPadding = ResponsiveTypography.ResponsiveSpacing(12f);
+            lrt.offsetMin = new Vector2(20f, verticalPadding);
+            lrt.offsetMax = new Vector2(-20f, -verticalPadding);
 
             return btnCard.gameObject;
         }
@@ -1103,15 +1107,17 @@ namespace RetroTech
             colors.pressedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
             btn.colors = colors;
 
-            var label = UiKit.TMP(btnCard.transform, text, 28, new Color32(103, 80, 164, 255), TextAlignmentOptions.Center, bold: true);
+            var label = UiKit.TMP(btnCard.transform, text, 32, new Color32(103, 80, 164, 255),
+                TextAlignmentOptions.Center, bold: true, allowAutoShrink: false);
             label.enableWordWrapping = false;
             label.raycastTarget = false;
 
             var lrt = label.rectTransform;
             lrt.anchorMin = Vector2.zero;
             lrt.anchorMax = Vector2.one;
-            lrt.offsetMin = new Vector2(16, 12);
-            lrt.offsetMax = new Vector2(-16, -12);
+            float largeVerticalPadding = ResponsiveTypography.ResponsiveSpacing(16f);
+            lrt.offsetMin = new Vector2(20f, largeVerticalPadding);
+            lrt.offsetMax = new Vector2(-20f, -largeVerticalPadding);
 
             return btnCard.gameObject;
         }
@@ -1119,7 +1125,7 @@ namespace RetroTech
 
         private (GameObject header, RectTransform chevron) CreatePrototypeCategoryHeader(Transform parent, string title)
         {
-            var headerCard = CreateGlassCard(parent, 56f);
+            var headerCard = CreateGlassCard(parent, 64f);
             headerCard.color = new Color(1f, 1f, 1f, 0.15f); // Slightly more opaque for headers
 
             var btn = headerCard.gameObject.AddComponent<Button>();
@@ -1130,13 +1136,15 @@ namespace RetroTech
             colors.pressedColor = new Color(1, 1, 1, 0.25f);
             btn.colors = colors;
 
-            var titleTMP = UiKit.TMP(headerCard.transform, title, 20, Color.white, TextAlignmentOptions.MidlineLeft, bold: false);
+            var titleTMP = UiKit.TMP(headerCard.transform, title, 28, Color.white,
+                TextAlignmentOptions.MidlineLeft, bold: false, allowAutoShrink: false);
             titleTMP.enableWordWrapping = false;
             titleTMP.overflowMode = TMPro.TextOverflowModes.Ellipsis;
             titleTMP.rectTransform.anchorMin = Vector2.zero;
             titleTMP.rectTransform.anchorMax = Vector2.one;
-            titleTMP.rectTransform.offsetMin = new Vector2(20, 8);
-            titleTMP.rectTransform.offsetMax = new Vector2(-44, -8);
+            float headerVerticalPadding = ResponsiveTypography.ResponsiveSpacing(14f);
+            titleTMP.rectTransform.offsetMin = new Vector2(24f, headerVerticalPadding);
+            titleTMP.rectTransform.offsetMax = new Vector2(-48f, -headerVerticalPadding);
             titleTMP.raycastTarget = false;
 
             var chevron = CreateChevronIcon(headerCard.transform);
@@ -1711,7 +1719,7 @@ namespace RetroTech
             placeholder.text = "Buscar por nome...";
             placeholder.color = new Color(1f, 1f, 1f, 0.5f);
             placeholder.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            placeholder.fontSize = ResponsiveTypography.ResponsiveFontSize(18);
+            placeholder.fontSize = ResponsiveTypography.ResponsiveFontSize(24);
             placeholder.alignment = TextAnchor.MiddleLeft;
 
             var phRT = placeholderGO.GetComponent<RectTransform>();
@@ -1726,7 +1734,7 @@ namespace RetroTech
             var text = textGO.AddComponent<Text>();
             text.color = Color.white;
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = ResponsiveTypography.ResponsiveFontSize(18);
+            text.fontSize = ResponsiveTypography.ResponsiveFontSize(24);
             text.alignment = TextAnchor.MiddleLeft;
 
             var textRT = textGO.GetComponent<RectTransform>();
@@ -1835,7 +1843,8 @@ namespace RetroTech
             // Add results count
             if (filtered.Count == 0)
             {
-                var noResultsTMP = UiKit.TMP(resultsGO, "Nenhuma peça encontrada.", 18, new Color32(255, 255, 255, 150), TextAlignmentOptions.Center);
+                var noResultsTMP = UiKit.TMP(resultsGO, "Nenhuma peça encontrada.", 24,
+                    new Color32(255, 255, 255, 150), TextAlignmentOptions.Center, allowAutoShrink: false);
             }
         }
 
