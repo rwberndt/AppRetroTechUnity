@@ -932,122 +932,146 @@ namespace RetroTech
 
             contentCanvasGroup.alpha = 1f;
         }
+        private const float FONT_SCALE = 1.25f;
 
-        /// <summary>
-        /// Cria a tela de resultado (FIXED VERSION)
-        /// </summary>
         private void CreateResultScreen()
         {
             _resultLayoutRoot = new GameObject("QuizResultRoot", typeof(RectTransform), typeof(VerticalLayoutGroup));
             _resultLayoutRoot.transform.SetParent(_contentContainer, false);
 
             var layout = _resultLayoutRoot.GetComponent<VerticalLayoutGroup>();
-            layout.spacing = 24f; // Reduced spacing for better fit
-            layout.padding = new RectOffset(40, 40, 32, 48); // Better padding
+            layout.spacing = 32f; // mantido
+            layout.padding = new RectOffset(40, 40, 40, 60); // mantido
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
             layout.childControlHeight = false;
             layout.childForceExpandHeight = false;
 
-            AddSpacer(_resultLayoutRoot.transform, 8f);
+            AddSpacer(_resultLayoutRoot.transform, 20f);
 
-            // Trophy icon
-            var trophyTMP = UiKit.TMP(_resultLayoutRoot.transform, "🏆", 96,
-                new Color32(255, 215, 0, 255), TextAlignmentOptions.Center);
-            trophyTMP.margin = new Vector4(0, 0, 0, 8f);
+            // Title (tamanho aumentado)
+            var titleTMP = UiKit.TMP(
+                _resultLayoutRoot.transform,
+                "Quiz Concluído!",
+                Mathf.RoundToInt(60 * FONT_SCALE),
+                Color.white,
+                TMPro.TextAlignmentOptions.Center,
+                bold: true
+            );
+            titleTMP.margin = new Vector4(0, 0, 0, 10f);
 
-            // Title
-            var titleTMP = UiKit.TMP(_resultLayoutRoot.transform, "Quiz Concluído!", 48,
-                Color.white, TextAlignmentOptions.Center, bold: true);
-            titleTMP.margin = new Vector4(0, 0, 0, 6f);
+            // Subtitle (tamanho aumentado)
+            var subtitleTMP = UiKit.TMP(
+                _resultLayoutRoot.transform,
+                "Veja como você foi e escolha o próximo passo!",
+                Mathf.RoundToInt(30 * FONT_SCALE),
+                new Color32(214, 205, 245, 255),
+                TMPro.TextAlignmentOptions.Center
+            );
+            subtitleTMP.margin = new Vector4(0, 0, 0, 24f);
 
-            // Subtitle
-            var subtitleTMP = UiKit.TMP(_resultLayoutRoot.transform,
-                "Veja como você foi e escolha a próxima passo!",
-                24, new Color32(214, 205, 245, 255), TextAlignmentOptions.Center);
-            subtitleTMP.margin = new Vector4(0, 0, 0, 16f);
-
-            // Result card
-            var resultCard = UiKit.CreateCard(_resultLayoutRoot.transform, new Vector2(0, 360f),
+            // Result card (mantido)
+            var resultCard = UiKit.CreateCard(_resultLayoutRoot.transform, new Vector2(0, 450f),
                 new Color(0f, 0f, 0f, 0.5f), 28f, glass: true);
 
             var resultCardLayout = resultCard.GetComponent<LayoutElement>();
             if (resultCardLayout != null)
             {
-                float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(360f);
+                float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(450f);
                 resultCardLayout.minHeight = responsiveHeight;
                 resultCardLayout.preferredHeight = responsiveHeight;
             }
 
             var resultVLG = resultCard.gameObject.AddComponent<VerticalLayoutGroup>();
-            resultVLG.padding = new RectOffset(36, 36, 40, 36);
-            resultVLG.spacing = 18;
+            resultVLG.padding = new RectOffset(40, 40, 48, 40);
+            resultVLG.spacing = 32;
             resultVLG.childAlignment = TextAnchor.MiddleCenter;
             resultVLG.childControlWidth = true;
             resultVLG.childForceExpandWidth = true;
             resultVLG.childControlHeight = false;
             resultVLG.childForceExpandHeight = false;
 
-            // Score display
-            var scoreTMP = UiKit.TMP(resultCard.transform,
+            // Score (tamanho aumentado)
+            var scoreTMP = UiKit.TMP(
+                resultCard.transform,
                 $"{_quizScore}",
-                80, new Color32(169, 143, 255, 255), TextAlignmentOptions.Center, bold: true);
-            scoreTMP.fontStyle = FontStyles.Bold;
+                Mathf.RoundToInt(96 * FONT_SCALE),
+                new Color32(169, 143, 255, 255),
+                TMPro.TextAlignmentOptions.Center,
+                bold: true
+            );
+            scoreTMP.fontStyle = TMPro.FontStyles.Bold;
             scoreTMP.margin = new Vector4(0, 0, 0, 0);
 
-            var outOfTMP = UiKit.TMP(resultCard.transform,
+            // "de X perguntas corretas" (tamanho aumentado)
+            var outOfTMP = UiKit.TMP(
+                resultCard.transform,
                 $"de {SampleData.QuizQuestions.Count} perguntas corretas",
-                26, Color.white, TextAlignmentOptions.Center);
+                Mathf.RoundToInt(30 * FONT_SCALE),
+                Color.white,
+                TMPro.TextAlignmentOptions.Center
+            );
             outOfTMP.margin = new Vector4(0, 0, 0, 0);
 
             float accuracy = SampleData.QuizQuestions.Count > 0
                 ? (float)_quizScore / SampleData.QuizQuestions.Count
                 : 0f;
 
-            var accuracyTMP = UiKit.TMP(resultCard.transform,
+            // "% de aproveitamento" (tamanho aumentado)
+            var accuracyTMP = UiKit.TMP(
+                resultCard.transform,
                 $"{Mathf.RoundToInt(accuracy * 100f)}% de aproveitamento",
-                28, new Color32(214, 205, 245, 255), TextAlignmentOptions.Center, bold: true);
-            accuracyTMP.margin = new Vector4(0, 6f, 0, 0);
+                Mathf.RoundToInt(32 * FONT_SCALE),
+                new Color32(214, 205, 245, 255),
+                TMPro.TextAlignmentOptions.Center,
+                bold: true
+            );
+            accuracyTMP.margin = new Vector4(0, 8f, 0, 0);
 
-            AddSpacer(resultCard.transform, 8f);
+            AddSpacer(resultCard.transform, 16f);
 
-            // Performance message
+            // Mensagem de performance (tamanho aumentado)
             string message = GetResultMessage();
-            var msgTMP = UiKit.TMP(resultCard.transform, message, 24,
-                Color.white, TextAlignmentOptions.Center);
+            var msgTMP = UiKit.TMP(
+                resultCard.transform,
+                message,
+                Mathf.RoundToInt(40 * FONT_SCALE),
+                Color.white,
+                TMPro.TextAlignmentOptions.Center
+            );
             msgTMP.enableWordWrapping = true;
-            msgTMP.lineSpacing = 8;
+            msgTMP.lineSpacing = 10;
             msgTMP.margin = new Vector4(0, 0, 0, 0);
 
-            // Save high score
+            // Save + High score (apenas tamanho do "Novo Recorde!" aumentado)
             SaveHighScore();
-
-            // High score display if achieved
             int highScore = GetHighScore();
             if (_quizScore >= highScore && _quizScore > 0)
             {
-                AddSpacer(resultCard.transform, 6f);
-                var highScoreTMP = UiKit.TMP(resultCard.transform, "🎉 Novo Recorde!", 20,
-                    new Color32(255, 215, 0, 255), TextAlignmentOptions.Center, bold: true);
+                AddSpacer(resultCard.transform, 16f);
+                var highScoreTMP = UiKit.TMP(
+                    resultCard.transform,
+                    "Novo Recorde!",
+                    Mathf.RoundToInt(24 * FONT_SCALE),
+                    new Color32(255, 215, 0, 255),
+                    TMPro.TextAlignmentOptions.Center,
+                    bold: true
+                );
             }
 
-            AddSpacer(_resultLayoutRoot.transform, 16f);
+            AddSpacer(_resultLayoutRoot.transform, 24f);
 
-            // Action buttons - FIXED LAYOUT
-            // Button 1: Jogar novamente (full width)
-            CreateResultActionButton(_resultLayoutRoot.transform, "🔄 Jogar novamente",
-                new Color32(114, 74, 160, 255), new Color32(255, 255, 255, 255),
-                () => RestartQuiz());
+            
 
-            AddSpacer(_resultLayoutRoot.transform, 12f);
+            AddSpacer(_resultLayoutRoot.transform, 40f);
 
-            // Buttons row for remaining two buttons
+            // Linha de botões secundários (textos maiores)
             var actionsRow = new GameObject("ResultActions", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             actionsRow.transform.SetParent(_resultLayoutRoot.transform, false);
 
             var actionsLayout = actionsRow.GetComponent<HorizontalLayoutGroup>();
-            actionsLayout.spacing = 16f;
+            actionsLayout.spacing = 40f;
             actionsLayout.padding = new RectOffset(0, 0, 0, 0);
             actionsLayout.childAlignment = TextAnchor.MiddleCenter;
             actionsLayout.childControlWidth = true;
@@ -1056,32 +1080,60 @@ namespace RetroTech
             actionsLayout.childForceExpandHeight = false;
 
             var actionsLayoutElement = actionsRow.AddComponent<LayoutElement>();
-            float actionsHeight = ResponsiveTypography.ResponsiveSpacing(80f);
+            float actionsHeight = ResponsiveTypography.ResponsiveSpacing(85f);
             actionsLayoutElement.minHeight = actionsHeight;
             actionsLayoutElement.preferredHeight = actionsHeight;
 
-            CreateResultActionButton(actionsRow.transform, "📚 Revisar conteúdo",
-                new Color32(147, 112, 219, 80), new Color32(255, 255, 255, 255),
-                () => OnReviewRequested?.Invoke());
+            CreateResultActionButton(
+                actionsRow.transform,
+                "Revisar Conteúdo",
+                new Color32(147, 112, 219, 80),
+                new Color32(255, 255, 255, 255),
+                () => OnReviewRequested?.Invoke(),
+                isMainButton: false
+            );
 
-            CreateResultActionButton(actionsRow.transform, "🏛️ Explorar o museu",
-                new Color32(69, 90, 100, 200), new Color32(255, 255, 255, 255),
-                () => OnExploreMuseumRequested?.Invoke());
+            CreateResultActionButton(
+                actionsRow.transform,
+                "Explorar Museu",
+                new Color32(69, 90, 100, 200),
+                new Color32(255, 255, 255, 255),
+                () => OnExploreMuseumRequested?.Invoke(),
+                isMainButton: false
+            );
 
-            AddSpacer(_resultLayoutRoot.transform, 24f);
+            AddSpacer(_resultLayoutRoot.transform, 32f);
 
+
+            // Botão principal (texto maior)
+            CreateResultActionButton(
+                _resultLayoutRoot.transform,
+                "Jogar Novamente",
+                new Color32(69, 90, 100, 200),
+                new Color32(255, 255, 255, 255),
+                () => RestartQuiz(),
+                isMainButton: true
+            );
             OnQuizCompleted?.Invoke(_quizScore);
         }
 
-        private void CreateResultActionButton(Transform parent, string label, Color32 backgroundColor,
-            Color32 textColor, UnityAction onClick)
+        private void CreateResultActionButton(
+      Transform parent,
+      string label,
+      Color32 backgroundColor,
+      Color32 textColor,
+      UnityEngine.Events.UnityAction onClick,
+      bool isMainButton = false)
         {
-            var buttonImage = UiKit.CreateCard(parent, new Vector2(0, 72f), backgroundColor, 22f, glass: false);
+            // Altura mantida (apenas texto aumenta)
+            float buttonHeight = isMainButton ? 90f : 75f;
+
+            var buttonImage = UiKit.CreateCard(parent, new Vector2(0, buttonHeight), backgroundColor, 60f, glass: false);
 
             var layoutElement = buttonImage.GetComponent<LayoutElement>();
             if (layoutElement != null)
             {
-                float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(72f);
+                float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(buttonHeight);
                 layoutElement.minHeight = responsiveHeight;
                 layoutElement.preferredHeight = responsiveHeight;
                 layoutElement.flexibleWidth = 1f;
@@ -1102,17 +1154,27 @@ namespace RetroTech
             colors.fadeDuration = 0.15f;
             button.colors = colors;
 
-            var labelTMP = UiKit.TMP(buttonImage.transform, label, 24, textColor,
-                TextAlignmentOptions.Center, bold: true);
+            // >>> Apenas tamanho da fonte aumentado <<<
+            int fontSize = isMainButton
+                ? Mathf.RoundToInt(40 * FONT_SCALE)  // principal (era 40)
+                : Mathf.RoundToInt(44 * FONT_SCALE); // secundário (era 44)
+
+            var labelTMP = UiKit.TMP(
+                buttonImage.transform,
+                label,
+                fontSize,
+                textColor,
+                TMPro.TextAlignmentOptions.Center,
+                bold: true
+            );
             labelTMP.raycastTarget = false;
 
             var rect = labelTMP.rectTransform;
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
-            rect.offsetMin = new Vector2(20f, 12f);
-            rect.offsetMax = new Vector2(-20f, -12f);
+            rect.offsetMin = new Vector2(24f, 16f);
+            rect.offsetMax = new Vector2(-24f, -16f);
         }
-
         /// <summary>
         /// Obtém a mensagem de resultado baseada na performance
         /// </summary>
@@ -1121,15 +1183,15 @@ namespace RetroTech
             float percentage = (float)_quizScore / SampleData.QuizQuestions.Count;
 
             if (percentage >= 1.0f)
-                return "Perfeito! Você é um verdadeiro expert em tecnologia retrô! 🌟";
+                return "Perfeito! Você é um verdadeiro expert em tecnologia retrô!";
             else if (percentage >= 0.8f)
-                return "Excelente! Você tem um ótimo conhecimento sobre tecnologia retrô! 🎯";
+                return "Excelente! Você tem um ótimo conhecimento sobre tecnologia retrô!";
             else if (percentage >= 0.6f)
-                return "Muito bom! Continue explorando para aprender ainda mais! 📚";
+                return "Muito bom! Continue explorando para aprender ainda mais!";
             else if (percentage >= 0.4f)
-                return "Bom trabalho! Que tal revisar alguns conceitos? 💡";
+                return "Bom trabalho! Que tal revisar alguns conceitos?";
             else
-                return "Continue praticando! Explore mais sobre as peças do museu! 🚀";
+                return "Continue praticando! Explore mais sobre as peças do museu!";
         }
 
         /// <summary>
