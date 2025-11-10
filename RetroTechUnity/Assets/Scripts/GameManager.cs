@@ -1363,6 +1363,24 @@ namespace RetroTech
                 Debug.Log($"Question answered: {question.Question} - {(wasCorrect ? "Correct" : "Incorrect")}");
             };
 
+
+            
+            _quizPage.OnReviewRequested += () =>
+            {
+                Debug.Log("Review content requested - navigating to Timeline");
+                _activeTab = 2; 
+                SwitchPage(_activeTab);
+                RefreshTabsVisual();
+            };
+
+            _quizPage.OnExploreMuseumRequested += () =>
+            {
+                Debug.Log("Explore museum requested - navigating to Categories");
+                _activeTab = 1; 
+                SwitchPage(_activeTab);
+                RefreshTabsVisual();
+            };
+
             // Criar a página usando a nova classe
             var pageObject = _quizPage.CreatePage(
                 _canvas.transform,
