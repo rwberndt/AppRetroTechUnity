@@ -463,7 +463,7 @@ namespace RetroTech
             topRowLayout.childControlHeight = false;
             topRowLayout.childForceExpandHeight = false;
 
-            var titleTMP = UiKit.TMP(topRow.transform, title, 30, ModalTextColor,
+            var titleTMP = UiKit.TMP(topRow.transform, title, 50, ModalTextColor,
                 TextAlignmentOptions.Left, bold: true);
             titleTMP.enableWordWrapping = true;
             titleTMP.margin = Vector4.zero;
@@ -504,7 +504,7 @@ namespace RetroTech
             string pieceCountText = pieceCount == 1
                 ? "1 peça disponível"
                 : $"{pieceCount} peças disponíveis";
-            var subtitleTMP = UiKit.TMP(header.transform, pieceCountText, 20, SubtitleTextColor, TextAlignmentOptions.Left);
+            var subtitleTMP = UiKit.TMP(header.transform, pieceCountText, 40, SubtitleTextColor, TextAlignmentOptions.Left);
             subtitleTMP.enableWordWrapping = true;
             subtitleTMP.margin = new Vector4(0, 0, 0, 4);
         }
@@ -579,7 +579,7 @@ namespace RetroTech
                     ? "Nenhuma peça disponível nesta categoria no momento."
                     : $"Nenhuma peça cadastrada para \"{subcategoryName}\" no momento.";
 
-                var emptyTMP = UiKit.TMP(parent, emptyMessage, 22, ModalTextColor, TextAlignmentOptions.Center);
+                var emptyTMP = UiKit.TMP(parent, emptyMessage, 42, ModalTextColor, TextAlignmentOptions.Center);
                 emptyTMP.alignment = TextAlignmentOptions.Center;
                 emptyTMP.margin = new Vector4(0, 48, 0, 0);
                 emptyTMP.enableWordWrapping = true;
@@ -589,7 +589,7 @@ namespace RetroTech
             foreach (var piece in pieces)
             {
                 var pieceCard = UiKit.CreateCard(parent, new Vector2(0, 0),
-                    PieceCardColor, 18f, glass: true);
+                    PieceCardColor, 28f, glass: true);
 
                 var layoutElement = pieceCard.GetComponent<LayoutElement>();
                 if (layoutElement != null)
@@ -616,7 +616,7 @@ namespace RetroTech
 
                 CreatePieceThumbnail(pieceCard.transform, piece);
 
-                var titleTMP = UiKit.TMP(pieceCard.transform, piece.Name, 26, ModalTextColor,
+                var titleTMP = UiKit.TMP(pieceCard.transform, piece.Name, 36, ModalTextColor,
                     TextAlignmentOptions.Left, bold: true);
                 titleTMP.enableWordWrapping = true;
                 titleTMP.margin = new Vector4(0, 0, 0, 4);
@@ -651,7 +651,7 @@ namespace RetroTech
                 var description = string.IsNullOrWhiteSpace(piece.Description)
                     ? "Detalhes não disponíveis."
                     : piece.Description;
-                var descTMP = UiKit.TMP(pieceCard.transform, description, 20, new Color32(210, 205, 240, 255),
+                var descTMP = UiKit.TMP(pieceCard.transform, description, 30, new Color32(210, 205, 240, 255),
                     TextAlignmentOptions.Left);
                 descTMP.enableWordWrapping = true;
                 descTMP.margin = new Vector4(0, 0, 0, 12);
@@ -743,7 +743,7 @@ namespace RetroTech
             fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            var textTMP = UiKit.TMP(chip.transform, value, 18, MetadataTextColor, TextAlignmentOptions.MidlineLeft);
+            var textTMP = UiKit.TMP(chip.transform, value, 30, MetadataTextColor, TextAlignmentOptions.MidlineLeft);
             textTMP.enableWordWrapping = false;
             textTMP.raycastTarget = false;
 
@@ -776,7 +776,7 @@ namespace RetroTech
             layoutElement.preferredHeight = 52f;
             layoutElement.flexibleWidth = 1f;
 
-            var buttonText = UiKit.TMP(buttonGO.transform, "Ver detalhes", 20, Color.white, TextAlignmentOptions.Center, bold: true);
+            var buttonText = UiKit.TMP(buttonGO.transform, "Ver detalhes", 40, Color.white, TextAlignmentOptions.Center, bold: true);
             buttonText.raycastTarget = false;
 
             var button = buttonGO.GetComponent<Button>();
