@@ -20,7 +20,7 @@ namespace RetroTech
         private LayoutElement _layoutElement;
 
         [SerializeField, Min(0f)]
-        private float _topFlexWeight = 0.5f;
+        private float _topFlexWeight = 0f;
 
         [SerializeField, Min(0f)]
         private float _bottomFlexWeight = 1.5f;
@@ -91,31 +91,63 @@ namespace RetroTech
         {
             bool changed = false;
 
-            if (_topSpacer == null)
+            if (_topFlexWeight > 0f)
             {
-                _topSpacer = FindExistingSpacer("TopFlexibleSpace");
                 if (_topSpacer == null)
                 {
-                    _topSpacer = CreateSpacer("TopFlexibleSpace", _topFlexWeight);
-                    changed = true;
+                    _topSpacer = FindExistingSpacer("TopFlexibleSpace");
+                    if (_topSpacer == null)
+                    {
+                        _topSpacer = CreateSpacer("TopFlexibleSpace", _topFlexWeight);
+                        changed = true;
+                    }
                 }
+                else
+                {
+                    var layout = _topSpacer.GetComponent<LayoutElement>();
+                    if (!Mathf.Approximately(layout.flexibleHeight, _topFlexWeight))
+                    {
+                        layout.flexibleHeight = _topFlexWeight;
+                        changed = true;
+                    }
+                }
+
+                _topSpacer.SetSiblingIndex(0);
+            }
+            else if (_topSpacer != null)
+            {
+                DestroySpacer(ref _topSpacer);
+                changed = true;
             }
 
-            if (_bottomSpacer == null)
+            if (_bottomFlexWeight > 0f)
             {
-                _bottomSpacer = FindExistingSpacer("BottomFlexibleSpace");
                 if (_bottomSpacer == null)
                 {
-                    _bottomSpacer = CreateSpacer("BottomFlexibleSpace", _bottomFlexWeight);
-                    changed = true;
+                    _bottomSpacer = FindExistingSpacer("BottomFlexibleSpace");
+                    if (_bottomSpacer == null)
+                    {
+                        _bottomSpacer = CreateSpacer("BottomFlexibleSpace", _bottomFlexWeight);
+                        changed = true;
+                    }
                 }
-            }
+                else
+                {
+                    var layout = _bottomSpacer.GetComponent<LayoutElement>();
+                    if (!Mathf.Approximately(layout.flexibleHeight, _bottomFlexWeight))
+                    {
+                        layout.flexibleHeight = _bottomFlexWeight;
+                        changed = true;
+                    }
+                }
 
-            if (_topSpacer != null)
-                _topSpacer.SetSiblingIndex(0);
-
-            if (_bottomSpacer != null)
                 _bottomSpacer.SetAsLastSibling();
+            }
+            else if (_bottomSpacer != null)
+            {
+                DestroySpacer(ref _bottomSpacer);
+                changed = true;
+            }
 
             return changed;
         }
@@ -146,6 +178,21 @@ namespace RetroTech
             return go.GetComponent<RectTransform>();
         }
 
+        private void DestroySpacer(ref RectTransform spacer)
+        {
+            if (spacer == null)
+                return;
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                Object.DestroyImmediate(spacer.gameObject);
+            else
+#endif
+                Destroy(spacer.gameObject);
+
+            spacer = null;
+        }
+
         private void RefreshLayout(bool force = false)
         {
             if (_viewport == null || _layoutElement == null)
@@ -171,18 +218,7 @@ namespace RetroTech
             _topFlexWeight = Mathf.Max(0f, _topFlexWeight);
             _bottomFlexWeight = Mathf.Max(0f, _bottomFlexWeight);
 
-            if (_topSpacer != null)
-            {
-                var topLayout = _topSpacer.GetComponent<LayoutElement>();
-                topLayout.flexibleHeight = _topFlexWeight;
-            }
-
-            if (_bottomSpacer != null)
-            {
-                var bottomLayout = _bottomSpacer.GetComponent<LayoutElement>();
-                bottomLayout.flexibleHeight = _bottomFlexWeight;
-            }
-
+            EnsureSpacers();
             RefreshLayout(true);
         }
 #endif
