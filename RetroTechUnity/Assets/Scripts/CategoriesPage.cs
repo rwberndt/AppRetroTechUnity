@@ -21,8 +21,9 @@ namespace RetroTech
         [SerializeField] private string pageTitle = "CategoriesPage";
 
         [Header("Visual Configuration")]
-        [SerializeField] private float categoryHeaderHeight = 80f; 
-        [SerializeField] private float subcategoryItemHeight = 70f; 
+        [SerializeField] private int pageTitleFontSize = DefaultPageTitleFontSize;
+        [SerializeField] private float categoryHeaderHeight = 80f;
+        [SerializeField] private float subcategoryItemHeight = 70f;
         [SerializeField] private int categoryTitleFontSize = 36;
         [SerializeField] private int subcategoryFontSize = 32;
         [SerializeField] private float pieceThumbnailHeight = 220f;
@@ -90,26 +91,15 @@ namespace RetroTech
         /// </summary>
         private void CreatePageTitle()
         {
-            var titleContainer = new GameObject("PageTitleContainer", typeof(RectTransform));
-            titleContainer.transform.SetParent(_contentContainer, false);
-
-            var titleRT = titleContainer.GetComponent<RectTransform>();
-            titleRT.anchorMin = new Vector2(0, 1);
-            titleRT.anchorMax = new Vector2(1, 1);
-            titleRT.pivot = new Vector2(0.5f, 1);
-            titleRT.sizeDelta = new Vector2(0, 120); // Altura maior do container
-
-            // Criar texto do título
-            var titleTMP = UiKit.TMP(titleContainer.transform, "Categorias", 56,
-                TextColor, TextAlignmentOptions.Center, bold: true);
-
-            titleTMP.rectTransform.anchorMin = Vector2.zero;
-            titleTMP.rectTransform.anchorMax = Vector2.one;
-            titleTMP.rectTransform.offsetMin = new Vector2(24, 24);
-            titleTMP.rectTransform.offsetMax = new Vector2(-24, -24);
-            titleTMP.raycastTarget = false;
-            titleTMP.fontStyle = FontStyles.Bold;
+            var (titleContainer, titleTMP) = UiKit.CreatePageTitle(_contentContainer, "Categorias", pageTitleFontSize,
+                TextColor, TextAlignmentOptions.Left);
+            titleContainer.name = "PageTitleContainer";
             titleContainer.transform.SetAsFirstSibling(); // Colocar como primeiro elemento
+
+            if (titleTMP != null)
+            {
+                titleTMP.raycastTarget = false;
+            }
         }
 
         /// <summary>

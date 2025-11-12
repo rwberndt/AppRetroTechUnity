@@ -22,6 +22,7 @@ namespace RetroTech
         [SerializeField] private Color32 buttonTextColor = new Color32(250, 250, 255, 255);
         [SerializeField] private Color32 errorColor = new Color32(255, 105, 97, 255);
         [SerializeField] private Color32 successColor = new Color32(144, 238, 144, 255);
+        [SerializeField] private int pageTitleFontSize = UiKit.DefaultPageTitleFontSize;
 
         public event Action<string, string> OnLoginRequested;
         public event Action<string, string> OnRegisterRequested;
@@ -169,12 +170,17 @@ namespace RetroTech
 
         private void CreateHeader()
         {
-            var title = UiKit.TMP(_contentContainer, "Bem-vindo ao RetroTech", 48, UiKit.TextMain, TextAlignmentOptions.Left, bold: true);
-            title.margin = new Vector4(0, 0, 0, 12);
+            var (titleContainer, title) = UiKit.CreatePageTitle(_contentContainer, "Bem-vindo ao RetroTech",
+                pageTitleFontSize, UiKit.TextMain, TextAlignmentOptions.Left);
+            titleContainer.name = "LoginPageTitle";
+            if (title != null)
+            {
+                title.raycastTarget = false;
+            }
 
             var subtitle = UiKit.TMP(_contentContainer, "Faça login ou crie sua conta para acessar o acervo.", 32,
                 UiKit.TextMuted, TextAlignmentOptions.Left);
-            subtitle.margin = new Vector4(0, 0, 0, 30);
+            subtitle.margin = new Vector4(0, 12, 0, 30);
         }
 
         private void CreateTabs()

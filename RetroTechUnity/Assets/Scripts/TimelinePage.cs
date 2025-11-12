@@ -21,7 +21,7 @@ namespace RetroTech
         [Header("Visual Configuration")]
         [SerializeField] private float titleMarginBottom = 24f;
         [SerializeField] private float timelineCardHeight = 200f;
-        [SerializeField] private int pageTitleFontSize = 36;
+        [SerializeField] private int pageTitleFontSize = DefaultPageTitleFontSize;
         [SerializeField] private int yearFontSize = 30;
         [SerializeField] private int nameCardFontSize = 22;
         [SerializeField] private int descriptionFontSize = 24;
@@ -112,29 +112,12 @@ namespace RetroTech
         /// </summary>
         private void CreatePageTitle()
         {
-            var titleContainer = new GameObject("PageTitle", typeof(RectTransform), typeof(LayoutElement));
-            titleContainer.transform.SetParent(_contentContainer, false);
-
-            var titleRT = titleContainer.GetComponent<RectTransform>();
-            titleRT.anchorMin = new Vector2(0f, 1f);
-            titleRT.anchorMax = new Vector2(1f, 1f);
-            titleRT.pivot = new Vector2(0.5f, 1f);
-            titleRT.offsetMin = Vector2.zero;
-            titleRT.offsetMax = Vector2.zero;
-
-            var titleLayout = titleContainer.GetComponent<LayoutElement>();
-            float titleHeight = ResponsiveTypography.ResponsiveSpacing(pageTitleFontSize + 32f);
-            titleLayout.minHeight = titleHeight;
-            titleLayout.preferredHeight = titleHeight;
-            titleLayout.flexibleHeight = 0f;
-
-            var titleTMP = UiKit.TMP(titleContainer.transform, "Linha do Tempo", pageTitleFontSize,
-                PageTitleColor, TextAlignmentOptions.Left, bold: true);
-            var tmpRT = titleTMP.rectTransform;
-            tmpRT.anchorMin = Vector2.zero;
-            tmpRT.anchorMax = Vector2.one;
-            tmpRT.offsetMin = Vector2.zero;
-            tmpRT.offsetMax = Vector2.zero;
+            var (titleContainer, titleTMP) = UiKit.CreatePageTitle(_contentContainer, "Linha do Tempo", pageTitleFontSize,
+                PageTitleColor, TextAlignmentOptions.Left);
+            if (titleTMP != null)
+            {
+                titleTMP.raycastTarget = false;
+            }
 
             AddSpacer(_contentContainer.transform, 0f, titleMarginBottom);
         }

@@ -15,6 +15,9 @@ namespace RetroTech
         public static readonly Color32 GlassBg = new(255, 255, 255, 30);
         public static readonly Color32 GlassLine = new(255, 255, 255, 60);
 
+        public const int DefaultPageTitleFontSize = 56;
+        private const float PageTitleHorizontalPadding = 24f;
+
         // Create a rounded panel. When gradTop/bottom are provided, paints a vertical gradient
         public static Image CreateCard(
         Transform parent,
@@ -70,7 +73,38 @@ namespace RetroTech
             t.color = color;
             t.alignment = align;
             t.enableWordWrapping = true;
+            t.fontStyle = bold ? FontStyles.Bold : FontStyles.Normal;
             return t;
+        }
+
+        public static (GameObject container, TextMeshProUGUI label) CreatePageTitle(
+            Transform parent,
+            string text,
+            int fontSize = DefaultPageTitleFontSize,
+            Color32? color = null,
+            TextAlignmentOptions alignment = TextAlignmentOptions.Left)
+        {
+            var container = new GameObject("PageTitle", typeof(RectTransform), typeof(LayoutElement));
+            container.transform.SetParent(parent, false);
+
+            var layout = container.GetComponent<LayoutElement>();
+            float height = ResponsiveTypography.ResponsiveSpacing(fontSize + 32f);
+            layout.minHeight = height;
+            layout.preferredHeight = height;
+            layout.flexibleHeight = 0f;
+
+            var label = TMP(container.transform, text, fontSize, color ?? TextMain, alignment, bold: true) as TextMeshProUGUI;
+            if (label != null)
+            {
+                var labelRT = label.rectTransform;
+                labelRT.anchorMin = Vector2.zero;
+                labelRT.anchorMax = Vector2.one;
+                labelRT.offsetMin = new Vector2(PageTitleHorizontalPadding, 0f);
+                labelRT.offsetMax = new Vector2(-PageTitleHorizontalPadding, 0f);
+                label.margin = Vector4.zero;
+            }
+
+            return (container, label);
         }
     }
 }
