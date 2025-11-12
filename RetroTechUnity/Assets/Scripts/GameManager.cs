@@ -1540,6 +1540,7 @@ namespace RetroTech
             dImg.sprite = _fallbackGradient;
             dImg.color = Color.white;
 
+
             // Header with back button
             var headerGO = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             headerGO.transform.SetParent(detailPanel.transform, false);
@@ -1579,7 +1580,7 @@ namespace RetroTech
             backIconImage.raycastTarget = false;
 
             // App title
-            UiKit.TMP(headerGO.transform, "RetroTech", 28, Color.white, TextAlignmentOptions.Left, bold: true);
+            UiKit.TMP(headerGO.transform, "RetroTech", 38, Color.white, TextAlignmentOptions.Left, bold: true);
 
             // Content scroll view
             var contentScroll = CreateModalScrollView(detailPanel.transform, new Vector2(16, 16), new Vector2(-16, -96));
@@ -1633,15 +1634,18 @@ namespace RetroTech
             {
                 heroCard.color = new Color(1f, 1f, 1f, 0.15f);
             }
+            AddSpacer(parent, 25);
 
             // Title
             UiKit.TMP(parent, piece.Name, 50, Color.white, TextAlignmentOptions.Left, bold: true);
 
+            AddSpacer(parent,25);
+
             // Year
-            AddDetailField(parent, "Ano de fabricação", piece.YearManufactured > 0 ? piece.YearManufactured.ToString() : "-");
+            AddDetailSection(parent, "Ano de fabricação", piece.YearManufactured > 0 ? piece.YearManufactured.ToString() : "-");
 
             // Manufacturer
-            AddDetailField(parent, "Fabricante", !string.IsNullOrEmpty(piece.Manufacturer) ? piece.Manufacturer : "-");
+            AddDetailSection(parent, "Fabricante", !string.IsNullOrEmpty(piece.Manufacturer) ? piece.Manufacturer : "-");
 
             // Description
             AddDetailSection(parent, "Descrição", !string.IsNullOrEmpty(piece.Description) ? piece.Description : "Sem descrição.");
@@ -1664,7 +1668,7 @@ namespace RetroTech
         private void AddDetailSection(Transform parent, string title, string content)
         {
             UiKit.TMP(parent, title, 46, Color.white, TextAlignmentOptions.Left, bold: true);
-            var contentTMP = UiKit.TMP(parent, content, 36, new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
+            var contentTMP = UiKit.TMP(parent, content, 33, new Color32(255, 255, 255, 200), TextAlignmentOptions.Left);
             contentTMP.enableWordWrapping = true;
             contentTMP.margin = new Vector4(0, 0, 0, 20);
         }

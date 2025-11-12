@@ -743,13 +743,13 @@ namespace RetroTech
             fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            var textTMP = UiKit.TMP(chip.transform, value, 30, MetadataTextColor, TextAlignmentOptions.MidlineLeft);
+            var textTMP = UiKit.TMP(chip.transform, value, 35, MetadataTextColor, TextAlignmentOptions.MidlineLeft);
             textTMP.enableWordWrapping = false;
             textTMP.raycastTarget = false;
 
             var chipLayoutElement = chip.AddComponent<LayoutElement>();
             chipLayoutElement.minHeight = 32f;
-            chipLayoutElement.preferredHeight = 32f;
+            chipLayoutElement.preferredHeight = 42f;
         }
 
         /// <summary>
