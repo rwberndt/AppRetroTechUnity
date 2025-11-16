@@ -17,6 +17,7 @@ namespace RetroTech
 
         public const int DefaultPageTitleFontSize = 56;
         private const float PageTitleHorizontalPadding = 24f;
+        private const float PageTitleTopPadding = 32f;
 
         // Create a rounded panel. When gradTop/bottom are provided, paints a vertical gradient
         public static Image CreateCard(
@@ -88,7 +89,7 @@ namespace RetroTech
             container.transform.SetParent(parent, false);
 
             var layout = container.GetComponent<LayoutElement>();
-            float height = ResponsiveTypography.ResponsiveSpacing(fontSize + 32f);
+            float height = ResponsiveTypography.ResponsiveSpacing(fontSize + 32f + PageTitleTopPadding);
             layout.minHeight = height;
             layout.preferredHeight = height;
             layout.flexibleHeight = 0f;
@@ -100,7 +101,7 @@ namespace RetroTech
                 labelRT.anchorMin = Vector2.zero;
                 labelRT.anchorMax = Vector2.one;
                 labelRT.offsetMin = new Vector2(PageTitleHorizontalPadding, 0f);
-                labelRT.offsetMax = new Vector2(-PageTitleHorizontalPadding, 0f);
+                labelRT.offsetMax = new Vector2(-PageTitleHorizontalPadding, -PageTitleTopPadding);
                 label.margin = Vector4.zero;
             }
 
