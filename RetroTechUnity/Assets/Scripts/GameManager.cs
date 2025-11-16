@@ -47,10 +47,10 @@ namespace RetroTech
         private Sprite _navIconGlow;
         private const float NavSidePadding = 14f;
         private const float NavTopPadding = 8f;
-        private const float IconFrameSizeInactive = 108f;
-        private const float IconFrameSizeActive = 134f;
-        private const float IconGlyphSizeInactive = 52f;
-        private const float IconGlyphSizeActive = 66f;
+        private const float IconFrameSizeInactive = 68f;
+        private const float IconFrameSizeActive = 80f;
+        private const float IconGlyphSizeInactive = 44f;
+        private const float IconGlyphSizeActive = 58f;
 
         // Icons (Resources/Icons/*.png)
         private Sprite _iconHome, _iconCategories, _iconTimeline, _iconScanner, _iconQuiz;
@@ -569,7 +569,7 @@ namespace RetroTech
         }
 
         // ========= Navigation =========
-        private const float NavBarHeight = 156f;
+        private const float NavBarHeight = 104f;
 
         private void CreateNavigationBar()
         {
@@ -617,12 +617,12 @@ namespace RetroTech
             var rowRT = row.GetComponent<RectTransform>();
             rowRT.anchorMin = Vector2.zero;
             rowRT.anchorMax = Vector2.one;
-            rowRT.offsetMin = new Vector2(36f, 40f + bottomInset);
-            rowRT.offsetMax = new Vector2(-36f, -12f);
+            rowRT.offsetMin = new Vector2(32f, 24f + bottomInset);
+            rowRT.offsetMax = new Vector2(-32f, -12f);
 
             var hlg = row.GetComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.spacing = 28f;
+            hlg.spacing = 24f;
             hlg.padding = new RectOffset(0, 0, 0, 0);
             hlg.childControlWidth = true;
             hlg.childForceExpandWidth = true;
@@ -671,11 +671,11 @@ namespace RetroTech
             contentRT.anchorMin = new Vector2(0.5f, 0.5f);
             contentRT.anchorMax = new Vector2(0.5f, 0.5f);
             contentRT.pivot = new Vector2(0.5f, 0.5f);
-            contentRT.anchoredPosition = new Vector2(0f, 10f);             // lift a bit more for larger pill
-            contentRT.sizeDelta = new Vector2(150f, 132f);                 // additional space for the oversized pill + icon
+            contentRT.anchoredPosition = new Vector2(0f, 6f);              // lift a bit
+            contentRT.sizeDelta = new Vector2(100f, 80f);                  // space for pill + icon
 
             var contentLE = content.GetComponent<LayoutElement>();
-            contentLE.preferredHeight = 132f;
+            contentLE.preferredHeight = 80f;
 
             // --- Overlapped icon group (pill behind icon) ---
             var iconGroup = new GameObject("IconGroup", typeof(RectTransform));
@@ -685,7 +685,7 @@ namespace RetroTech
             igRT.anchorMax = new Vector2(0.5f, 0.5f);
             igRT.pivot = new Vector2(0.5f, 0.5f);
             igRT.anchoredPosition = Vector2.zero;
-            igRT.sizeDelta = new Vector2(IconFrameSizeActive + 32f, IconFrameSizeActive + 32f);
+            igRT.sizeDelta = new Vector2(IconFrameSizeActive + 14f, IconFrameSizeActive + 14f);
 
             // Active pill (overlapped background)
             var activePill = new GameObject("ActivePill", typeof(RectTransform), typeof(Image));
@@ -695,7 +695,7 @@ namespace RetroTech
             pillRT.anchorMax = new Vector2(0.5f, 0.5f);
             pillRT.pivot = new Vector2(0.5f, 0.5f);
             pillRT.anchoredPosition = Vector2.zero;
-            pillRT.sizeDelta = new Vector2(IconFrameSizeActive + 32f, IconFrameSizeActive + 32f);
+            pillRT.sizeDelta = new Vector2(IconFrameSizeActive + 14f, IconFrameSizeActive + 14f);
 
             var pillImg = activePill.GetComponent<Image>();
             var rounded = Resources.Load<Sprite>("Sprites/RoundedPanel");
@@ -743,8 +743,8 @@ namespace RetroTech
             indicatorRT.anchorMin = new Vector2(0.5f, 0f);
             indicatorRT.anchorMax = new Vector2(0.5f, 0f);
             indicatorRT.pivot = new Vector2(0.5f, 0f);
-            indicatorRT.anchoredPosition = new Vector2(0f, 4f);
-            indicatorRT.sizeDelta = new Vector2(68f, 3f);
+            indicatorRT.anchoredPosition = new Vector2(0f, 2f);
+            indicatorRT.sizeDelta = new Vector2(56f, 3f);
             var indicatorImage = indicatorGO.GetComponent<Image>();
             indicatorImage.color = new Color(1f, 1f, 1f, 0f);
 
@@ -761,7 +761,7 @@ namespace RetroTech
             lrt.anchorMax = new Vector2(0.5f, 0f);
             lrt.pivot = new Vector2(0.5f, 0f);
             lrt.anchoredPosition = new Vector2(0f, 6f);
-            lrt.sizeDelta = new Vector2(120f, 18f);
+            lrt.sizeDelta = new Vector2(100f, 18f);
         }
 
         private void RefreshTabsVisual()
