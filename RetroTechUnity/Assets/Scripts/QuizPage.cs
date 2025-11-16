@@ -22,7 +22,7 @@ namespace RetroTech
         [SerializeField] private float questionCardHeight = 200f;
         [SerializeField] private float optionHeight = 72f;
         [SerializeField] private float explanationHeight = 280f; // Much larger
-        [SerializeField] private int pageTitleFontSize = 44;
+        [SerializeField] private int pageTitleFontSize = DefaultPageTitleFontSize;
         [SerializeField] private int questionNumberFontSize = 34;
         [SerializeField] private int scoreFontSize = 38;
         [SerializeField] private int questionFontSize = 38;
@@ -179,14 +179,20 @@ namespace RetroTech
         /// </summary>
         private void CreatePageTitle()
         {
-            _pageTitleLabel = (TextMeshProUGUI)UiKit.TMP(_contentContainer, "Quiz RetroTech", pageTitleFontSize,
-                Color.white, TextAlignmentOptions.Center, bold: true);
-            _pageTitleLabel.fontStyle = FontStyles.Bold;
-            _pageTitleLabel.margin = new Vector4(0, 0, 0, 0);
+            var (titleContainer, titleLabel) = UiKit.CreatePageTitle(_contentContainer, "Quiz RetroTech",
+                pageTitleFontSize, Color.white, TextAlignmentOptions.Left);
+            titleContainer.name = "PageTitle";
+            _pageTitleLabel = titleLabel;
 
-            // Add subtle text outline for better visibility (no shadow)
-            _pageTitleLabel.outlineWidth = 0.2f;
-            _pageTitleLabel.outlineColor = new Color32(0, 0, 0, 100);
+            if (_pageTitleLabel != null)
+            {
+                _pageTitleLabel.margin = Vector4.zero;
+                _pageTitleLabel.raycastTarget = false;
+
+                // Add subtle text outline for better visibility (no shadow)
+                _pageTitleLabel.outlineWidth = 0.2f;
+                _pageTitleLabel.outlineColor = new Color32(0, 0, 0, 100);
+            }
         }
 
         /// <summary>

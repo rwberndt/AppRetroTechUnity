@@ -15,7 +15,7 @@ namespace RetroTech
         [SerializeField] private string pageTitle = "HomePage";
 
         [Header("Content Configuration")]
-        [SerializeField] private float titleFontSize = 80f;
+        [SerializeField] private float titleFontSize = DefaultPageTitleFontSize;
         [SerializeField] private float welcomeFontSize = 52f;
         [SerializeField] private float descriptionFontSize = 44f;
         [SerializeField] private float sectionTitleFontSize = 50f;
@@ -91,9 +91,15 @@ namespace RetroTech
         /// </summary>
         private void CreateTitle()
         {
-            var titleTMP = UiKit.TMP(_contentContainer, "RetroTech", (int)titleFontSize, TextMain,
-                TextAlignmentOptions.Left, bold: true);
-            titleTMP.name = "Title";
+            var (titleContainer, titleTMP) = UiKit.CreatePageTitle(_contentContainer, "RetroTech",
+                Mathf.RoundToInt(titleFontSize), TextMain, TextAlignmentOptions.Left);
+            titleContainer.name = "TitleContainer";
+
+            if (titleTMP != null)
+            {
+                titleTMP.name = "Title";
+                titleTMP.raycastTarget = false;
+            }
         }
 
         /// <summary>
@@ -243,10 +249,19 @@ namespace RetroTech
 
         private void ApplyResponsiveFontToChild(string childName, float baseFontSize)
         {
-            var tmp = _contentContainer.Find(childName)?.GetComponent<TextMeshProUGUI>();
-            if (tmp != null)
+            TextMeshProUGUI target = null;
+            foreach (var tmp in _contentContainer.GetComponentsInChildren<TextMeshProUGUI>(true))
             {
-                ResponsiveTypography.ApplyToTMP(tmp, Mathf.RoundToInt(baseFontSize));
+                if (tmp != null && tmp.name == childName)
+                {
+                    target = tmp;
+                    break;
+                }
+            }
+
+            if (target != null)
+            {
+                ResponsiveTypography.ApplyToTMP(target, Mathf.RoundToInt(baseFontSize));
             }
         }
 

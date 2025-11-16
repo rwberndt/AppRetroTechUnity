@@ -23,7 +23,7 @@ namespace RetroTech
         [SerializeField] private float previewCardHeight = 480f;
         [SerializeField] private float tipsCardHeight = 420f;
         [SerializeField] private float qrFrameSize = 260f;
-        [SerializeField] private int titleFontSize = 50;
+        [SerializeField] private int titleFontSize = DefaultPageTitleFontSize;
         [SerializeField] private int scanTitleFontSize = 36;
         [SerializeField] private int scanDescFontSize = 45;
         [SerializeField] private int tipsTitleFontSize = 36;
@@ -91,6 +91,7 @@ namespace RetroTech
         private void CreateScannerContent()
         {
             CreateTitle();
+            AddSpacer(_contentContainer, 40);
             CreatePreviewArea();
             AddSpacer(_contentContainer, 32);
             CreateScanButton();
@@ -103,9 +104,12 @@ namespace RetroTech
         /// </summary>
         private void CreateTitle()
         {
-            var titleTMP = UiKit.TMP(_contentContainer, "Scanner QR", titleFontSize,
-                Color.white, TextAlignmentOptions.Left, bold: true);
-            titleTMP.margin = new Vector4(0, 0, 0, 40);
+            var (_, titleTMP) = UiKit.CreatePageTitle(_contentContainer, "Scanner QR", titleFontSize,
+                Color.white, TextAlignmentOptions.Left);
+            if (titleTMP != null)
+            {
+                titleTMP.raycastTarget = false;
+            }
         }
 
         /// <summary>
