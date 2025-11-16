@@ -47,10 +47,10 @@ namespace RetroTech
         private Sprite _navIconGlow;
         private const float NavSidePadding = 14f;
         private const float NavTopPadding = 8f;
-        private const float IconFrameSizeInactive = 68f;
-        private const float IconFrameSizeActive = 80f;
-        private const float IconGlyphSizeInactive = 30f;
-        private const float IconGlyphSizeActive = 34f;
+        private const float IconFrameSizeInactive = 84f;
+        private const float IconFrameSizeActive = 100f;
+        private const float IconGlyphSizeInactive = 38f;
+        private const float IconGlyphSizeActive = 46f;
 
         // Icons (Resources/Icons/*.png)
         private Sprite _iconHome, _iconCategories, _iconTimeline, _iconScanner, _iconQuiz;
@@ -569,7 +569,7 @@ namespace RetroTech
         }
 
         // ========= Navigation =========
-        private const float NavBarHeight = 104f;
+        private const float NavBarHeight = 128f;
 
         private void CreateNavigationBar()
         {
@@ -617,8 +617,8 @@ namespace RetroTech
             var rowRT = row.GetComponent<RectTransform>();
             rowRT.anchorMin = Vector2.zero;
             rowRT.anchorMax = Vector2.one;
-            rowRT.offsetMin = new Vector2(32f, 24f + bottomInset);
-            rowRT.offsetMax = new Vector2(-32f, -12f);
+            rowRT.offsetMin = new Vector2(32f, 32f + bottomInset);
+            rowRT.offsetMax = new Vector2(-32f, -18f);
 
             var hlg = row.GetComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
@@ -672,10 +672,10 @@ namespace RetroTech
             contentRT.anchorMax = new Vector2(0.5f, 0.5f);
             contentRT.pivot = new Vector2(0.5f, 0.5f);
             contentRT.anchoredPosition = new Vector2(0f, 6f);              // lift a bit
-            contentRT.sizeDelta = new Vector2(100f, 80f);                  // space for pill + icon
+            contentRT.sizeDelta = new Vector2(120f, 110f);                 // space for larger pill + icon
 
             var contentLE = content.GetComponent<LayoutElement>();
-            contentLE.preferredHeight = 80f;
+            contentLE.preferredHeight = 110f;
 
             // --- Overlapped icon group (pill behind icon) ---
             var iconGroup = new GameObject("IconGroup", typeof(RectTransform));
@@ -685,7 +685,7 @@ namespace RetroTech
             igRT.anchorMax = new Vector2(0.5f, 0.5f);
             igRT.pivot = new Vector2(0.5f, 0.5f);
             igRT.anchoredPosition = Vector2.zero;
-            igRT.sizeDelta = new Vector2(IconFrameSizeActive + 14f, IconFrameSizeActive + 14f);
+            igRT.sizeDelta = new Vector2(IconFrameSizeActive + 24f, IconFrameSizeActive + 24f);
 
             // Active pill (overlapped background)
             var activePill = new GameObject("ActivePill", typeof(RectTransform), typeof(Image));
@@ -695,7 +695,7 @@ namespace RetroTech
             pillRT.anchorMax = new Vector2(0.5f, 0.5f);
             pillRT.pivot = new Vector2(0.5f, 0.5f);
             pillRT.anchoredPosition = Vector2.zero;
-            pillRT.sizeDelta = new Vector2(IconFrameSizeActive + 14f, IconFrameSizeActive + 14f);
+            pillRT.sizeDelta = new Vector2(IconFrameSizeActive + 24f, IconFrameSizeActive + 24f);
 
             var pillImg = activePill.GetComponent<Image>();
             var rounded = Resources.Load<Sprite>("Sprites/RoundedPanel");
