@@ -37,11 +37,11 @@ namespace RetroTech
         // Navigation bar reuses the same family of colors as the page gradient so it blends seamlessly
         private readonly Color NavGradientTop = new Color32(249, 197, 228, 255);   // Soft pink pulled from the page background
         private readonly Color NavGradientBottom = new Color32(142, 70, 199, 255); // Deep violet matching the footer of the page gradient
-        private readonly Color IconBackgroundActiveColor = new Color(1f, 1f, 1f, 1f);
-        private readonly Color IconBackgroundInactiveColor = new Color(1f, 1f, 1f, 0.82f);
-        private readonly Color IconActiveColor = new Color(1f, 1f, 1f, 1f);
-        private readonly Color IconInactiveColor = new Color(1f, 1f, 1f, 0.85f);
-        private readonly Color NavIndicatorColor = new Color32(242, 210, 255, 255);
+        private readonly Color IconBackgroundActiveColor = new Color(1f, 1f, 1f, 0.92f);
+        private readonly Color IconBackgroundInactiveColor = new Color(1f, 1f, 1f, 0.28f);
+        private readonly Color IconActiveColor = new Color32(80, 32, 128, 255);
+        private readonly Color IconInactiveColor = new Color(1f, 1f, 1f, 0.9f);
+        private readonly Color NavIndicatorColor = new Color32(255, 234, 255, 255);
         private Sprite _fallbackGradient;
         private Sprite _navBarGradient;
         private Sprite _navIconGlow;
@@ -390,30 +390,11 @@ namespace RetroTech
 
         private void LoadIcons()
         {
-            _iconHome = Resources.Load<Sprite>("Icons/icon_home");
-            _iconCategories = Resources.Load<Sprite>("Icons/icon_categories");
-            _iconTimeline = Resources.Load<Sprite>("Icons/icon_timeline");
-            _iconScanner = Resources.Load<Sprite>("Icons/icon_scanner");
-            _iconQuiz = Resources.Load<Sprite>("Icons/icon_quiz");
-
-            List<string> missingIcons = null;
-            if (_iconHome == null) missingIcons = AppendMissing(missingIcons, "icon_home");
-            if (_iconCategories == null) missingIcons = AppendMissing(missingIcons, "icon_categories");
-            if (_iconTimeline == null) missingIcons = AppendMissing(missingIcons, "icon_timeline");
-            if (_iconScanner == null) missingIcons = AppendMissing(missingIcons, "icon_scanner");
-            if (_iconQuiz == null) missingIcons = AppendMissing(missingIcons, "icon_quiz");
-
-            if (missingIcons != null)
-            {
-                Debug.LogWarning($"Navigation icons not found in Resources/Icons: {string.Join(", ", missingIcons)}");
-            }
-        }
-
-        private static List<string> AppendMissing(List<string> list, string value)
-        {
-            list ??= new List<string>();
-            list.Add(value);
-            return list;
+            _iconHome = IconFactory.GetHomeIcon();
+            _iconCategories = IconFactory.GetCategoriesIcon();
+            _iconTimeline = IconFactory.GetTimelineIcon();
+            _iconScanner = IconFactory.GetScannerIcon();
+            _iconQuiz = IconFactory.GetQuizIcon();
         }
 
         private Sprite CreateFallbackGradient(Color top, Color bottom)
@@ -599,7 +580,12 @@ namespace RetroTech
             var bgImg = bgGO.GetComponent<Image>();
             bgImg.sprite = _navBarGradient != null ? _navBarGradient : _fallbackGradient;
             bgImg.type = Image.Type.Simple;
-            bgImg.color = Color.white;
+            bgImg.color = new Color(1f, 1f, 1f, 0.24f);
+
+            var bgShadow = bgGO.AddComponent<Shadow>();
+            bgShadow.effectColor = new Color(0f, 0f, 0f, 0.25f);
+            bgShadow.effectDistance = new Vector2(0f, 6f);
+            bgShadow.useGraphicAlpha = true;
 
             var topLine = new GameObject("TopBorder", typeof(RectTransform), typeof(Image));
             topLine.transform.SetParent(bgGO.transform, false);
@@ -617,12 +603,12 @@ namespace RetroTech
             var rowRT = row.GetComponent<RectTransform>();
             rowRT.anchorMin = Vector2.zero;
             rowRT.anchorMax = Vector2.one;
-            rowRT.offsetMin = new Vector2(32f, 24f + bottomInset);
-            rowRT.offsetMax = new Vector2(-32f, -12f);
+            rowRT.offsetMin = new Vector2(28f, 20f + bottomInset);
+            rowRT.offsetMax = new Vector2(-28f, -6f);
 
             var hlg = row.GetComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.spacing = 24f;
+            hlg.spacing = 20f;
             hlg.padding = new RectOffset(0, 0, 0, 0);
             hlg.childControlWidth = true;
             hlg.childForceExpandWidth = true;
@@ -655,7 +641,14 @@ namespace RetroTech
 
             var btn = tab.GetComponent<Button>();
             btn.targetGraphic = bg;
-            btn.transition = Selectable.Transition.None;
+            btn.transition = Selectable.Transition.ColorTint;
+            var colors = btn.colors;
+            colors.normalColor = new Color(1f, 1f, 1f, 0f);
+            colors.highlightedColor = new Color(1f, 1f, 1f, 0.08f);
+            colors.pressedColor = new Color(1f, 1f, 1f, 0.14f);
+            colors.selectedColor = colors.highlightedColor;
+            colors.fadeDuration = 0.08f;
+            btn.colors = colors;
             btn.onClick.RemoveAllListeners();
             btn.onClick.AddListener(() =>
             {
@@ -700,7 +693,7 @@ namespace RetroTech
             var pillImg = activePill.GetComponent<Image>();
             var rounded = Resources.Load<Sprite>("Sprites/RoundedPanel");
             if (rounded != null) { pillImg.sprite = rounded; pillImg.type = Image.Type.Sliced; }
-            pillImg.color = new Color(1f, 1f, 1f, 0f);  // hidden while inactive
+            pillImg.color = new Color(1f, 1f, 1f, 0.08f);  // subtle base even when inactive
 
             // Icon frame (glow)
             var iconFrameGO = new GameObject("IconFrame", typeof(RectTransform), typeof(Image));
@@ -748,7 +741,7 @@ namespace RetroTech
             indicatorRT.anchorMax = new Vector2(0.5f, 0f);
             indicatorRT.pivot = new Vector2(0.5f, 0f);
             indicatorRT.anchoredPosition = new Vector2(0f, 2f);
-            indicatorRT.sizeDelta = new Vector2(56f, 3f);
+            indicatorRT.sizeDelta = new Vector2(72f, 4f);
             var indicatorImage = indicatorGO.GetComponent<Image>();
             indicatorImage.color = new Color(1f, 1f, 1f, 0f);
 
@@ -787,7 +780,7 @@ namespace RetroTech
                 var labelCG = label ? label.GetComponent<CanvasGroup>() : null;
 
                 if (pill != null)
-                    pill.color = active ? new Color(1f, 1f, 1f, 0.12f) : new Color(1f, 1f, 1f, 0f);
+                    pill.color = active ? new Color(1f, 1f, 1f, 0.26f) : new Color(1f, 1f, 1f, 0.08f);
 
                 if (iconFrame != null)
                 {
