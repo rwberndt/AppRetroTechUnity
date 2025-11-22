@@ -41,8 +41,8 @@ namespace RetroTech
         private readonly Color IconInactiveColor = new Color(1f, 1f, 1f, 0.85f);
         private Sprite _fallbackGradient;
         private Sprite _navBarGradient;
-        private const float IconGlyphSizeInactive = 40f;
-        private const float IconGlyphSizeActive = 48f;
+        private const float IconGlyphSizeInactive = 54f;
+        private const float IconGlyphSizeActive = 64f;
 
         // Icons (Resources/Icons/*.png)
         private Sprite _iconHome, _iconCategories, _iconTimeline, _iconScanner, _iconQuiz;
@@ -560,7 +560,7 @@ namespace RetroTech
         }
 
         // ========= Navigation =========
-        private const float NavBarHeight = 136f;
+        private const float NavBarHeight = 168f;
 
         private void CreateNavigationBar()
         {
@@ -608,8 +608,8 @@ namespace RetroTech
             var rowRT = row.GetComponent<RectTransform>();
             rowRT.anchorMin = Vector2.zero;
             rowRT.anchorMax = Vector2.one;
-            rowRT.offsetMin = new Vector2(32f, 30f + bottomInset);
-            rowRT.offsetMax = new Vector2(-32f, -16f);
+            rowRT.offsetMin = new Vector2(32f, 36f + bottomInset);
+            rowRT.offsetMax = new Vector2(-32f, -20f);
 
             var hlg = row.GetComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
@@ -662,16 +662,16 @@ namespace RetroTech
             contentRT.anchorMin = new Vector2(0f, 0f);
             contentRT.anchorMax = new Vector2(1f, 1f);
             contentRT.pivot = new Vector2(0.5f, 0.5f);
-            contentRT.offsetMin = new Vector2(0f, 6f);
-            contentRT.offsetMax = new Vector2(0f, -6f);
+            contentRT.offsetMin = new Vector2(0f, 10f);
+            contentRT.offsetMax = new Vector2(0f, -10f);
 
             var contentLE = content.GetComponent<LayoutElement>();
             contentLE.flexibleHeight = 1f;
 
             var vlg = content.GetComponent<VerticalLayoutGroup>();
             vlg.childAlignment = TextAnchor.MiddleCenter;
-            vlg.spacing = 10f;
-            vlg.padding = new RectOffset(0, 0, 10, 0);
+            vlg.spacing = 14f;
+            vlg.padding = new RectOffset(0, 0, 12, 0);
             vlg.childControlWidth = false;
             vlg.childControlHeight = false;
             vlg.childForceExpandWidth = false;
@@ -694,16 +694,16 @@ namespace RetroTech
             iconLE.preferredWidth = IconGlyphSizeInactive;
 
             // Label (fades in when active)
-            var label = UiKit.TMP(content.transform, tabName, 18, Color.white, TextAlignmentOptions.Center, bold: false);
+            var label = UiKit.TMP(content.transform, tabName, 22, Color.white, TextAlignmentOptions.Center, bold: false);
             label.enableWordWrapping = false;
             label.raycastTarget = false;
 
             var labelCG = label.gameObject.AddComponent<CanvasGroup>();
 
             var lrt = label.rectTransform;
-            lrt.sizeDelta = new Vector2(128f, 26f);
+            lrt.sizeDelta = new Vector2(150f, 32f);
             var labelLE = label.gameObject.AddComponent<LayoutElement>();
-            labelLE.preferredHeight = 26f;
+            labelLE.preferredHeight = 32f;
         }
 
         private void RefreshTabsVisual()
