@@ -108,6 +108,11 @@ namespace RetroTech
             return _pageObject;
         }
 
+        private void Awake()
+        {
+            LoadFeedbackIcons();
+        }
+
         /// <summary>
         /// Cria todo o conteúdo do quiz
         /// </summary>
@@ -428,23 +433,14 @@ namespace RetroTech
         {
             if (_correctIcon == null)
             {
-                _correctIcon = Resources.Load<Sprite>("Icons/quiz_correct");
+            _correctIcon = Resources.Load<Sprite>("Icons/quiz_correct");
             }
 
             if (_incorrectIcon == null)
             {
-                _incorrectIcon = Resources.Load<Sprite>("Icons/quiz_incorrect");
+            _incorrectIcon = Resources.Load<Sprite>("Icons/quiz_incorrect");
             }
 
-            if (_correctIcon == null || _incorrectIcon == null)
-            {
-                var fallback = Resources.Load<Sprite>("Icons/icon_quiz");
-
-                if (_correctIcon == null) _correctIcon = fallback;
-                if (_incorrectIcon == null) _incorrectIcon = fallback;
-
-                Debug.LogWarning("QuizPage: Feedback icons not set. Assign sprites in the inspector or place quiz_correct.png and quiz_incorrect.png under Resources/Icons.");
-            }
 
             UpdateExplanationIcon(false);
         }
@@ -804,7 +800,6 @@ namespace RetroTech
 
         private void UpdateExplanationIcon(bool wasCorrect)
         {
-            if (_explanationIcon == null) return;
 
             var sprite = wasCorrect ? _correctIcon : _incorrectIcon;
 
