@@ -74,6 +74,11 @@ namespace RetroTech
         private GameObject _optionsContainer;
         private GameObject _explanationCard;
         private Image _explanationCardBackground;
+        [Header("Feedback Icons")]
+        [SerializeField] private Sprite _correctIcon;
+        [SerializeField] private Sprite _incorrectIcon;
+
+        private Image _explanationIcon;
         private List<GameObject> _optionButtons = new List<GameObject>();
 
         // Layout caching
@@ -150,6 +155,7 @@ namespace RetroTech
 
             // Enhanced explanation card
             CreateEnhancedExplanationCard(createGlassCardFunc);
+            LoadFeedbackIcons();
 
             AddSpacer(_contentContainer, 16f);
 
@@ -388,7 +394,20 @@ namespace RetroTech
             titleHLG.childControlWidth = false;
             titleHLG.childForceExpandWidth = false;
 
-            _explanationTitleText = (TextMeshProUGUI)UiKit.TMP(titleContainer.transform, "❌ Incorreto!",
+            var iconGO = new GameObject("ResultIcon", typeof(RectTransform), typeof(Image));
+            iconGO.transform.SetParent(titleContainer.transform, false);
+
+            var iconRT = iconGO.GetComponent<RectTransform>();
+            iconRT.sizeDelta = new Vector2(48, 48);
+            iconRT.anchorMin = new Vector2(0, 0.5f);
+            iconRT.anchorMax = new Vector2(0, 0.5f);
+            iconRT.pivot = new Vector2(0.5f, 0.5f);
+
+            _explanationIcon = iconGO.GetComponent<Image>();
+            _explanationIcon.preserveAspect = true;
+            _explanationIcon.raycastTarget = false;
+
+            _explanationTitleText = (TextMeshProUGUI)UiKit.TMP(titleContainer.transform, "Incorreto!",
                 explanationTitleFontSize, Color.white, TextAlignmentOptions.Left, bold: true);
             _explanationTitleText.name = "ExpTitle";
             _explanationTitleText.enableWordWrapping = false;
@@ -403,6 +422,31 @@ namespace RetroTech
             _explanationText.margin = new Vector4(0, 8, 0, 0); // More top margin
 
             _explanationCard.SetActive(false);
+        }
+
+        private void LoadFeedbackIcons()
+        {
+            if (_correctIcon == null)
+            {
+                _correctIcon = Resources.Load<Sprite>("Icons/quiz_correct");
+            }
+
+            if (_incorrectIcon == null)
+            {
+                _incorrectIcon = Resources.Load<Sprite>("Icons/quiz_incorrect");
+            }
+
+            if (_correctIcon == null || _incorrectIcon == null)
+            {
+                var fallback = Resources.Load<Sprite>("Icons/icon_quiz");
+
+                if (_correctIcon == null) _correctIcon = fallback;
+                if (_incorrectIcon == null) _incorrectIcon = fallback;
+
+                Debug.LogWarning("QuizPage: Feedback icons not set. Assign sprites in the inspector or place quiz_correct.png and quiz_incorrect.png under Resources/Icons.");
+            }
+
+            UpdateExplanationIcon(false);
         }
 
         /// <summary>
@@ -750,11 +794,31 @@ namespace RetroTech
         /// </summary>
         private void ShowExplanation(string explanation, bool wasCorrect)
         {
-            _explanationTitleText.text = wasCorrect ? "✅ Correto!" : "❌ Incorreto!";
+            _explanationTitleText.text = wasCorrect ? "Correto!" : "Incorreto!";
             _explanationText.text = explanation;
             _explanationCardBackground.color = wasCorrect ? ExplanationCorrectBg : ExplanationWrongBg;
+            UpdateExplanationIcon(wasCorrect);
 
             StartCoroutine(FadeInExplanation());
+        }
+
+        private void UpdateExplanationIcon(bool wasCorrect)
+        {
+            if (_explanationIcon == null) return;
+
+            var sprite = wasCorrect ? _correctIcon : _incorrectIcon;
+
+            if (sprite != null)
+            {
+                _explanationIcon.sprite = sprite;
+                _explanationIcon.enabled = true;
+                _explanationIcon.gameObject.SetActive(true);
+            }
+            else
+            {
+                _explanationIcon.enabled = false;
+                _explanationIcon.gameObject.SetActive(false);
+            }
         }
 
         private IEnumerator FadeInExplanation()
