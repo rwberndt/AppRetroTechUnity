@@ -108,10 +108,6 @@ namespace RetroTech
             return _pageObject;
         }
 
-        private void Awake()
-        {
-            LoadFeedbackIcons();
-        }
 
         /// <summary>
         /// Cria todo o conteúdo do quiz
