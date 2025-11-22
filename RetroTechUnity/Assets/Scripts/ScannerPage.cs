@@ -1,11 +1,14 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Globalization;
+using System.Threading.Tasks;
 using ZXing;
 using ZXing.Common;
 using static RetroTech.UiKit;
+using RetroTech.Services;
 
 namespace RetroTech
 {
@@ -33,6 +36,8 @@ namespace RetroTech
         public System.Action<ComputerPiece> OnPieceScanned;
 
         // State
+        private ApiConfiguration _apiConfiguration;
+        private IContentService _contentService;
         private GameObject _pageObject;
         private RectTransform _contentContainer;
         private Canvas _parentCanvas;
@@ -71,6 +76,22 @@ namespace RetroTech
             CreateScannerContent();
 
             return _pageObject;
+        }
+
+        /// <summary>
+        /// Permite configurar a mesma API usada para obter peças por ID, garantindo que o QR siga o mesmo endpoint.
+        /// </summary>
+        public void SetApiConfiguration(ApiConfiguration configuration)
+        {
+            _apiConfiguration = configuration ?? ApiConfiguration.Load();
+        }
+
+        /// <summary>
+        /// Permite fornecer o serviço que consulta peças na API.
+        /// </summary>
+        public void SetContentService(IContentService contentService)
+        {
+            _contentService = contentService;
         }
 
         /// <summary>
@@ -465,13 +486,32 @@ namespace RetroTech
             UpdateCameraPreviewTransform();
 
             ComputerPiece foundPiece = null;
+            Task<ComputerPiece> fetchTask = null;
             float scanTimeout = 30f;
             float scanStartTime = Time.time;
 
             while (_isScanning && foundPiece == null && (Time.time - scanStartTime) < scanTimeout)
             {
-                try
-                {
+                    if (fetchTask != null)
+                    {
+                        if (!fetchTask.IsCompleted)
+                        {
+                            yield return null;
+                            continue;
+                        }
+
+                        if (fetchTask.IsFaulted)
+                        {
+                            Debug.LogWarning($"Falha ao obter dados da peça escaneada: {fetchTask.Exception?.GetBaseException()?.Message ?? fetchTask.Exception?.Message}.");
+                        }
+                        else
+                        {
+                            foundPiece = fetchTask.Result;
+                        }
+
+                        break;
+                    }
+
                     if (_webcam.width > 16 && _webcam.height > 16)
                     {
                         if (_webcamPixelBuffer == null || _webcamPixelBuffer.Length != _webcam.width * _webcam.height)
@@ -481,21 +521,12 @@ namespace RetroTech
 
                         _webcam.GetPixels32(_webcamPixelBuffer);
                         var result = _qrReader.Decode(_webcamPixelBuffer, _webcam.width, _webcam.height);
-                        if (result != null)
+                        if (result != null && TryParsePieceIdFromQRData(result.Text, out long pieceId))
                         {
-                            foundPiece = FindPieceFromQRData(result.Text);
-                            if (foundPiece != null)
-                            {
-                                Debug.Log($"QR Code encontrado: {result.Text}");
-                                break;
-                            }
+                            Debug.Log($"QR Code encontrado: {result.Text}");
+                            fetchTask = FetchPieceByIdAsync(pieceId);
                         }
                     }
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"Erro durante escaneamento: {ex.Message}");
-                }
 
                 UpdateCameraPreviewTransform();
                 yield return new WaitForSeconds(0.1f);
@@ -590,45 +621,61 @@ namespace RetroTech
         }
 
         /// <summary>
-        /// Encontra uma peça baseada nos dados do QR Code
+        /// Tenta extrair o ID da peça a partir do QR Code, garantindo que o host e o endpoint sejam válidos.
         /// </summary>
-        private ComputerPiece FindPieceFromQRData(string qrData)
+        private bool TryParsePieceIdFromQRData(string qrData, out long pieceId)
         {
+            pieceId = 0;
+
             if (string.IsNullOrWhiteSpace(qrData))
             {
-                return null;
+                return false;
             }
 
-            string parsedValue = qrData.Trim();
-
-            // Se é uma URL, extrair o ID da peça
-            const string urlPrefix = "https://retro.tech/piece/";
-            if (parsedValue.StartsWith(urlPrefix, System.StringComparison.OrdinalIgnoreCase))
+            if (!Uri.TryCreate(qrData.Trim(), UriKind.Absolute, out var uri))
             {
-                parsedValue = parsedValue.Substring(urlPrefix.Length);
+                return false;
             }
 
-            if (long.TryParse(parsedValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out long pieceId))
+            if (_apiConfiguration?.BaseUri != null && !uri.Host.Equals(_apiConfiguration.BaseUri.Host, StringComparison.OrdinalIgnoreCase))
             {
-                foreach (var piece in SampleData.Pieces)
+                return false;
+            }
+
+            string piecesEndpoint = _apiConfiguration?.PiecesEndpoint ?? "Pieces";
+            var endpointSegments = piecesEndpoint.Trim('/').Split('/');
+            var pathSegments = uri.AbsolutePath.Trim('/').Split('/');
+
+            if (pathSegments.Length < endpointSegments.Length + 1)
+            {
+                return false;
+            }
+
+            int idIndex = pathSegments.Length - 1;
+            for (int i = 0; i < endpointSegments.Length; i++)
+            {
+                int segmentIndex = idIndex - endpointSegments.Length + i;
+                if (segmentIndex < 0 || !pathSegments[segmentIndex].Equals(endpointSegments[i], StringComparison.OrdinalIgnoreCase))
                 {
-                    if (piece.Id == pieceId)
-                    {
-                        return piece;
-                    }
+                    return false;
                 }
             }
 
-            // Se não encontrou por ID, tentar por nome
-            foreach (var piece in SampleData.Pieces)
+            return long.TryParse(pathSegments[idIndex], NumberStyles.Integer, CultureInfo.InvariantCulture, out pieceId);
+        }
+
+        /// <summary>
+        /// Obtém os detalhes da peça a partir do serviço configurado.
+        /// </summary>
+        private Task<ComputerPiece> FetchPieceByIdAsync(long pieceId)
+        {
+            if (_contentService == null)
             {
-                if (piece.Name.Equals(parsedValue, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    return piece;
-                }
+                Debug.LogWarning("Serviço de conteúdo não configurado para buscar peça por QR code.");
+                return Task.FromResult<ComputerPiece>(null);
             }
 
-            return null;
+            return _contentService.GetPieceByIdAsync(pieceId);
         }
 
         /// <summary>
