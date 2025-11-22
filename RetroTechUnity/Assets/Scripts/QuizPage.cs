@@ -1183,8 +1183,8 @@ namespace RetroTech
         private void CreateResultActionButton(
             Transform parent,
             string label,
-            Color32 backgroundColor,
-            Color32 textColor,
+            Color backgroundColor,
+            Color textColor,
             UnityEngine.Events.UnityAction onClick,
             bool isMainButton = false)
         {
