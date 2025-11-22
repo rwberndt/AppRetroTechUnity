@@ -62,7 +62,8 @@ namespace RetroTech
 
         public static TMP_Text TMP(Transform parent, string text, int size, Color32 color,
                                    TextAlignmentOptions align = TextAlignmentOptions.MidlineLeft,
-                                   bool bold = false)
+                                   bool bold = false,
+                                   bool allowAutoShrink = true)
         {
             var go = new GameObject("TMP");
             go.transform.SetParent(parent, false);
@@ -70,9 +71,10 @@ namespace RetroTech
             rt.sizeDelta = new Vector2(0, size + 18);
             var t = go.AddComponent<TextMeshProUGUI>();
             t.text = text;
-            ResponsiveTypography.ApplyToTMP(t, size);
+            ResponsiveTypography.ApplyToTMP(t, size, allowAutoShrink);
             t.color = color;
             t.alignment = align;
+            t.fontStyle = bold ? FontStyles.Bold : FontStyles.Normal;
             t.enableWordWrapping = true;
             t.fontStyle = bold ? FontStyles.Bold : FontStyles.Normal;
             return t;
