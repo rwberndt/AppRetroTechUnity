@@ -46,6 +46,7 @@ namespace RetroTech
         private readonly Color ExplanationCorrectBg = new Color32(76, 175, 80, 70); // More opaque for readability
         private readonly Color ExplanationWrongBg = new Color32(244, 67, 54, 70); // More opaque for readability
         private readonly Color ShadowColor = new Color(0, 0, 0, 0.25f);
+        private readonly Color PrimaryColor = new Color32(114, 74, 160, 255);
 
         // Events
         public System.Action<int, int> OnScoreUpdated;
@@ -108,10 +109,6 @@ namespace RetroTech
             return _pageObject;
         }
 
-        private void Awake()
-        {
-            LoadFeedbackIcons();
-        }
 
         /// <summary>
         /// Cria todo o conteúdo do quiz
@@ -1010,7 +1007,7 @@ namespace RetroTech
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
-            layout.childControlHeight = false;
+            layout.childControlHeight = true;
             layout.childForceExpandHeight = false;
 
             AddSpacer(_resultLayoutRoot.transform, 20f);
@@ -1045,7 +1042,8 @@ namespace RetroTech
             {
                 float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(450f);
                 resultCardLayout.minHeight = responsiveHeight;
-                resultCardLayout.preferredHeight = responsiveHeight;
+                resultCardLayout.preferredHeight = -1f;
+                resultCardLayout.flexibleHeight = 1f;
             }
 
             var resultVLG = resultCard.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -1054,7 +1052,7 @@ namespace RetroTech
             resultVLG.childAlignment = TextAnchor.MiddleCenter;
             resultVLG.childControlWidth = true;
             resultVLG.childForceExpandWidth = true;
-            resultVLG.childControlHeight = false;
+            resultVLG.childControlHeight = true;
             resultVLG.childForceExpandHeight = false;
 
             // Score (tamanho aumentado)
@@ -1174,8 +1172,8 @@ namespace RetroTech
             CreateResultActionButton(
                 _resultLayoutRoot.transform,
                 "Jogar Novamente",
-                new Color32(69, 90, 100, 200),
-                new Color32(255, 255, 255, 255),
+                Color.white,
+                new Color32(114, 74, 160, 255),
                 () => RestartQuiz(),
                 isMainButton: true
             );
@@ -1183,17 +1181,19 @@ namespace RetroTech
         }
 
         private void CreateResultActionButton(
-      Transform parent,
-      string label,
-      Color32 backgroundColor,
-      Color32 textColor,
-      UnityEngine.Events.UnityAction onClick,
-      bool isMainButton = false)
+            Transform parent,
+            string label,
+            Color backgroundColor,
+            Color textColor,
+            UnityEngine.Events.UnityAction onClick,
+            bool isMainButton = false)
         {
             // Altura mantida (apenas texto aumenta)
-            float buttonHeight = isMainButton ? 90f : 75f;
+            float buttonHeight = isMainButton ? 80f : 75f;
 
-            var buttonImage = UiKit.CreateCard(parent, new Vector2(0, buttonHeight), backgroundColor, 60f, glass: false);
+            float cornerRadius = isMainButton ? 22f : 60f;
+            var buttonColor = isMainButton ? Color.white : backgroundColor;
+            var buttonImage = UiKit.CreateCard(parent, new Vector2(0, buttonHeight), buttonColor, cornerRadius, glass: false);
 
             var layoutElement = buttonImage.GetComponent<LayoutElement>();
             if (layoutElement != null)
@@ -1210,10 +1210,14 @@ namespace RetroTech
             button.onClick.AddListener(onClick);
 
             var colors = button.colors;
-            var background = (Color)backgroundColor;
+            var background = (Color)buttonColor;
             colors.normalColor = background;
-            colors.highlightedColor = Color.Lerp(background, Color.white, 0.15f);
-            colors.pressedColor = Color.Lerp(background, new Color(0.4f, 0.3f, 0.7f, 1f), 0.4f);
+            colors.highlightedColor = isMainButton
+                ? new Color(0.95f, 0.95f, 0.95f, 1f)
+                : Color.Lerp(background, Color.white, 0.15f);
+            colors.pressedColor = isMainButton
+                ? new Color(0.9f, 0.9f, 0.9f, 1f)
+                : Color.Lerp(background, new Color(0.4f, 0.3f, 0.7f, 1f), 0.4f);
             colors.selectedColor = colors.normalColor;
             colors.colorMultiplier = 1f;
             colors.fadeDuration = 0.15f;
@@ -1221,14 +1225,16 @@ namespace RetroTech
 
             // >>> Apenas tamanho da fonte aumentado <<<
             int fontSize = isMainButton
-                ? Mathf.RoundToInt(40 * FONT_SCALE)  // principal (era 40)
+                ? 38  // alinhado ao CTA da HomePage
                 : Mathf.RoundToInt(44 * FONT_SCALE); // secundário (era 44)
+
+            var labelColor = isMainButton ? PrimaryColor : textColor;
 
             var labelTMP = UiKit.TMP(
                 buttonImage.transform,
                 label,
                 fontSize,
-                textColor,
+                labelColor,
                 TMPro.TextAlignmentOptions.Center,
                 bold: true
             );
