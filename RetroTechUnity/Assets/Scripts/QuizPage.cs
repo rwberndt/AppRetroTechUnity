@@ -1010,7 +1010,7 @@ namespace RetroTech
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
-            layout.childControlHeight = false;
+            layout.childControlHeight = true;
             layout.childForceExpandHeight = false;
 
             AddSpacer(_resultLayoutRoot.transform, 20f);
@@ -1045,7 +1045,8 @@ namespace RetroTech
             {
                 float responsiveHeight = ResponsiveTypography.ResponsiveSpacing(450f);
                 resultCardLayout.minHeight = responsiveHeight;
-                resultCardLayout.preferredHeight = responsiveHeight;
+                resultCardLayout.preferredHeight = -1f;
+                resultCardLayout.flexibleHeight = 1f;
             }
 
             var resultVLG = resultCard.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -1054,7 +1055,7 @@ namespace RetroTech
             resultVLG.childAlignment = TextAnchor.MiddleCenter;
             resultVLG.childControlWidth = true;
             resultVLG.childForceExpandWidth = true;
-            resultVLG.childControlHeight = false;
+            resultVLG.childControlHeight = true;
             resultVLG.childForceExpandHeight = false;
 
             // Score (tamanho aumentado)
