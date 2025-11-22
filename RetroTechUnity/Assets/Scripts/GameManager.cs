@@ -731,7 +731,7 @@ namespace RetroTech
 
                 if (label != null)
                 {
-                    label.fontStyle = active ? FontStyles.SemiBold : FontStyles.Normal;
+                    label.fontStyle = FontStyles.Normal;
                     var labelColor = label.color;
                     labelColor.a = active ? 1f : 0.75f;
                     label.color = labelColor;
