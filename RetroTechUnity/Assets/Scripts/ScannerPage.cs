@@ -492,8 +492,6 @@ namespace RetroTech
 
             while (_isScanning && foundPiece == null && (Time.time - scanStartTime) < scanTimeout)
             {
-                try
-                {
                     if (fetchTask != null)
                     {
                         if (!fetchTask.IsCompleted)
@@ -529,11 +527,6 @@ namespace RetroTech
                             fetchTask = FetchPieceByIdAsync(pieceId);
                         }
                     }
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"Erro durante escaneamento: {ex.Message}");
-                }
 
                 UpdateCameraPreviewTransform();
                 yield return new WaitForSeconds(0.1f);
