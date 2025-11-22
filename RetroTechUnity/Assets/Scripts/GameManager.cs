@@ -49,8 +49,8 @@ namespace RetroTech
         private const float NavTopPadding = 8f;
         private const float IconFrameSizeInactive = 68f;
         private const float IconFrameSizeActive = 80f;
-        private const float IconGlyphSizeInactive = 30f;
-        private const float IconGlyphSizeActive = 34f;
+        private const float IconGlyphSizeInactive = 44f;
+        private const float IconGlyphSizeActive = 58f;
 
         // Icons (Resources/Icons/*.png)
         private Sprite _iconHome, _iconCategories, _iconTimeline, _iconScanner, _iconQuiz;
@@ -720,7 +720,7 @@ namespace RetroTech
             iconFrameImg.color = IconBackgroundInactiveColor;
 
             // Icon glyph
-            var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image), typeof(Outline));
+            var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
             iconGO.transform.SetParent(iconFrameGO.transform, false);
             var iconRT = iconGO.GetComponent<RectTransform>();
             iconRT.anchorMin = new Vector2(0.5f, 0.5f);
@@ -735,10 +735,6 @@ namespace RetroTech
             iconImg.preserveAspect = true;
             iconImg.raycastTarget = false;
 
-            var outline = iconGO.GetComponent<Outline>();
-            outline.effectColor = new Color(0f, 0f, 0f, 0.25f);
-            outline.effectDistance = new Vector2(1.2f, -1.2f);
-            outline.useGraphicAlpha = true;
 
             // Indicator (thin) — positioned under content, not in layout
             var indicatorGO = new GameObject("Indicator", typeof(RectTransform), typeof(Image));
