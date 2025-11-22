@@ -41,8 +41,8 @@ namespace RetroTech
         private readonly Color IconInactiveColor = new Color(1f, 1f, 1f, 0.85f);
         private Sprite _fallbackGradient;
         private Sprite _navBarGradient;
-        private const float IconGlyphSizeInactive = 28f;
-        private const float IconGlyphSizeActive = 32f;
+        private const float IconGlyphSizeInactive = 32f;
+        private const float IconGlyphSizeActive = 38f;
 
         // Icons (Resources/Icons/*.png)
         private Sprite _iconHome, _iconCategories, _iconTimeline, _iconScanner, _iconQuiz;
@@ -560,7 +560,7 @@ namespace RetroTech
         }
 
         // ========= Navigation =========
-        private const float NavBarHeight = 104f;
+        private const float NavBarHeight = 112f;
 
         private void CreateNavigationBar()
         {
@@ -670,8 +670,8 @@ namespace RetroTech
 
             var vlg = content.GetComponent<VerticalLayoutGroup>();
             vlg.childAlignment = TextAnchor.MiddleCenter;
-            vlg.spacing = 6f;
-            vlg.padding = new RectOffset(0, 0, 8, 0);
+            vlg.spacing = 8f;
+            vlg.padding = new RectOffset(0, 0, 10, 0);
             vlg.childControlWidth = false;
             vlg.childControlHeight = false;
             vlg.childForceExpandWidth = false;
@@ -694,16 +694,16 @@ namespace RetroTech
             iconLE.preferredWidth = IconGlyphSizeInactive;
 
             // Label (fades in when active)
-            var label = UiKit.TMP(content.transform, tabName, 14, Color.white, TextAlignmentOptions.Center, bold: false);
+            var label = UiKit.TMP(content.transform, tabName, 16, Color.white, TextAlignmentOptions.Center, bold: false);
             label.enableWordWrapping = false;
             label.raycastTarget = false;
 
             var labelCG = label.gameObject.AddComponent<CanvasGroup>();
 
             var lrt = label.rectTransform;
-            lrt.sizeDelta = new Vector2(100f, 18f);
+            lrt.sizeDelta = new Vector2(110f, 22f);
             var labelLE = label.gameObject.AddComponent<LayoutElement>();
-            labelLE.preferredHeight = 18f;
+            labelLE.preferredHeight = 22f;
         }
 
         private void RefreshTabsVisual()
