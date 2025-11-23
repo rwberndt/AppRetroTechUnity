@@ -5,6 +5,8 @@ using UnityEngine.UI;
 using UnityEngine.Events;
 using TMPro;
 using static RetroTech.UiKit;
+using RetroTech.Services;
+using System.Threading.Tasks;
 
 namespace RetroTech
 {
@@ -14,6 +16,8 @@ namespace RetroTech
     /// </summary>
     public class QuizPage : MonoBehaviour
     {
+        private IContentService _contentService;
+
         [Header("Page Configuration")]
         [SerializeField] private string pageTitle = "QuizPage";
 
@@ -54,6 +58,11 @@ namespace RetroTech
         public System.Action<QuizQuestion, bool> OnQuestionAnswered;
         public System.Action OnReviewRequested;
         public System.Action OnExploreMuseumRequested;
+
+        public void SetContentService(IContentService contentService)
+        {
+            _contentService = contentService;
+        }
 
         // State
         private int _currentQuizIndex;
@@ -1281,7 +1290,7 @@ namespace RetroTech
         /// <summary>
         /// Reinicia o quiz
         /// </summary>
-        public void RestartQuiz()
+        public async void RestartQuiz()
         {
             if (_currentAnimation != null)
             {
@@ -1290,6 +1299,13 @@ namespace RetroTech
             }
 
             StopAllCoroutines();
+
+            var contentCanvasGroup = _contentContainer.GetComponent<CanvasGroup>();
+            if (contentCanvasGroup == null)
+            {
+                contentCanvasGroup = _contentContainer.gameObject.AddComponent<CanvasGroup>();
+            }
+            contentCanvasGroup.alpha = 0f;
 
             if (_resultLayoutRoot != null)
             {
@@ -1303,11 +1319,28 @@ namespace RetroTech
                     element.SetActive(true);
             }
 
-            var contentCanvasGroup = _contentContainer.GetComponent<CanvasGroup>();
-            if (contentCanvasGroup != null)
-                contentCanvasGroup.alpha = 1f;
+            await RefreshQuizContentAsync();
 
             InitializeQuiz();
+
+            contentCanvasGroup.alpha = 1f;
+        }
+
+        private async Task RefreshQuizContentAsync()
+        {
+            if (_contentService == null)
+            {
+                return;
+            }
+
+            try
+            {
+                await SampleData.InitializeAsync(_contentService, forceRefresh: true);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"Não foi possível atualizar as perguntas do quiz: {ex.Message}");
+            }
         }
 
         /// <summary>

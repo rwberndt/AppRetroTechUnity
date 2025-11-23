@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using RetroTech;
+using UnityEngine;
 
 namespace RetroTech.Services
 {
@@ -355,11 +356,33 @@ namespace RetroTech.Services
                 return null;
             }
 
+            var options = dto.options != null
+                ? new List<string>(dto.options)
+                : new List<string>();
+
+            int correctIndex = dto.correctAnswerIndex;
+
+            bool IsIndexValid(int index) => index >= 0 && index < options.Count;
+
+            if (!IsIndexValid(correctIndex) && !string.IsNullOrWhiteSpace(dto.correctAnswer))
+            {
+                correctIndex = options.FindIndex(option =>
+                    string.Equals(option?.Trim(), dto.correctAnswer.Trim(), StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!IsIndexValid(correctIndex))
+            {
+                Debug.LogWarning(
+                    "Ignorando pergunta do quiz '{dto.question}' porque o índice da resposta correta está inválido. " +
+                    "Total de opções: {options.Count}, índice recebido: {dto.correctAnswerIndex}");
+                return null;
+            }
+
             return new QuizQuestion(
                 dto.id,
                 dto.question ?? string.Empty,
-                dto.options != null ? new List<string>(dto.options) : new List<string>(),
-                dto.correctAnswerIndex,
+                options,
+                correctIndex,
                 dto.explanation,
                 dto.relatedPieceId > 0 ? dto.relatedPieceId : (long?)null);
         }
@@ -396,6 +419,7 @@ namespace RetroTech.Services
             public string question;
             public string[] options;
             public int correctAnswerIndex;
+            public string correctAnswer;
             public string explanation;
             public long relatedPieceId;
         }
