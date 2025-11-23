@@ -372,9 +372,9 @@ namespace RetroTech.Services
 
             if (!IsIndexValid(correctIndex))
             {
-                Debug.LogWarning($
+                Debug.LogWarning(
                     "Ignorando pergunta do quiz '{dto.question}' porque o índice da resposta correta está inválido. " +
-                    $"Total de opções: {options.Count}, índice recebido: {dto.correctAnswerIndex}");
+                    "Total de opções: {options.Count}, índice recebido: {dto.correctAnswerIndex}");
                 return null;
             }
 
