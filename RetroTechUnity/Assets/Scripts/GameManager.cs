@@ -1308,10 +1308,12 @@ namespace RetroTech
             _quizPage.OnExploreMuseumRequested += () =>
             {
                 Debug.Log("Explore museum requested - navigating to Categories");
-                _activeTab = 1; 
+                _activeTab = 1;
                 SwitchPage(_activeTab);
                 RefreshTabsVisual();
             };
+
+            _quizPage.SetContentService(_contentService);
 
             // Criar a página usando a nova classe
             var pageObject = _quizPage.CreatePage(
