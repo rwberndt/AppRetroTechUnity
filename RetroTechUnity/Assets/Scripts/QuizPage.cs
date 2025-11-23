@@ -1300,6 +1300,13 @@ namespace RetroTech
 
             StopAllCoroutines();
 
+            var contentCanvasGroup = _contentContainer.GetComponent<CanvasGroup>();
+            if (contentCanvasGroup == null)
+            {
+                contentCanvasGroup = _contentContainer.gameObject.AddComponent<CanvasGroup>();
+            }
+            contentCanvasGroup.alpha = 0f;
+
             if (_resultLayoutRoot != null)
             {
                 Destroy(_resultLayoutRoot);
@@ -1312,13 +1319,11 @@ namespace RetroTech
                     element.SetActive(true);
             }
 
-            var contentCanvasGroup = _contentContainer.GetComponent<CanvasGroup>();
-            if (contentCanvasGroup != null)
-                contentCanvasGroup.alpha = 1f;
-
             await RefreshQuizContentAsync();
 
             InitializeQuiz();
+
+            contentCanvasGroup.alpha = 1f;
         }
 
         private async Task RefreshQuizContentAsync()
