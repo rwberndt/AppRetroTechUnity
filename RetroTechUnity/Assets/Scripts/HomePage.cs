@@ -150,7 +150,7 @@ namespace RetroTech
         private void CreateFeaturesSection()
         {
             // Título da seção
-            var featTitleTMP = UiKit.TMP(_contentContainer, "Principais funcionalidades\n", (int)sectionTitleFontSize,
+            var featTitleTMP = UiKit.TMP(_contentContainer, "Principais funcionalidades\n\n\n", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             featTitleTMP.name = "FeaturesTitle";
 
