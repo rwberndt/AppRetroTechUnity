@@ -381,23 +381,39 @@ namespace RetroTech
 
         private void LoadIcons()
         {
+            // Try to load icons from Resources, fallback to high-quality procedural icons
             _iconHome = Resources.Load<Sprite>("Icons/icon_home");
             _iconCategories = Resources.Load<Sprite>("Icons/icon_categories");
             _iconTimeline = Resources.Load<Sprite>("Icons/icon_timeline");
             _iconScanner = Resources.Load<Sprite>("Icons/icon_scanner");
             _iconQuiz = Resources.Load<Sprite>("Icons/icon_quiz");
 
-            List<string> missingIcons = null;
-            if (_iconHome == null) missingIcons = AppendMissing(missingIcons, "icon_home");
-            if (_iconCategories == null) missingIcons = AppendMissing(missingIcons, "icon_categories");
-            if (_iconTimeline == null) missingIcons = AppendMissing(missingIcons, "icon_timeline");
-            if (_iconScanner == null) missingIcons = AppendMissing(missingIcons, "icon_scanner");
-            if (_iconQuiz == null) missingIcons = AppendMissing(missingIcons, "icon_quiz");
+            // Use high-quality procedural icons (crisp, anti-aliased, vector-style)
+            // These look better than compressed PNG assets, especially at different sizes
+            bool useProceduralIcons = true; // Set to false to use PNG assets from Resources
 
-            if (missingIcons != null)
+            if (useProceduralIcons || _iconHome == null)
             {
-                Debug.LogWarning($"Navigation icons not found in Resources/Icons: {string.Join(", ", missingIcons)}");
+                _iconHome = HighQualityIconFactory.CreateHomeIcon();
             }
+            if (useProceduralIcons || _iconCategories == null)
+            {
+                _iconCategories = HighQualityIconFactory.CreateCategoriesIcon();
+            }
+            if (useProceduralIcons || _iconTimeline == null)
+            {
+                _iconTimeline = HighQualityIconFactory.CreateTimelineIcon();
+            }
+            if (useProceduralIcons || _iconScanner == null)
+            {
+                _iconScanner = HighQualityIconFactory.CreateScannerIcon();
+            }
+            if (useProceduralIcons || _iconQuiz == null)
+            {
+                _iconQuiz = HighQualityIconFactory.CreateQuizIcon();
+            }
+
+            Debug.Log("High-quality navigation icons loaded successfully");
         }
 
         private static List<string> AppendMissing(List<string> list, string value)
@@ -677,10 +693,36 @@ namespace RetroTech
             vlg.childForceExpandWidth = false;
             vlg.childForceExpandHeight = false;
 
-            // Icon glyph
+            // Icon container with shadow effect
+            var iconContainer = new GameObject("IconContainer", typeof(RectTransform));
+            iconContainer.transform.SetParent(content.transform, false);
+            var iconContainerRT = iconContainer.GetComponent<RectTransform>();
+            iconContainerRT.sizeDelta = new Vector2(IconGlyphSizeInactive + 8, IconGlyphSizeInactive + 8);
+
+            // Subtle shadow for depth (behind the icon)
+            var shadowGO = new GameObject("Shadow", typeof(RectTransform), typeof(Image));
+            shadowGO.transform.SetParent(iconContainer.transform, false);
+            var shadowRT = shadowGO.GetComponent<RectTransform>();
+            shadowRT.anchorMin = new Vector2(0.5f, 0.5f);
+            shadowRT.anchorMax = new Vector2(0.5f, 0.5f);
+            shadowRT.pivot = new Vector2(0.5f, 0.5f);
+            shadowRT.anchoredPosition = new Vector2(0f, -2f); // Slight offset down
+            shadowRT.sizeDelta = new Vector2(IconGlyphSizeInactive, IconGlyphSizeInactive);
+
+            var shadowImg = shadowGO.GetComponent<Image>();
+            shadowImg.sprite = icon;
+            shadowImg.color = new Color(0f, 0f, 0f, 0.15f); // Subtle dark shadow
+            shadowImg.preserveAspect = true;
+            shadowImg.raycastTarget = false;
+
+            // Icon glyph (main icon)
             var iconGO = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-            iconGO.transform.SetParent(content.transform, false);
+            iconGO.transform.SetParent(iconContainer.transform, false);
             var iconRT = iconGO.GetComponent<RectTransform>();
+            iconRT.anchorMin = new Vector2(0.5f, 0.5f);
+            iconRT.anchorMax = new Vector2(0.5f, 0.5f);
+            iconRT.pivot = new Vector2(0.5f, 0.5f);
+            iconRT.anchoredPosition = Vector2.zero;
             iconRT.sizeDelta = new Vector2(IconGlyphSizeInactive, IconGlyphSizeInactive);
 
             var iconImg = iconGO.GetComponent<Image>();
@@ -689,9 +731,9 @@ namespace RetroTech
             iconImg.preserveAspect = true;
             iconImg.raycastTarget = false;
 
-            var iconLE = iconGO.AddComponent<LayoutElement>();
-            iconLE.preferredHeight = IconGlyphSizeInactive;
-            iconLE.preferredWidth = IconGlyphSizeInactive;
+            var iconLE = iconContainer.AddComponent<LayoutElement>();
+            iconLE.preferredHeight = IconGlyphSizeInactive + 8;
+            iconLE.preferredWidth = IconGlyphSizeInactive + 8;
 
             // Label (fades in when active)
             var label = UiKit.TMP(content.transform, tabName, 22, Color.white, TextAlignmentOptions.Center, bold: false);
@@ -717,24 +759,24 @@ namespace RetroTech
                 var tab = row.GetChild(i);
                 bool active = (i == _activeTab);
 
-                var icon = tab.Find("Content/Icon")?.GetComponent<Image>();
+                // Find icon container and its children
+                var iconContainer = tab.Find("Content/IconContainer");
+                var icon = iconContainer?.Find("Icon")?.GetComponent<Image>();
+                var shadow = iconContainer?.Find("Shadow")?.GetComponent<Image>();
+
                 var label = tab.GetComponentsInChildren<TextMeshProUGUI>(true).LastOrDefault();
                 var labelCG = label ? label.GetComponent<CanvasGroup>() : null;
 
-                if (icon != null)
+                if (icon != null && iconContainer != null)
                 {
-                    icon.color = active ? IconActiveColor : IconInactiveColor;
-                    icon.rectTransform.sizeDelta = active
-                        ? new Vector2(IconGlyphSizeActive, IconGlyphSizeActive)
-                        : new Vector2(IconGlyphSizeInactive, IconGlyphSizeInactive);
+                    // Smooth color and size transition with animation
+                    StartCoroutine(AnimateIconTransition(icon, shadow, iconContainer.GetComponent<RectTransform>(), active));
                 }
 
                 if (label != null)
                 {
-                    label.fontStyle =  FontStyles.Normal;
-                    var labelColor = label.color;
-                    labelColor.a = active ? 1f : 0.75f;
-                    label.color = labelColor;
+                    label.fontStyle = active ? FontStyles.Bold : FontStyles.Normal;
+                    StartCoroutine(AnimateLabelTransition(label, active));
                 }
 
                 if (labelCG != null)
@@ -742,6 +784,87 @@ namespace RetroTech
                     labelCG.alpha = 1f;
                 }
             }
+        }
+
+        private System.Collections.IEnumerator AnimateIconTransition(Image icon, Image shadow, RectTransform containerRT, bool active)
+        {
+            Color targetColor = active ? IconActiveColor : IconInactiveColor;
+            Vector2 targetSize = active
+                ? new Vector2(IconGlyphSizeActive, IconGlyphSizeActive)
+                : new Vector2(IconGlyphSizeInactive, IconGlyphSizeInactive);
+            Vector2 targetContainerSize = active
+                ? new Vector2(IconGlyphSizeActive + 8, IconGlyphSizeActive + 8)
+                : new Vector2(IconGlyphSizeInactive + 8, IconGlyphSizeInactive + 8);
+
+            Color startColor = icon.color;
+            Vector2 startSize = icon.rectTransform.sizeDelta;
+            Vector2 startContainerSize = containerRT.sizeDelta;
+
+            // Shadow gets stronger when active
+            Color shadowStartColor = shadow != null ? shadow.color : Color.clear;
+            Color shadowTargetColor = active ? new Color(0f, 0f, 0f, 0.25f) : new Color(0f, 0f, 0f, 0.15f);
+
+            float duration = 0.25f; // Smooth 250ms transition
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                // Ease-out cubic for smooth deceleration
+                float eased = 1f - Mathf.Pow(1f - t, 3f);
+
+                icon.color = Color.Lerp(startColor, targetColor, eased);
+                icon.rectTransform.sizeDelta = Vector2.Lerp(startSize, targetSize, eased);
+                containerRT.sizeDelta = Vector2.Lerp(startContainerSize, targetContainerSize, eased);
+
+                if (shadow != null)
+                {
+                    shadow.color = Color.Lerp(shadowStartColor, shadowTargetColor, eased);
+                    shadow.rectTransform.sizeDelta = Vector2.Lerp(startSize, targetSize, eased);
+                }
+
+                yield return null;
+            }
+
+            // Ensure final values are set
+            icon.color = targetColor;
+            icon.rectTransform.sizeDelta = targetSize;
+            containerRT.sizeDelta = targetContainerSize;
+
+            if (shadow != null)
+            {
+                shadow.color = shadowTargetColor;
+                shadow.rectTransform.sizeDelta = targetSize;
+            }
+        }
+
+        private System.Collections.IEnumerator AnimateLabelTransition(TextMeshProUGUI label, bool active)
+        {
+            Color startColor = label.color;
+            Color targetColor = label.color;
+            targetColor.a = active ? 1f : 0.75f;
+
+            float duration = 0.2f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                // Ease-out for smooth transition
+                float eased = 1f - Mathf.Pow(1f - t, 2f);
+
+                Color currentColor = label.color;
+                currentColor.a = Mathf.Lerp(startColor.a, targetColor.a, eased);
+                label.color = currentColor;
+
+                yield return null;
+            }
+
+            label.color = targetColor;
         }
 
         // ========= Pages =========
