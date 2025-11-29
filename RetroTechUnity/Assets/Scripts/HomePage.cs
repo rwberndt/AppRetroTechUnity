@@ -131,7 +131,7 @@ namespace RetroTech
         private void CreateObjectiveSection()
         {
             // Título da seção
-            var objTitleTMP = UiKit.TMP(_contentContainer, "Objetivo do aplicativo\n", (int)sectionTitleFontSize,
+            var objTitleTMP = UiKit.TMP(_contentContainer, "Objetivo do aplicativo", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             objTitleTMP.name = "ObjectiveTitle";
 
@@ -150,7 +150,7 @@ namespace RetroTech
         private void CreateFeaturesSection()
         {
             // Título da seção
-            var featTitleTMP = UiKit.TMP(_contentContainer, "Principais funcionalidades\n", (int)sectionTitleFontSize,
+            var featTitleTMP = UiKit.TMP(_contentContainer, "Principais funcionalidades", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             featTitleTMP.name = "FeaturesTitle";
 
@@ -171,7 +171,7 @@ namespace RetroTech
         /// </summary>
         private void CreateTeamSection()
         {
-            var teamTitleTMP = UiKit.TMP(_contentContainer, "Equipe de desenvolvimento\n", (int)sectionTitleFontSize,
+            var teamTitleTMP = UiKit.TMP(_contentContainer, "Equipe de desenvolvimento", (int)sectionTitleFontSize,
                 TextMain, TextAlignmentOptions.Left, bold: true);
             teamTitleTMP.name = "TeamTitle";
 
