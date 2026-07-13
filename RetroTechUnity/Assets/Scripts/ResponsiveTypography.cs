@@ -11,6 +11,7 @@ namespace RetroTech
     {
         private const float ReferenceMinDimension = 1080f;
         private const float ReferenceDpi = 160f;
+        private const float AccessibilityBoost = 1.12f;
 
         private static int _cachedFrame = -1;
         private static float _cachedScale = -1f;
@@ -65,7 +66,7 @@ namespace RetroTech
             if (baseSize <= 0)
                 return baseSize;
 
-            float scale = GetFontScale();
+            float scale = GetFontScale() * AccessibilityBoost;
             return Mathf.RoundToInt(baseSize * scale);
         }
 
@@ -97,7 +98,7 @@ namespace RetroTech
             if (allowShrink)
             {
                 tmp.fontSizeMax = responsiveSize;
-                tmp.fontSizeMin = Mathf.Max(18f, responsiveSize * 0.65f);
+                tmp.fontSizeMin = Mathf.Max(20f, responsiveSize * 0.7f);
             }
         }
     }
